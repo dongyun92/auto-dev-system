@@ -1,0 +1,531 @@
+name: gimpo-map-service
+description: "김포공항 벡터 지도 서비스 및 실시간 시각화 시스템"
+version: "1.0.0"
+module_type: map_visualization_service
+priority: medium
+estimated_hours: 8
+
+dependencies:
+  depends_on: ["runway-status-manager"]
+  provides_to: ["atc-dashboard"]
+
+tech_stack:
+  - "spring-boot"
+  - "postgresql"
+  - "postgis"
+  - "svg-processing"
+  - "geojson"
+  - "websocket"
+
+api_endpoints:
+  - method: GET
+    path: /api/map/base
+    description: "김포공항 기본 지도 데이터 조회"
+    query_params:
+      format: "svg|geojson|png"
+      resolution: "low|medium|high|ultra"
+      layers: "runways,taxiways,gates,buildings"
+    responses:
+      200: "지도 데이터 (요청된 포맷)"
+      400: "지원하지 않는 포맷"
+
+  - method: GET
+    path: /api/map/layers/{layer_type}
+    description: "특정 레이어 데이터 조회"
+    path_params:
+      layer_type: "runways|taxiways|gates|buildings|restricted_zones"
+    query_params:
+      include_properties: "속성 정보 포함 여부"
+      coordinate_system: "WGS84|UTM52N"
+    responses:
+      200: "레이어별 지도 데이터"
+      404: "존재하지 않는 레이어"
+
+  - method: GET
+    path: /api/map/aircraft/overlay
+    description: "항공기 위치 오버레이 데이터"
+    query_params:
+      callsigns: "특정 항공기 필터 (콤마 구분)"
+      include_trail: "이동 경로 포함 여부"
+      trail_duration: "경로 표시 시간 (분)"
+    responses:
+      200: "항공기 위치 및 경로 오버레이"
+
+  - method: GET
+    path: /api/map/rwsl/overlay
+    description: "RWSL 등화 상태 오버레이"
+    responses:
+      200: "RWSL 구역별 등화 상태 시각화 데이터"
+
+  - method: POST
+    path: /api/map/screenshot
+    description: "현재 지도 상태 스크린샷 생성"
+    request_body:
+      width: 1920
+      height: 1080
+      format: "png|jpeg|svg"
+      include_overlays: true
+      timestamp: "2025-06-23T14:30:00Z"
+    responses:
+      200: "생성된 이미지 URL"
+      400: "잘못된 파라미터"
+
+  - method: WebSocket
+    path: /ws/map/realtime
+    description: "실시간 지도 업데이트 스트림"
+    message_format:
+      update:
+        timestamp: "2025-06-23T14:30:00Z"
+        aircraft_positions:
+          - callsign: "KAL123"
+            position: {lat: 37.5583, lng: 126.7908}
+            heading: 140
+            status: "taxiing"
+        rwsl_states:
+          - zone_id: "RW14L_ENTRY"
+            state: "RED"
+            brightness: 100
+        weather_overlay:
+          visibility: 5000  # meters
+          wind_direction: 280
+          wind_speed: 15  # knots
+
+database:
+  tables:
+    - name: map_base_layers
+      description: "기본 지도 레이어 데이터"
+      columns:
+        - name: id
+          type: BIGSERIAL
+          constraints: ["PRIMARY KEY"]
+        - name: layer_name
+          type: VARCHAR(50)
+          constraints: ["NOT NULL", "UNIQUE"]
+          description: "runways, taxiways, gates, buildings, etc"
+        - name: layer_type
+          type: VARCHAR(20)
+          constraints: ["NOT NULL"]
+          description: "polygon, line, point, raster"
+        - name: geometry
+          type: GEOMETRY
+          constraints: ["NOT NULL"]
+          description: "PostGIS geometry data"
+        - name: properties
+          type: JSONB
+          description: "레이어 속성 (이름, 유형, 상태 등)"
+        - name: style_properties
+          type: JSONB
+          description: "시각화 스타일 (색상, 두께, 패턴)"
+        - name: z_index
+          type: INTEGER
+          constraints: ["NOT NULL"]
+          description: "레이어 순서"
+        - name: visible
+          type: BOOLEAN
+          constraints: ["DEFAULT TRUE"]
+        - name: last_updated
+          type: TIMESTAMPTZ
+          constraints: ["NOT NULL"]
+      indexes:
+        - name: idx_base_layers_geometry
+          type: "GIST"
+          columns: ["geometry"]
+        - name: idx_base_layers_name
+          columns: ["layer_name"]
+
+    - name: dynamic_overlays
+      description: "동적 오버레이 데이터"
+      columns:
+        - name: id
+          type: BIGSERIAL
+          constraints: ["PRIMARY KEY"]
+        - name: overlay_type
+          type: VARCHAR(30)
+          constraints: ["NOT NULL"]
+          description: "aircraft, rwsl, weather, traffic, alerts"
+        - name: object_id
+          type: VARCHAR(50)
+          constraints: ["NOT NULL"]
+          description: "항공기 callsign, RWSL zone_id 등"
+        - name: geometry
+          type: GEOMETRY
+          constraints: ["NOT NULL"]
+        - name: display_properties
+          type: JSONB
+          constraints: ["NOT NULL"]
+          description: "표시 속성 (색상, 크기, 아이콘, 텍스트)"
+        - name: animation_properties
+          type: JSONB
+          description: "애니메이션 설정 (이동, 깜빡임, 회전)"
+        - name: timestamp
+          type: TIMESTAMPTZ
+          constraints: ["NOT NULL"]
+        - name: expires_at
+          type: TIMESTAMPTZ
+          description: "오버레이 만료 시간"
+      indexes:
+        - name: idx_dynamic_overlays_geometry
+          type: "GIST"
+          columns: ["geometry"]
+        - name: idx_dynamic_overlays_type_object
+          columns: ["overlay_type", "object_id"]
+        - name: idx_dynamic_overlays_timestamp
+          columns: ["timestamp"]
+
+kimpo_airport_geospatial_data:
+  coordinate_system:
+    primary: "EPSG:4326 (WGS84)"
+    secondary: "EPSG:5178 (Korea 2000 UTM Zone 52N)"
+    
+  airport_boundaries:
+    outer_boundary:
+      type: "Polygon"
+      coordinates: [
+        [[126.7700, 37.5400], [126.8100, 37.5400], 
+         [126.8100, 37.5800], [126.7700, 37.5800], 
+         [126.7700, 37.5400]]
+      ]
+    
+    restricted_airspace:
+      type: "Polygon" 
+      coordinates: [
+        [[126.7750, 37.5450], [126.8050, 37.5450],
+         [126.8050, 37.5750], [126.7750, 37.5750],
+         [126.7750, 37.5450]]
+      ]
+
+  runways:
+    runway_14l_32r:
+      centerline:
+        type: "LineString"
+        coordinates: [[126.7878, 37.5523], [126.7938, 37.5643]]
+      polygon:
+        type: "Polygon"
+        coordinates: [
+          [[126.7870, 37.5523], [126.7930, 37.5643],
+           [126.7886, 37.5523], [126.7946, 37.5643],
+           [126.7870, 37.5523]]
+        ]
+      properties:
+        name: "14L/32R"
+        length: 3200
+        width: 45
+        surface: "asphalt"
+        markings: ["threshold", "centerline", "touchdown_zone"]
+    
+    runway_14r_32l:
+      centerline:
+        type: "LineString"
+        coordinates: [[126.7948, 37.5533], [126.8008, 37.5653]]
+      polygon:
+        type: "Polygon"
+        coordinates: [
+          [[126.7940, 37.5533], [126.8000, 37.5653],
+           [126.7956, 37.5533], [126.8016, 37.5653],
+           [126.7940, 37.5533]]
+        ]
+      properties:
+        name: "14R/32L"
+        length: 3600
+        width: 45
+        surface: "asphalt"
+        markings: ["threshold", "centerline", "touchdown_zone", "ils"]
+
+  taxiways:
+    taxiway_alpha:
+      centerline:
+        type: "LineString"
+        coordinates: [
+          [126.7888, 37.5573], [126.7893, 37.5578],
+          [126.7898, 37.5583], [126.7903, 37.5588]
+        ]
+      properties:
+        name: "Taxiway Alpha"
+        width: 23
+        max_speed: 25
+        surface: "asphalt"
+    
+    taxiway_bravo:
+      centerline:
+        type: "LineString"
+        coordinates: [
+          [126.7908, 37.5583], [126.7913, 37.5588],
+          [126.7918, 37.5593], [126.7923, 37.5598]
+        ]
+      properties:
+        name: "Taxiway Bravo"
+        width: 23
+        max_speed: 30
+        surface: "asphalt"
+
+  gates:
+    domestic_gates:
+      - id: "GATE_1"
+        position: [126.7888, 37.5563]
+        geometry:
+          type: "Point"
+          coordinates: [126.7888, 37.5563]
+        properties:
+          gate_number: "1"
+          aircraft_size: "medium"
+          airline: "KAL"
+          terminal: "domestic"
+      
+      - id: "GATE_2"
+        position: [126.7893, 37.5568]
+        geometry:
+          type: "Point"
+          coordinates: [126.7893, 37.5568]
+        properties:
+          gate_number: "2"
+          aircraft_size: "medium"
+          airline: "AAR"
+          terminal: "domestic"
+    
+    international_gates:
+      - id: "GATE_11"
+        position: [126.7918, 37.5583]
+        geometry:
+          type: "Point"
+          coordinates: [126.7918, 37.5583]
+        properties:
+          gate_number: "11"
+          aircraft_size: "large"
+          airline: "KAL"
+          terminal: "international"
+
+  buildings:
+    terminal_domestic:
+      geometry:
+        type: "Polygon"
+        coordinates: [
+          [[126.7870, 37.5560], [126.7920, 37.5560],
+           [126.7920, 37.5580], [126.7870, 37.5580],
+           [126.7870, 37.5560]]
+        ]
+      properties:
+        name: "국내선 터미널"
+        type: "passenger_terminal"
+        floors: 3
+        
+    terminal_international:
+      geometry:
+        type: "Polygon"
+        coordinates: [
+          [[126.7900, 37.5580], [126.7960, 37.5580],
+           [126.7960, 37.5610], [126.7900, 37.5610],
+           [126.7900, 37.5580]]
+        ]
+      properties:
+        name: "국제선 터미널"
+        type: "passenger_terminal"
+        floors: 4
+        
+    control_tower:
+      geometry:
+        type: "Point"
+        coordinates: [126.7945, 37.5595]
+      properties:
+        name: "김포타워"
+        type: "control_tower"
+        height: 87
+        radio_frequency: "118.1"
+
+visualization_styles:
+  default_theme:
+    background_color: "#f5f5f5"
+    runway_color: "#444444"
+    taxiway_color: "#666666"
+    grass_color: "#4a7c59"
+    building_color: "#cccccc"
+    text_color: "#000000"
+    
+  dark_theme:
+    background_color: "#1a1a1a"
+    runway_color: "#888888"
+    taxiway_color: "#666666"
+    grass_color: "#2a5c39"
+    building_color: "#555555"
+    text_color: "#ffffff"
+    
+  high_contrast_theme:
+    background_color: "#ffffff"
+    runway_color: "#000000"
+    taxiway_color: "#333333"
+    grass_color: "#006600"
+    building_color: "#888888"
+    text_color: "#000000"
+    alert_color: "#ff0000"
+    warning_color: "#ffaa00"
+    
+  aircraft_icons:
+    default:
+      small: "aircraft_small.svg"
+      medium: "aircraft_medium.svg"
+      large: "aircraft_large.svg"
+      heavy: "aircraft_heavy.svg"
+    
+    by_airline:
+      KAL: "aircraft_kal.svg"
+      AAR: "aircraft_aar.svg"
+      JJA: "aircraft_jja.svg"
+      TWB: "aircraft_twb.svg"
+      
+    by_status:
+      taxiing: "#00aa00"
+      takeoff: "#0066cc"
+      landing: "#cc6600"
+      parked: "#666666"
+      emergency: "#ff0000"
+
+rwsl_visualization:
+  light_zones:
+    - zone_id: "RW14L_ENTRY"
+      position: [126.7878, 37.5523]
+      radius: 150
+      light_count: 8
+      
+    - zone_id: "RW14L_EXIT"
+      position: [126.7938, 37.5643]
+      radius: 150
+      light_count: 6
+      
+    - zone_id: "RW14R_ENTRY"
+      position: [126.7948, 37.5533]
+      radius: 150
+      light_count: 8
+      
+    - zone_id: "INTERSECTION_AB"
+      position: [126.7923, 37.5588]
+      radius: 200
+      light_count: 12
+  
+  light_states:
+    GREEN:
+      color: "#00ff00"
+      brightness: "100%"
+      animation: "steady"
+      
+    AMBER:
+      color: "#ffaa00"
+      brightness: "100%"
+      animation: "steady"
+      
+    RED:
+      color: "#ff0000"
+      brightness: "100%"
+      animation: "steady"
+      
+    FLASHING_RED:
+      color: "#ff0000"
+      brightness: "100%"
+      animation: "flash_1hz"
+      
+    OFF:
+      color: "#333333"
+      brightness: "10%"
+      animation: "none"
+
+real_time_updates:
+  update_frequency: "1초마다"
+  websocket_channels:
+    aircraft_positions: "/ws/map/aircraft"
+    rwsl_states: "/ws/map/rwsl"
+    weather_overlay: "/ws/map/weather"
+    traffic_flow: "/ws/map/traffic"
+    
+  data_compression:
+    use_binary: true
+    delta_updates: true
+    compression_algorithm: "gzip"
+    
+  performance_optimization:
+    level_of_detail: "거리 기반 상세도 조절"
+    culling: "화면 밖 객체 제거"
+    batching: "동일 타입 객체 배치 렌더링"
+    caching: "정적 레이어 캐싱"
+
+weather_overlays:
+  visibility:
+    excellent: "> 10km (투명)"
+    good: "5-10km (연한 회색)"
+    poor: "1-5km (회색)"
+    very_poor: "< 1km (진한 회색)"
+    
+  wind:
+    display_arrows: true
+    arrow_scale: "풍속에 비례"
+    update_frequency: "30초"
+    
+  precipitation:
+    rain: "파란 점선 패턴"
+    snow: "흰 점선 패턴"
+    intensity_opacity: "강도에 따른 투명도"
+
+korean_specific_features:
+  hangul_fonts:
+    primary: "Noto Sans CJK KR"
+    fallback: "맑은 고딕"
+    
+  location_names:
+    runway_14l: "일사좌"
+    runway_14r: "일사우"
+    runway_32l: "삼이좌" 
+    runway_32r: "삼이우"
+    domestic_terminal: "국내선 터미널"
+    international_terminal: "국제선 터미널"
+    control_tower: "김포타워"
+    
+  airline_korean_names:
+    KAL: "대한항공"
+    AAR: "아시아나항공"
+    JJA: "제주항공"
+    TWB: "티웨이항공"
+
+performance_requirements:
+  rendering_performance: "60 FPS 유지"
+  initial_load_time: "< 3초"
+  real_time_update_latency: "< 100ms"
+  memory_usage: "< 512MB (브라우저)"
+  svg_optimization: "벡터 경로 최소화"
+  tile_caching: "정적 타일 1시간 캐싱"
+
+testing:
+  unit_tests:
+    - "지도 레이어 렌더링 테스트"
+    - "좌표 변환 정확도 테스트"
+    - "SVG/GeoJSON 변환 테스트"
+    - "실시간 오버레이 업데이트 테스트"
+  
+  integration_tests:
+    - "활주로 상태 관리자 연동 테스트"
+    - "웹소켓 실시간 업데이트 테스트"
+    - "다중 해상도 지도 렌더링 테스트"
+    - "RWSL 등화 상태 시각화 테스트"
+  
+  performance_tests:
+    - "50대 항공기 동시 렌더링 테스트"
+    - "1시간 연속 실시간 업데이트 테스트"
+    - "다양한 브라우저 호환성 테스트"
+  
+  test_scenarios:
+    - name: "김포공항 전체 지도 렌더링"
+      description: "모든 레이어 포함 전체 지도 로딩"
+      load_time_target: "< 3초"
+      
+    - name: "러시아워 실시간 추적"
+      description: "25대 항공기 동시 실시간 추적"
+      fps_target: "> 30 FPS"
+
+completion_criteria:
+  - "김포공항 정확한 지도 데이터 구축 (WGS84 좌표계)"
+  - "SVG/GeoJSON 다중 포맷 지원"
+  - "실시간 항공기 위치 오버레이 렌더링"
+  - "RWSL 등화 상태 시각화 완성"
+  - "웹소켓 실시간 지도 업데이트 스트리밍"
+  - "한국어 지명 및 항공사명 표시"
+  - "다크/라이트 테마 지원"
+  - "60 FPS 렌더링 성능 달성"
+  - "PostGIS 공간 데이터베이스 연동"
+  - "단위 테스트 커버리지 85% 이상"
+  - "모바일/데스크톱 반응형 지원"
