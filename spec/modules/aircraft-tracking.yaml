@@ -11,7 +11,7 @@ metadata:
 
 dependencies:
   internal_modules:
-    - "adsd-data-simulator"
+    - "adsb-data-simulator"
   external_services:
     - "PostgreSQL Database"
     - "Redis Cache"
@@ -207,7 +207,7 @@ performance_requirements:
 real_time_features:
   position_updates:
     frequency: "1초 간격"
-    source: "ADSD 데이터 시뮬레이터"
+    source: "ADSB 데이터 시뮬레이터"
     validation: "위치 유효성 검증"
     
   trajectory_prediction:
@@ -219,7 +219,7 @@ real_time_features:
     auto_detection: "위치 기반 자동 상태 변경"
 
 integration_points:
-  adsd_simulator:
+  adsb_simulator:
     - "실시간 항공기 데이터 수신"
     - "WebSocket 연결 관리"
     - "데이터 검증 및 필터링"
@@ -240,7 +240,7 @@ testing_scenarios:
     - "우선순위 처리 테스트"
     
   integration_tests:
-    - "ADSD 시뮬레이터 연동 테스트"
+    - "ADSB 시뮬레이터 연동 테스트"
     - "실시간 추적 정확도 테스트"
     - "동시 다중 항공기 추적 테스트"
     - "비상상황 처리 테스트"
