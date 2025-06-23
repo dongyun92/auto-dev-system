@@ -1,0 +1,264 @@
+name: 🤖 Orchestrator - Auto Issue Generation
+
+on:
+  push:
+    paths:
+      - 'spec/**'
+      - '!spec/README.md'
+      - '!spec/modules/README.md'
+  workflow_dispatch:
+    inputs:
+      force_regenerate:
+        description: 'Force regenerate all issues'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  parse-and-generate:
+    runs-on: ubuntu-latest
+    name: Parse YAML and Generate Issues
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🔍 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: 📋 Install YAML Parser
+      run: |
+        npm install js-yaml
+        
+    - name: 🔍 Check for existing issues
+      id: check_issues
+      run: |
+        # GitHub CLI를 사용해서 기존 이슈 확인
+        existing_issues=$(gh issue list --label "auto-generated" --state open --json number,title --jq '. | length')
+        echo "existing_count=$existing_issues" >> $GITHUB_OUTPUT
+        echo "Found $existing_issues existing auto-generated issues"
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 📄 Parse YAML and Generate Issues
+      id: parse_yaml
+      run: |
+        node << 'EOF'
+        const fs = require('fs');
+        const yaml = require('js-yaml');
+        const path = require('path');
+        
+        // spec.yaml 읽기
+        const specPath = 'spec/spec.yaml';
+        let projectSpec = {};
+        if (fs.existsSync(specPath)) {
+          projectSpec = yaml.load(fs.readFileSync(specPath, 'utf8'));
+        }
+        
+        // modules 폴더에서 YAML 파일들 찾기
+        const modulesDir = 'spec/modules';
+        const moduleFiles = [];
+        
+        if (fs.existsSync(modulesDir)) {
+          const files = fs.readdirSync(modulesDir);
+          files.forEach(file => {
+            if (file.endsWith('.yaml') || file.endsWith('.yml')) {
+              const filePath = path.join(modulesDir, file);
+              try {
+                const moduleSpec = yaml.load(fs.readFileSync(filePath, 'utf8'));
+                if (moduleSpec && moduleSpec.name) {
+                  moduleFiles.push({
+                    file: file,
+                    spec: moduleSpec
+                  });
+                }
+              } catch (e) {
+                console.log(`Warning: Failed to parse ${file}: ${e.message}`);
+              }
+            }
+          });
+        }
+        
+        console.log(`Found ${moduleFiles.length} module specifications`);
+        
+        // 의존성 순서 계산 (간단한 토폴로지 정렬)
+        function resolveDependencies(modules) {
+          const resolved = [];
+          const remaining = [...modules];
+          
+          while (remaining.length > 0) {
+            const canResolve = remaining.filter(module => {
+              const deps = module.spec.depends_on || [];
+              return deps.every(dep => resolved.some(r => r.spec.name === dep));
+            });
+            
+            if (canResolve.length === 0) {
+              // 순환 의존성 또는 잘못된 의존성
+              console.log('Warning: Circular dependency detected or invalid dependency');
+              remaining.forEach(module => resolved.push(module));
+              break;
+            }
+            
+            canResolve.forEach(module => {
+              resolved.push(module);
+              const index = remaining.indexOf(module);
+              remaining.splice(index, 1);
+            });
+          }
+          
+          return resolved;
+        }
+        
+        const orderedModules = resolveDependencies(moduleFiles);
+        
+        // GitHub Issues 생성을 위한 데이터 준비
+        const phases = projectSpec.development_phases || [
+          { name: 'implementation', description: '기본 기능 구현', labels: ['dev', 'implementation'] },
+          { name: 'testing', description: '단위 테스트 및 통합 테스트', labels: ['test', 'quality'] },
+          { name: 'integration', description: '모듈 간 통합 및 API 연결', labels: ['integration', 'api'] }
+        ];
+        
+        const issuesData = [];
+        let issueNumber = 1;
+        
+        orderedModules.forEach((module, moduleIndex) => {
+          phases.forEach((phase, phaseIndex) => {
+            const issue = {
+              title: `[${phase.name.toUpperCase()}] ${module.spec.name} - ${phase.description}`,
+              body: generateIssueBody(module.spec, phase, projectSpec),
+              labels: ['auto-generated', 'claude-task', ...phase.labels],
+              assignees: [],
+              moduleIndex,
+              phaseIndex,
+              moduleName: module.spec.name,
+              phaseName: phase.name
+            };
+            issuesData.push(issue);
+            issueNumber++;
+          });
+        });
+        
+        function generateIssueBody(moduleSpec, phase, projectSpec) {
+          let body = `# ${moduleSpec.name} - ${phase.description}\n\n`;
+          body += `## 📋 모듈 정보\n`;
+          body += `- **이름**: ${moduleSpec.name}\n`;
+          body += `- **설명**: ${moduleSpec.description || 'N/A'}\n`;
+          body += `- **버전**: ${moduleSpec.version || '1.0.0'}\n`;
+          
+          if (moduleSpec.depends_on && moduleSpec.depends_on.length > 0) {
+            body += `- **의존성**: ${moduleSpec.depends_on.join(', ')}\n`;
+          }
+          
+          body += `\n## 🎯 ${phase.description}\n\n`;
+          
+          if (phase.name === 'implementation') {
+            body += `### 구현 요구사항\n`;
+            if (moduleSpec.endpoints) {
+              body += `#### API 엔드포인트\n`;
+              moduleSpec.endpoints.forEach(endpoint => {
+                body += `- \`${endpoint.method} ${endpoint.path}\`: ${endpoint.description}\n`;
+              });
+            }
+            if (moduleSpec.tech_stack) {
+              body += `\n#### 기술 스택\n`;
+              moduleSpec.tech_stack.forEach(tech => {
+                body += `- ${tech}\n`;
+              });
+            }
+          } else if (phase.name === 'testing') {
+            body += `### 테스트 요구사항\n`;
+            if (moduleSpec.tests) {
+              if (moduleSpec.tests.unit_test_coverage) {
+                body += `- **단위 테스트 커버리지**: ${moduleSpec.tests.unit_test_coverage}%\n`;
+              }
+              if (moduleSpec.tests.integration_tests) {
+                body += `- **통합 테스트**: 필수\n`;
+              }
+            }
+          } else if (phase.name === 'integration') {
+            body += `### 통합 요구사항\n`;
+            body += `- API 문서 생성\n`;
+            body += `- 다른 모듈과의 연동 테스트\n`;
+            if (moduleSpec.depends_on) {
+              body += `- 의존 모듈과의 인터페이스 검증\n`;
+            }
+          }
+          
+          body += `\n## ✅ 완료 조건\n`;
+          body += `- [ ] 기능 구현 완료\n`;
+          body += `- [ ] 코드 리뷰 통과\n`;
+          body += `- [ ] 테스트 통과\n`;
+          body += `- [ ] 문서화 완료\n`;
+          
+          body += `\n---\n`;
+          body += `*🤖 이 이슈는 자동으로 생성되었습니다. @claude 를 멘션하여 개발을 시작하세요.*\n`;
+          
+          return body;
+        }
+        
+        // 결과를 파일로 저장
+        fs.writeFileSync('issues.json', JSON.stringify(issuesData, null, 2));
+        console.log(`Generated ${issuesData.length} issues for ${orderedModules.length} modules`);
+        
+        // GitHub Actions 출력
+        console.log(`::set-output name=issues_count::${issuesData.length}`);
+        console.log(`::set-output name=modules_count::${orderedModules.length}`);
+        EOF
+        
+    - name: 🎯 Create GitHub Issues
+      if: steps.check_issues.outputs.existing_count == '0' || github.event.inputs.force_regenerate == 'true'
+      run: |
+        # issues.json 파일에서 이슈 데이터 읽기
+        if [ ! -f "issues.json" ]; then
+          echo "No issues.json file found"
+          exit 0
+        fi
+        
+        # jq를 사용해서 JSON 파싱하고 이슈 생성
+        issue_count=$(jq '. | length' issues.json)
+        echo "Creating $issue_count issues..."
+        
+        for i in $(seq 0 $((issue_count - 1))); do
+          title=$(jq -r ".[$i].title" issues.json)
+          body=$(jq -r ".[$i].body" issues.json)
+          labels=$(jq -r ".[$i].labels | join(\",\")" issues.json)
+          
+          echo "Creating issue: $title"
+          
+          gh issue create \
+            --title "$title" \
+            --body "$body" \
+            --label "$labels" \
+            --assignee "" || echo "Failed to create issue: $title"
+            
+          # API 레이트 리밋 방지를 위한 대기
+          sleep 2
+        done
+        
+        echo "✅ Issue creation completed"
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 📊 Summary
+      run: |
+        echo "## 🎉 Orchestrator Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Generated Issues" >> $GITHUB_STEP_SUMMARY
+        echo "- **Total Issues**: ${{ steps.parse_yaml.outputs.issues_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Modules**: ${{ steps.parse_yaml.outputs.modules_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔄 Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "1. Claude Code will automatically pick up these issues" >> $GITHUB_STEP_SUMMARY
+        echo "2. Development will proceed in dependency order" >> $GITHUB_STEP_SUMMARY
+        echo "3. Each module goes through: Implementation → Testing → Integration" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🤖 **Auto-development pipeline is now active!**" >> $GITHUB_STEP_SUMMARY
