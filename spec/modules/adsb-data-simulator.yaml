@@ -1,0 +1,170 @@
+name: adsb-data-simulator
+description: "FlightRadar24 실시간 데이터를 시뮬레이션하는 ADSB(Automatic Dependent Surveillance-Broadcast) 시스템"
+version: "1.0.0"
+
+metadata:
+  module_type: "data_service"
+  priority: "high"
+  phase: 1
+  estimated_hours: 6
+  category: "기반 데이터 시스템"
+
+dependencies:
+  external_services:
+    - "FlightRadar24 API"
+    - "PostgreSQL Database"
+  internal_modules: []
+  
+tech_stack:
+  - "spring-boot"
+  - "postgresql"
+  - "flightradar24-api"
+  - "websocket"
+  - "json"
+
+endpoints:
+  - method: "GET"
+    path: "/api/adsb/aircraft"
+    description: "현재 김포공항 영역 내 모든 항공기 데이터 조회"
+    response_format: "JSON"
+    
+  - method: "GET"
+    path: "/api/adsb/aircraft/{callsign}"
+    description: "특정 콜사인 항공기의 상세 데이터 조회"
+    response_format: "JSON"
+    
+  - method: "GET"
+    path: "/api/adsb/aircraft/area/{latitude}/{longitude}/{radius}"
+    description: "지정된 좌표 반경 내 항공기 데이터 조회"
+    response_format: "JSON"
+    
+  - method: "POST"
+    path: "/api/adsb/simulate"
+    description: "시뮬레이션 모드로 가상 항공기 데이터 생성"
+    request_format: "JSON"
+    
+  - method: "WebSocket"
+    path: "/ws/adsb/realtime"
+    description: "실시간 항공기 데이터 스트리밍"
+    protocol: "WebSocket"
+
+database_schema:
+  tables:
+    - name: "aircraft_data"
+      columns:
+        - name: "id"
+          type: "BIGSERIAL PRIMARY KEY"
+        - name: "callsign"
+          type: "VARCHAR(20) NOT NULL"
+        - name: "latitude"
+          type: "DECIMAL(10,7) NOT NULL"
+        - name: "longitude" 
+          type: "DECIMAL(10,7) NOT NULL"
+        - name: "altitude"
+          type: "INTEGER"
+        - name: "speed"
+          type: "INTEGER"
+        - name: "heading"
+          type: "INTEGER"
+        - name: "aircraft_type"
+          type: "VARCHAR(10)"
+        - name: "airline"
+          type: "VARCHAR(10)"
+        - name: "origin"
+          type: "VARCHAR(10)"
+        - name: "destination"
+          type: "VARCHAR(10)"
+        - name: "timestamp"
+          type: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        - name: "is_simulation"
+          type: "BOOLEAN DEFAULT FALSE"
+      indexes:
+        - "CREATE INDEX idx_aircraft_callsign ON aircraft_data(callsign)"
+        - "CREATE INDEX idx_aircraft_location ON aircraft_data(latitude, longitude)"
+        - "CREATE INDEX idx_aircraft_timestamp ON aircraft_data(timestamp)"
+
+gimpo_airport_specific:
+  coordinates:
+    latitude: 37.5583
+    longitude: 126.7908
+    monitoring_radius: "30km"
+  
+  korean_airlines:
+    priority:
+      - "KAL" # 대한항공
+      - "AAR" # 아시아나항공  
+      - "JJA" # 제주항공
+      - "TWB" # 티웨이항공
+      - "ABL" # 에어부산
+      - "ESR" # 이스타항공
+    
+  special_callsigns:
+    - "KOREA01" # 대통령전용기
+    - "KOREA02" # 정부전용기
+    - "MUGUNGHWA1" # 무궁화1호
+    
+  flight_patterns:
+    approaches:
+      - runway: "14L"
+        approach_path: "ILS 14L approach"
+      - runway: "14R" 
+        approach_path: "ILS 14R approach"
+      - runway: "32L"
+        approach_path: "ILS 32L approach"
+      - runway: "32R"
+        approach_path: "ILS 32R approach"
+
+simulation_scenarios:
+  normal_operations:
+    - scenario: "일반 착륙 접근"
+      aircraft_count: 5
+      duration_minutes: 10
+      
+  emergency_situations:
+    - scenario: "비상 착륙"
+      aircraft_count: 1
+      priority: "EMERGENCY"
+      
+  heavy_traffic:
+    - scenario: "러시아워 교통량"
+      aircraft_count: 20
+      duration_minutes: 30
+
+performance_requirements:
+  data_refresh_rate: "1초 간격"
+  concurrent_connections: "최대 100개 WebSocket 연결"
+  response_time: "< 500ms"
+  accuracy: "FlightRadar24 API와 99% 일치"
+
+testing_scenarios:
+  unit_tests:
+    - "FlightRadar24 API 호출 테스트"
+    - "데이터 파싱 및 변환 테스트"
+    - "WebSocket 연결 테스트"
+    - "시뮬레이션 데이터 생성 테스트"
+    
+  integration_tests:
+    - "김포공항 영역 데이터 필터링 테스트"
+    - "실시간 데이터 스트리밍 테스트"
+    - "한국 항공사 우선순위 처리 테스트"
+    - "비상상황 시나리오 테스트"
+
+completion_criteria:
+  functional:
+    - "FlightRadar24 API 연동 완료"
+    - "실시간 데이터 수집 및 저장"
+    - "WebSocket 실시간 스트리밍 구현"
+    - "시뮬레이션 모드 구현"
+    - "김포공항 특화 데이터 필터링"
+    
+  quality:
+    - "단위 테스트 커버리지 90% 이상"
+    - "API 응답시간 500ms 이하"
+    - "동시 연결 100개 처리 가능"
+    - "24시간 연속 운영 안정성 확인"
+
+security_considerations:
+  - "FlightRadar24 API 키 안전한 저장"
+  - "항공기 데이터 접근 권한 관리"
+  - "실시간 데이터 암호화 전송"
+  - "감사 로그 기록"
