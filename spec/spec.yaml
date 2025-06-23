@@ -1,13 +1,14 @@
 project:
-  name: todo-api-test
-  description: "자동화 시스템 검증을 위한 Simple Todo API 프로젝트"
+  name: gimpo-airport-rwsl-system
+  description: "김포공항 RWSL(Runway Wait Status Light) 실시간 충돌 감지 및 안전 시스템"
   version: "1.0.0"
   
 metadata:
-  author: "AI Development System"
+  author: "RWSL Development Team"
   created_at: "2025-06-23"
-  tech_stack: ["spring-boot", "postgresql", "jwt"]
-  project_type: "api_service"
+  tech_stack: ["spring-boot", "postgresql", "react", "websocket", "jwt"]
+  project_type: "aviation_safety_system"
+  airport: "김포국제공항 (RKSS)"
   
 global_settings:
   development:
@@ -15,38 +16,129 @@ global_settings:
     spring_boot_version: "3.2.0"
     database: "postgresql"
     build_tool: "maven"
+    frontend: "react-18"
+    
+  aviation_standards:
+    - "ICAO A-SMGCS Level 2 표준"
+    - "국토교통부 항공안전 기준"
+    - "김포공항 운영 절차서"
+    - "FlightRadar24 데이터 연동 표준"
+    
+  quality_requirements:
+    - "충돌 감지 정확도 99.5% 이상"
+    - "응답시간 1초 이내"
+    - "오탐률 5% 이하"
+    - "가용률 99.9% 이상"
     
   code_standards:
     - "Google Java Style Guide"
     - "RESTful API 설계 원칙"
-    - "JWT 보안 가이드라인"
-    - "테스트 커버리지 80% 이상"
+    - "WebSocket 실시간 통신 가이드라인"
+    - "테스트 커버리지 85% 이상"
+    - "항공 보안 코딩 표준"
     
   ci_cd:
     build_command: "mvn clean package"
     test_command: "mvn test"
     quality_gates:
-      - "테스트 커버리지 80% 이상"
+      - "테스트 커버리지 85% 이상"
       - "코드 스타일 검증"
       - "보안 취약점 스캔"
+      - "성능 테스트 통과"
+      - "RWSL 시뮬레이션 테스트"
     
+orchestrator:
+  max_parallel_tasks: 2
+  dependency_optimization: true
+  auto_integration_testing: true
+  
 modules_order:
-  - name: "database-setup"
+  # Phase 1: 기반 데이터 시스템 (병렬 처리 가능)
+  - name: "adsd-data-simulator"
     phase: 1
+    priority: "high"
     required: true
+    estimated_hours: 6
     
-  - name: "auth-service" 
+  - name: "aircraft-tracking"
+    phase: 1
+    priority: "high"
+    required: true
+    estimated_hours: 8
+    
+  - name: "runway-status-manager"
+    phase: 1
+    priority: "high"
+    required: true
+    estimated_hours: 4
+    
+  # Phase 2: 핵심 로직 시스템 (데이터 시스템 완료 후)
+  - name: "taxiway-management"
     phase: 2
+    priority: "high"
     required: true
-    depends_on: ["database-setup"]
+    depends_on: ["adsd-data-simulator", "runway-status-manager"]
+    estimated_hours: 6
     
-  - name: "todo-service"
-    phase: 3
+  - name: "conflict-detection-engine"
+    phase: 2
+    priority: "critical"
     required: true
-    depends_on: ["database-setup", "auth-service"]
+    depends_on: ["aircraft-tracking", "taxiway-management"]
+    estimated_hours: 12
+    
+  - name: "notification-service"
+    phase: 2
+    priority: "medium"
+    required: true
+    depends_on: ["conflict-detection-engine"]
+    estimated_hours: 4
+    
+  # Phase 3: 지도 및 시각화 (핵심 로직과 병렬 가능)
+  - name: "gimpo-map-service"
+    phase: 3
+    priority: "medium"
+    required: true
+    depends_on: ["runway-status-manager"]
+    estimated_hours: 8
+    
+  # Phase 4: 사용자 인터페이스 (모든 백엔드 완료 후)
+  - name: "atc-dashboard"
+    phase: 4
+    priority: "high"
+    required: true
+    depends_on: ["conflict-detection-engine", "notification-service", "gimpo-map-service"]
+    estimated_hours: 10
+    
+  # Phase 5: 시스템 통합 (모든 모듈 완료 후)
+  - name: "system-integration"
+    phase: 5
+    priority: "critical"
+    required: true
+    depends_on: ["atc-dashboard"]
+    estimated_hours: 6
 
 completion_criteria:
-  - "모든 모듈이 성공적으로 구현됨"
+  - "모든 9개 모듈이 성공적으로 구현됨"
+  - "FlightRadar24 실제 데이터로 검증 완료"
+  - "김포공항 좌표 및 운영 절차 정확히 반영"
+  - "실시간 충돌 감지 정확도 99.5% 달성"
+  - "관제사용 대시보드 완전 작동"
   - "전체 시스템 통합 테스트 통과"
-  - "API 문서 자동 생성됨"
   - "Docker 컨테이너 환경 구성 완료"
+  - "RWSL 등화 제어 시뮬레이션 정상 작동"
+  - "한국어/영어 다국어 지원 완료"
+  - "김포공항 특화 기상 조건 대응 완료"
+
+performance_targets:
+  response_time: "1초 이내"
+  accuracy: "99.5% 충돌 감지 정확도"
+  false_positive_rate: "5% 이하"
+  concurrent_aircraft: "50대 동시 추적"
+  availability: "99.9% 가용률"
+  
+security_requirements:
+  - "항공 보안 표준 준수"
+  - "실시간 데이터 암호화"
+  - "접근 권한 관리"
+  - "감사 로그 기록"
