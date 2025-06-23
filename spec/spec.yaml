@@ -54,7 +54,7 @@ orchestrator:
   
 modules_order:
   # Phase 1: 기반 데이터 시스템 (병렬 처리 가능)
-  - name: "adsd-data-simulator"
+  - name: "adsb-data-simulator"
     phase: 1
     priority: "high"
     required: true
@@ -77,7 +77,7 @@ modules_order:
     phase: 2
     priority: "high"
     required: true
-    depends_on: ["adsd-data-simulator", "runway-status-manager"]
+    depends_on: ["adsb-data-simulator", "runway-status-manager"]
     estimated_hours: 6
     
   - name: "conflict-detection-engine"
