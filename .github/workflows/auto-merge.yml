@@ -1,0 +1,156 @@
+name: 🔀 Auto Merge - CI Success Handler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted]
+  status:
+  check_run:
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Check PR Status
+      id: pr_status
+      run: |
+        PR_NUMBER="${{ github.event.pull_request.number || github.event.number }}"
+        
+        if [ -z "$PR_NUMBER" ]; then
+          echo "No PR number found, exiting"
+          exit 0
+        fi
+        
+        # PR 정보 가져오기
+        PR_INFO=$(gh pr view $PR_NUMBER --json state,mergeable,title,labels,author)
+        
+        STATE=$(echo "$PR_INFO" | jq -r '.state')
+        MERGEABLE=$(echo "$PR_INFO" | jq -r '.mergeable')
+        TITLE=$(echo "$PR_INFO" | jq -r '.title')
+        AUTHOR=$(echo "$PR_INFO" | jq -r '.author.login')
+        
+        echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        echo "state=$STATE" >> $GITHUB_OUTPUT
+        echo "mergeable=$MERGEABLE" >> $GITHUB_OUTPUT
+        echo "title=$TITLE" >> $GITHUB_OUTPUT
+        echo "author=$AUTHOR" >> $GITHUB_OUTPUT
+        
+        # auto-generated 라벨이 있는지 확인
+        HAS_AUTO_LABEL=$(echo "$PR_INFO" | jq -r '.labels[] | select(.name=="auto-generated") | .name // empty')
+        echo "has_auto_label=$HAS_AUTO_LABEL" >> $GITHUB_OUTPUT
+        
+        echo "PR #$PR_NUMBER - State: $STATE, Mergeable: $MERGEABLE, Author: $AUTHOR"
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 🧪 Check CI Status
+      id: ci_status
+      if: steps.pr_status.outputs.has_auto_label == 'auto-generated'
+      run: |
+        PR_NUMBER="${{ steps.pr_status.outputs.pr_number }}"
+        
+        # 모든 체크 상태 확인
+        CHECKS=$(gh pr checks $PR_NUMBER --json name,status,conclusion)
+        
+        PENDING_COUNT=$(echo "$CHECKS" | jq '[.[] | select(.status == "in_progress" or .status == "queued" or .status == "pending")] | length')
+        FAILED_COUNT=$(echo "$CHECKS" | jq '[.[] | select(.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out")] | length')
+        SUCCESS_COUNT=$(echo "$CHECKS" | jq '[.[] | select(.conclusion == "success")] | length')
+        TOTAL_COUNT=$(echo "$CHECKS" | jq '. | length')
+        
+        echo "pending_count=$PENDING_COUNT" >> $GITHUB_OUTPUT
+        echo "failed_count=$FAILED_COUNT" >> $GITHUB_OUTPUT
+        echo "success_count=$SUCCESS_COUNT" >> $GITHUB_OUTPUT
+        echo "total_count=$TOTAL_COUNT" >> $GITHUB_OUTPUT
+        
+        echo "CI Status - Total: $TOTAL_COUNT, Success: $SUCCESS_COUNT, Failed: $FAILED_COUNT, Pending: $PENDING_COUNT"
+        
+        # 모든 체크가 성공했는지 확인
+        if [ "$TOTAL_COUNT" -gt 0 ] && [ "$FAILED_COUNT" -eq 0 ] && [ "$PENDING_COUNT" -eq 0 ]; then
+          echo "all_checks_passed=true" >> $GITHUB_OUTPUT
+        else
+          echo "all_checks_passed=false" >> $GITHUB_OUTPUT
+        fi
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 🎯 Auto Merge
+      if: |
+        steps.pr_status.outputs.has_auto_label == 'auto-generated' &&
+        steps.pr_status.outputs.state == 'OPEN' &&
+        steps.pr_status.outputs.mergeable == 'MERGEABLE' &&
+        steps.ci_status.outputs.all_checks_passed == 'true'
+      run: |
+        PR_NUMBER="${{ steps.pr_status.outputs.pr_number }}"
+        
+        echo "🎉 All conditions met for auto-merge!"
+        echo "- PR is auto-generated"
+        echo "- PR is open and mergeable" 
+        echo "- All CI checks passed"
+        
+        # PR 머지 실행
+        gh pr merge $PR_NUMBER --squash --delete-branch || {
+          echo "❌ Merge failed, will retry later"
+          exit 1
+        }
+        
+        echo "✅ PR #$PR_NUMBER successfully merged!"
+        
+        # 다음 이슈 확인 및 트리거
+        echo "🔍 Checking for next tasks..."
+        
+        # 같은 모듈의 다음 단계 이슈가 있는지 확인
+        NEXT_ISSUES=$(gh issue list --label "auto-generated" --state open --limit 5 --json number,title)
+        NEXT_COUNT=$(echo "$NEXT_ISSUES" | jq '. | length')
+        
+        if [ "$NEXT_COUNT" -gt 0 ]; then
+          NEXT_ISSUE_NUMBER=$(echo "$NEXT_ISSUES" | jq -r '.[0].number')
+          NEXT_ISSUE_TITLE=$(echo "$NEXT_ISSUES" | jq -r '.[0].title')
+          
+          echo "🚀 Found next task: Issue #$NEXT_ISSUE_NUMBER - $NEXT_ISSUE_TITLE"
+          
+          # 다음 이슈에 Claude 멘션 코멘트 추가
+          gh issue comment $NEXT_ISSUE_NUMBER --body "🤖 Previous task completed successfully. @claude please begin work on this task."
+          
+          echo "✅ Next task triggered!"
+        else
+          echo "🎉 All tasks completed! No more issues in queue."
+        fi
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 📊 Summary
+      if: steps.pr_status.outputs.has_auto_label == 'auto-generated'
+      run: |
+        echo "## 🔀 Auto-Merge Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**PR**: #${{ steps.pr_status.outputs.pr_number }} - ${{ steps.pr_status.outputs.title }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Author**: ${{ steps.pr_status.outputs.author }}" >> $GITHUB_STEP_SUMMARY
+        echo "**State**: ${{ steps.pr_status.outputs.state }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Mergeable**: ${{ steps.pr_status.outputs.mergeable }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🧪 CI Status" >> $GITHUB_STEP_SUMMARY
+        echo "- **Total Checks**: ${{ steps.ci_status.outputs.total_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Passed**: ${{ steps.ci_status.outputs.success_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Failed**: ${{ steps.ci_status.outputs.failed_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Pending**: ${{ steps.ci_status.outputs.pending_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ steps.ci_status.outputs.all_checks_passed }}" == "true" ]; then
+          echo "✅ **Auto-merge completed successfully!**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⏳ **Waiting for CI completion...**" >> $GITHUB_STEP_SUMMARY
+        fi
