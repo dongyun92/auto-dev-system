@@ -32,7 +32,7 @@ graph TD
     B --> C[의존성 검사]
     C --> D[Claude 트리거 워크플로우 실행]
     D --> E[in-progress 라벨 추가]
-    E --> F[@claude 멘션 코멘트 생성]
+    E --> F[claude 멘션 코멘트 생성]
     F --> G[Claude Code 작업 시작]
 ```
 
