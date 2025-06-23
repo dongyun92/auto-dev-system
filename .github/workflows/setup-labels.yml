@@ -1,0 +1,94 @@
+name: 🏷️ Label Management - Setup Required Labels
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/setup-labels.yml'
+      - 'spec/spec.yaml'
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  setup-labels:
+    runs-on: ubuntu-latest
+    name: Create Required Labels
+    
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+      
+    - name: 🏷️ Create/Update Labels
+      run: |
+        # 기본 자동화 라벨들
+        declare -A LABELS
+        
+        # 자동화 관련 라벨
+        LABELS["auto-generated"]="🤖 Automatically generated issue or PR|#0052cc"
+        LABELS["claude-task"]="🧠 Task for Claude Code to process|#7b68ee"
+        LABELS["orchestrator"]="🎼 Orchestrator system related|#ff6b6b"
+        
+        # 개발 단계 라벨
+        LABELS["dev"]="🔨 Development task|#28a745"
+        LABELS["implementation"]="⚡ Implementation phase|#20b2aa"
+        LABELS["test"]="🧪 Testing related|#ffc107"
+        LABELS["quality"]="⭐ Quality assurance|#17a2b8"
+        LABELS["integration"]="🔗 Integration task|#6f42c1"
+        LABELS["api"]="🌐 API related work|#fd7e14"
+        
+        # 상태 라벨
+        LABELS["in-progress"]="🚧 Work in progress|#fbca04"
+        LABELS["review-needed"]="👀 Needs review|#d73a4a"
+        LABELS["blocked"]="🚫 Blocked by dependency|#b60205"
+        LABELS["completed"]="✅ Task completed|#0e8a16"
+        
+        # 에러/이슈 라벨
+        LABELS["ci-failed"]="❌ CI checks failed|#d73a4a"
+        LABELS["human-intervention"]="👤 Requires human intervention|#e99695"
+        LABELS["retry-needed"]="🔄 Needs retry|#f9d71c"
+        
+        # 우선순위 라벨
+        LABELS["priority-high"]="🔥 High priority|#b60205"
+        LABELS["priority-medium"]="⚡ Medium priority|#fbca04"
+        LABELS["priority-low"]="📝 Low priority|#0e8a16"
+        
+        # 각 라벨 생성/업데이트
+        for label_name in "${!LABELS[@]}"; do
+          IFS='|' read -r description color <<< "${LABELS[$label_name]}"
+          
+          echo "Creating/updating label: $label_name"
+          
+          # 라벨이 존재하는지 확인
+          if gh label list | grep -q "^$label_name"; then
+            echo "  → Updating existing label: $label_name"
+            gh label edit "$label_name" --description "$description" --color "$color" || {
+              echo "  ⚠️  Failed to update label: $label_name"
+            }
+          else
+            echo "  → Creating new label: $label_name"
+            gh label create "$label_name" --description "$description" --color "$color" || {
+              echo "  ⚠️  Failed to create label: $label_name"
+            }
+          fi
+        done
+        
+        echo "✅ Label setup completed!"
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 📊 List All Labels
+      run: |
+        echo "## 🏷️ Current Repository Labels" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        gh label list --json name,description,color --jq '.[] | "- **\(.name)**: \(.description) `#\(.color)`"' >> $GITHUB_STEP_SUMMARY
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **Label management completed!**" >> $GITHUB_STEP_SUMMARY
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
