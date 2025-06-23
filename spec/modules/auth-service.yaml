@@ -1,0 +1,106 @@
+name: auth-service
+description: "Todo 애플리케이션을 위한 JWT 기반 사용자 인증 시스템"
+type: api_service
+priority: high
+estimated_hours: 4
+
+dependencies:
+  depends_on: ["database-setup"]
+  
+tech_stack:
+  - spring-boot
+  - spring-security
+  - jwt
+  - bcrypt
+  - postgresql
+
+requirements:
+  functional:
+    - "사용자 회원가입 API (POST /auth/register)"
+    - "사용자 로그인 API (POST /auth/login)"
+    - "JWT 토큰 생성 및 검증"
+    - "비밀번호 암호화 (BCrypt)"
+    - "토큰 갱신 API (POST /auth/refresh)"
+    - "사용자 정보 조회 API (GET /auth/me)"
+    - "로그아웃 API (POST /auth/logout)"
+  
+  non_functional:
+    - "JWT 토큰 만료시간 설정 (24시간)"
+    - "Refresh 토큰 만료시간 설정 (7일)"
+    - "비밀번호 정책 검증 (최소 8자, 대소문자, 숫자 포함)"
+    - "이메일 중복 검증"
+    - "보안 헤더 설정"
+
+api_endpoints:
+  - method: POST
+    path: /auth/register
+    description: "새 사용자 회원가입"
+    request_body:
+      username: string
+      email: string
+      password: string
+    responses:
+      201: "회원가입 성공"
+      400: "잘못된 요청 (이메일 중복, 비밀번호 정책 위반)"
+  
+  - method: POST
+    path: /auth/login
+    description: "사용자 로그인"
+    request_body:
+      email: string
+      password: string
+    responses:
+      200: "로그인 성공 (토큰 반환)"
+      401: "인증 실패"
+  
+  - method: POST
+    path: /auth/refresh
+    description: "토큰 갱신"
+    headers:
+      Authorization: "Bearer refresh_token"
+    responses:
+      200: "새 액세스 토큰 반환"
+      401: "유효하지 않은 리프레시 토큰"
+  
+  - method: GET
+    path: /auth/me
+    description: "현재 사용자 정보 조회"
+    headers:
+      Authorization: "Bearer access_token"
+    responses:
+      200: "사용자 정보 반환"
+      401: "인증되지 않은 사용자"
+
+implementation:
+  files_to_create:
+    - "src/main/java/com/todo/auth/controller/AuthController.java"
+    - "src/main/java/com/todo/auth/service/AuthService.java"
+    - "src/main/java/com/todo/auth/service/JwtService.java"
+    - "src/main/java/com/todo/auth/dto/RegisterRequest.java"
+    - "src/main/java/com/todo/auth/dto/LoginRequest.java"
+    - "src/main/java/com/todo/auth/dto/AuthResponse.java"
+    - "src/main/java/com/todo/auth/entity/User.java"
+    - "src/main/java/com/todo/auth/repository/UserRepository.java"
+    - "src/main/java/com/todo/auth/config/SecurityConfig.java"
+    - "src/main/java/com/todo/auth/filter/JwtAuthenticationFilter.java"
+
+testing:
+  unit_tests:
+    - "AuthService 유닛 테스트"
+    - "JwtService 토큰 생성/검증 테스트"
+    - "비밀번호 암호화 테스트"
+    - "DTO 검증 테스트"
+  
+  integration_tests:
+    - "회원가입 API 테스트"
+    - "로그인 API 테스트"
+    - "토큰 갱신 API 테스트"
+    - "인증이 필요한 API 접근 테스트"
+
+completion_criteria:
+  - "모든 인증 API 엔드포인트가 정상 작동"
+  - "JWT 토큰 생성 및 검증이 올바르게 동작"
+  - "비밀번호가 안전하게 암호화됨"
+  - "이메일 중복 검증이 작동"
+  - "보안 설정이 적용됨"
+  - "모든 테스트가 통과"
