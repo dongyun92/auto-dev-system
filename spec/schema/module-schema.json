@@ -1,0 +1,359 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/dongyun92/auto-dev-system/spec/modules/module-schema.json",
+  "title": "Auto Development System - Module Specification Schema",
+  "description": "JSON Schema for module specification YAML files in the auto-development system",
+  "type": "object",
+  "required": ["name", "description", "version"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$",
+      "minLength": 2,
+      "maxLength": 50,
+      "description": "Module name (lowercase, hyphens allowed)",
+      "examples": ["user-service", "auth-api", "database-setup"]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 200,
+      "description": "Brief description of the module's purpose",
+      "examples": ["User management service with CRUD operations", "JWT-based authentication API"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the module",
+      "default": "1.0.0",
+      "examples": ["1.0.0", "2.1.3"]
+    },
+    "module_type": {
+      "type": "string",
+      "enum": ["api", "service", "database", "auth", "frontend", "utility", "integration"],
+      "description": "Type of module for categorization and specific handling",
+      "examples": ["api", "database", "auth"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "default": "medium",
+      "description": "Development priority level"
+    },
+    "depends_on": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+      },
+      "uniqueItems": true,
+      "description": "List of module names this module depends on",
+      "examples": [["database-setup", "auth-service"]]
+    },
+    "tech_stack": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Technologies and frameworks to use",
+      "examples": [["spring-boot", "postgresql", "jwt", "junit"]]
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["method", "path", "description"],
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+            "description": "HTTP method"
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/.*",
+            "description": "API endpoint path",
+            "examples": ["/api/users", "/api/auth/login"]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 5,
+            "description": "Description of what this endpoint does"
+          },
+          "request_body": {
+            "type": "object",
+            "description": "Request body schema (optional)"
+          },
+          "response": {
+            "type": "object",
+            "description": "Response schema (optional)"
+          },
+          "auth_required": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether authentication is required"
+          }
+        }
+      },
+      "description": "API endpoints to implement"
+    },
+    "database": {
+      "type": "object",
+      "properties": {
+        "tables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "columns"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "description": "Table name"
+              },
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type"],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Column name"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Column data type"
+                    },
+                    "nullable": {
+                      "type": "boolean",
+                      "default": true
+                    },
+                    "primary_key": {
+                      "type": "boolean",
+                      "default": false
+                    },
+                    "unique": {
+                      "type": "boolean",
+                      "default": false
+                    }
+                  }
+                }
+              },
+              "indexes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {"type": "string"},
+                    "columns": {"type": "array", "items": {"type": "string"}},
+                    "unique": {"type": "boolean", "default": false}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "migrations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of migration files"
+        }
+      },
+      "description": "Database schema information"
+    },
+    "tests": {
+      "type": "object",
+      "properties": {
+        "unit_test_coverage": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 80,
+          "description": "Required unit test coverage percentage"
+        },
+        "integration_tests": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether integration tests are required"
+        },
+        "e2e_tests": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether end-to-end tests are required"
+        },
+        "performance_tests": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether performance tests are required"
+        },
+        "test_data": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Test data files or fixtures needed"
+        }
+      },
+      "description": "Testing requirements and configuration"
+    },
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "environment_variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {"type": "string"},
+              "description": {"type": "string"},
+              "default_value": {"type": "string"},
+              "required": {"type": "boolean", "default": false},
+              "sensitive": {"type": "boolean", "default": false}
+            }
+          }
+        },
+        "config_files": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Configuration files needed"
+        }
+      },
+      "description": "Configuration requirements"
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "authentication": {
+          "type": "string",
+          "enum": ["jwt", "oauth", "basic", "none"],
+          "description": "Authentication method"
+        },
+        "authorization": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Required permissions or roles"
+        },
+        "sensitive_data": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether module handles sensitive data"
+        },
+        "encryption": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether data encryption is required"
+        }
+      },
+      "description": "Security requirements"
+    },
+    "performance": {
+      "type": "object",
+      "properties": {
+        "max_response_time": {
+          "type": "string",
+          "description": "Maximum acceptable response time",
+          "examples": ["100ms", "1s"]
+        },
+        "throughput": {
+          "type": "string",
+          "description": "Required throughput",
+          "examples": ["1000 req/sec", "10k users"]
+        },
+        "memory_limit": {
+          "type": "string",
+          "description": "Memory usage limit",
+          "examples": ["512MB", "1GB"]
+        }
+      },
+      "description": "Performance requirements"
+    },
+    "documentation": {
+      "type": "object",
+      "properties": {
+        "api_docs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether API documentation is required"
+        },
+        "user_guide": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether user guide is required"
+        },
+        "deployment_guide": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether deployment guide is required"
+        }
+      },
+      "description": "Documentation requirements"
+    },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "docker": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether Docker support is required"
+        },
+        "kubernetes": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether Kubernetes deployment is required"
+        },
+        "health_check": {
+          "type": "object",
+          "properties": {
+            "path": {"type": "string", "default": "/health"},
+            "method": {"type": "string", "default": "GET"}
+          }
+        }
+      },
+      "description": "Deployment configuration"
+    },
+    "monitoring": {
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Metrics to track"
+        },
+        "logging": {
+          "type": "object",
+          "properties": {
+            "level": {"type": "string", "enum": ["DEBUG", "INFO", "WARN", "ERROR"], "default": "INFO"},
+            "format": {"type": "string", "enum": ["json", "text"], "default": "json"}
+          }
+        },
+        "alerts": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Alert conditions"
+        }
+      },
+      "description": "Monitoring and observability configuration"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "author": {"type": "string"},
+        "created_date": {"type": "string", "format": "date"},
+        "last_updated": {"type": "string", "format": "date"},
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "estimated_effort": {
+          "type": "string",
+          "description": "Estimated development effort",
+          "examples": ["1 day", "1 week", "2 weeks"]
+        }
+      },
+      "description": "Metadata about the module specification"
+    }
+  },
+  "additionalProperties": false
+}
