@@ -10,8 +10,8 @@
 
 ### Phase 1: 기반 데이터 시스템 (병렬 처리 가능)
 
-1. **[adsd-data-simulator.yaml](./adsd-data-simulator.yaml)**
-   - FlightRadar24 기반 ADSD 데이터 시뮬레이터
+1. **[adsb-data-simulator.yaml](./adsb-data-simulator.yaml)**
+   - FlightRadar24 기반 ADS-B 데이터 시뮬레이터
    - 실제 김포공항 항공기 데이터 수집 및 처리
    - 과거 데이터 플레이백 기능
    - **예상 개발시간:** 6시간
