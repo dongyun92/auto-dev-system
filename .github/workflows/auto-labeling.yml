@@ -1,0 +1,165 @@
+name: 🏷️ Auto Label Management - Smart Labeling
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+      
+    - name: 🏷️ Auto-Label Issues
+      if: github.event.issue
+      run: |
+        ISSUE_NUMBER="${{ github.event.issue.number }}"
+        ISSUE_TITLE="${{ github.event.issue.title }}"
+        ISSUE_BODY="${{ github.event.issue.body }}"
+        
+        echo "Processing issue #$ISSUE_NUMBER: $ISSUE_TITLE"
+        
+        # 현재 라벨 가져오기
+        CURRENT_LABELS=$(gh issue view $ISSUE_NUMBER --json labels --jq '.labels[].name' | tr '\n' ' ')
+        echo "Current labels: $CURRENT_LABELS"
+        
+        # 추가할 라벨 배열
+        declare -a LABELS_TO_ADD=()
+        
+        # 제목 기반 라벨링
+        if echo "$ISSUE_TITLE" | grep -qi "\[IMPLEMENTATION\]\|\[DEV\]"; then
+          LABELS_TO_ADD+=("implementation" "dev")
+        elif echo "$ISSUE_TITLE" | grep -qi "\[TESTING\]\|\[TEST\]"; then
+          LABELS_TO_ADD+=("testing" "quality")
+        elif echo "$ISSUE_TITLE" | grep -qi "\[INTEGRATION\]"; then
+          LABELS_TO_ADD+=("integration" "api")
+        fi
+        
+        # 모듈 타입 기반 라벨링
+        if echo "$ISSUE_TITLE" | grep -qi "database\|db\|migration"; then
+          LABELS_TO_ADD+=("database")
+        elif echo "$ISSUE_TITLE" | grep -qi "auth\|authentication\|security"; then
+          LABELS_TO_ADD+=("security" "auth")
+        elif echo "$ISSUE_TITLE" | grep -qi "api\|service\|endpoint"; then
+          LABELS_TO_ADD+=("api" "backend")
+        elif echo "$ISSUE_TITLE" | grep -qi "frontend\|ui\|react\|vue"; then
+          LABELS_TO_ADD+=("frontend" "ui")
+        fi
+        
+        # 본문 기반 라벨링
+        if echo "$ISSUE_BODY" | grep -qi "high.priority\|urgent\|critical"; then
+          LABELS_TO_ADD+=("priority-high")
+        elif echo "$ISSUE_BODY" | grep -qi "low.priority"; then
+          LABELS_TO_ADD+=("priority-low")
+        else
+          LABELS_TO_ADD+=("priority-medium")
+        fi
+        
+        # 자동 생성된 이슈인지 확인
+        if echo "$ISSUE_BODY" | grep -qi "auto.*generated\|orchestrator"; then
+          LABELS_TO_ADD+=("auto-generated" "claude-task")
+        fi
+        
+        # 라벨 추가
+        if [ ${#LABELS_TO_ADD[@]} -gt 0 ]; then
+          LABELS_STRING=$(IFS=','; echo "${LABELS_TO_ADD[*]}")
+          echo "Adding labels: $LABELS_STRING"
+          
+          gh issue edit $ISSUE_NUMBER --add-label "$LABELS_STRING"
+          
+          # 코멘트 추가
+          gh issue comment $ISSUE_NUMBER --body "🏷️ **Auto-labeling completed**
+
+Added labels: \`$(echo "${LABELS_TO_ADD[@]}" | tr ' ' '\`, \`')\`
+
+These labels help organize and prioritize tasks in the auto-development pipeline."
+        else
+          echo "No additional labels needed"
+        fi
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 🏷️ Auto-Label Pull Requests
+      if: github.event.pull_request
+      run: |
+        PR_NUMBER="${{ github.event.pull_request.number }}"
+        PR_TITLE="${{ github.event.pull_request.title }}"
+        PR_BODY="${{ github.event.pull_request.body }}"
+        
+        echo "Processing PR #$PR_NUMBER: $PR_TITLE"
+        
+        # 추가할 라벨 배열
+        declare -a LABELS_TO_ADD=()
+        
+        # 제목 기반 라벨링
+        if echo "$PR_TITLE" | grep -qi "\[IMPLEMENTATION\]\|\[DEV\]"; then
+          LABELS_TO_ADD+=("implementation" "dev")
+        elif echo "$PR_TITLE" | grep -qi "\[TESTING\]\|\[TEST\]"; then
+          LABELS_TO_ADD+=("testing" "quality")
+        elif echo "$PR_TITLE" | grep -qi "\[INTEGRATION\]"; then
+          LABELS_TO_ADD+=("integration" "api")
+        fi
+        
+        # PR 본문에서 자동 생성 여부 확인
+        if echo "$PR_BODY" | grep -qi "auto.*generated\|claude.code"; then
+          LABELS_TO_ADD+=("auto-generated" "ready-for-review")
+        fi
+        
+        # 변경 파일 기반 라벨링 (GitHub API 사용)
+        CHANGED_FILES=$(gh pr view $PR_NUMBER --json files --jq '.files[].path')
+        
+        if echo "$CHANGED_FILES" | grep -q "\.java$\|\.kt$"; then
+          LABELS_TO_ADD+=("java" "backend")
+        elif echo "$CHANGED_FILES" | grep -q "\.py$"; then
+          LABELS_TO_ADD+=("python" "backend")
+        elif echo "$CHANGED_FILES" | grep -q "\.js$\|\.ts$\|\.jsx$\|\.tsx$"; then
+          LABELS_TO_ADD+=("javascript" "frontend")
+        fi
+        
+        if echo "$CHANGED_FILES" | grep -q "test\|spec"; then
+          LABELS_TO_ADD+=("testing")
+        fi
+        
+        if echo "$CHANGED_FILES" | grep -q "\.sql$\|migration"; then
+          LABELS_TO_ADD+=("database")
+        fi
+        
+        if echo "$CHANGED_FILES" | grep -q "\.md$\|README\|doc"; then
+          LABELS_TO_ADD+=("documentation")
+        fi
+        
+        # 라벨 추가
+        if [ ${#LABELS_TO_ADD[@]} -gt 0 ]; then
+          LABELS_STRING=$(IFS=','; echo "${LABELS_TO_ADD[*]}")
+          echo "Adding labels: $LABELS_STRING"
+          
+          gh pr edit $PR_NUMBER --add-label "$LABELS_STRING"
+        else
+          echo "No additional labels needed for PR"
+        fi
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 📊 Summary
+      run: |
+        if [ "${{ github.event.issue }}" ]; then
+          echo "## 🏷️ Issue Auto-Labeling Complete" >> $GITHUB_STEP_SUMMARY
+          echo "**Issue**: #${{ github.event.issue.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Title**: ${{ github.event.issue.title }}" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ github.event.pull_request }}" ]; then
+          echo "## 🏷️ PR Auto-Labeling Complete" >> $GITHUB_STEP_SUMMARY
+          echo "**PR**: #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Title**: ${{ github.event.pull_request.title }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Smart labeling completed automatically!" >> $GITHUB_STEP_SUMMARY
