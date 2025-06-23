@@ -1,0 +1,65 @@
+name: Claude Code Trigger
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  claude-trigger:
+    if: |
+      (github.event.issue.labels.*.name contains 'claude-task') && 
+      (
+        github.event_name == 'issues' ||
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude'))
+      )
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install Claude Code
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          
+      - name: Configure Claude Code
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          claude-code config set api-key $CLAUDE_API_KEY
+          claude-code config set github-token $GITHUB_TOKEN
+          
+      - name: Trigger Claude Code Development
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          echo "Starting Claude Code development for issue #$ISSUE_NUMBER"
+          
+          # Claude Code 명령어 실행
+          claude-code start-issue \
+            --repo=$REPOSITORY \
+            --issue=$ISSUE_NUMBER \
+            --title="$ISSUE_TITLE" \
+            --body="$ISSUE_BODY"
+            
+      - name: Report Status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🤖 Claude Code가 이 이슈 작업을 시작했습니다! 곧 개발이 진행될 예정입니다.'
+            });
