@@ -1,0 +1,261 @@
+# Utility Library Template
+# 공통으로 사용되는 유틸리티 및 헬퍼 함수 라이브러리
+
+name: "common-utils"
+description: "프로젝트 전반에서 사용되는 공통 유틸리티 및 헬퍼 함수 라이브러리"
+version: "1.0.0"
+module_type: "utility"
+priority: "high"
+
+# 다른 모듈들이 이 라이브러리를 사용하므로 의존성 없음
+depends_on: []
+
+# 기술 스택
+tech_stack:
+  - "java"
+  - "commons-lang3"
+  - "jackson"
+  - "slf4j"
+  - "junit"
+  - "assertj"
+  - "maven"
+
+# 유틸리티 클래스 및 기능 정의
+utility_functions:
+  - category: "String Utils"
+    functions:
+      - name: "isBlank"
+        description: "문자열이 null이거나 빈 문자열인지 확인"
+        params: ["String str"]
+        returns: "boolean"
+      - name: "capitalize"
+        description: "문자열의 첫 글자를 대문자로 변환"
+        params: ["String str"]
+        returns: "String"
+      - name: "truncate"
+        description: "문자열을 지정된 길이로 자르기"
+        params: ["String str", "int maxLength"]
+        returns: "String"
+      - name: "generateSlug"
+        description: "문자열을 URL 친화적인 슬러그로 변환"
+        params: ["String text"]
+        returns: "String"
+        
+  - category: "Date Utils"
+    functions:
+      - name: "formatDate"
+        description: "날짜를 지정된 형식으로 포맷팅"
+        params: ["Date date", "String pattern"]
+        returns: "String"
+      - name: "parseDate"
+        description: "문자열을 Date 객체로 파싱"
+        params: ["String dateStr", "String pattern"]
+        returns: "Date"
+      - name: "addDays"
+        description: "날짜에 일수 추가"
+        params: ["Date date", "int days"]
+        returns: "Date"
+      - name: "isWeekend"
+        description: "주말인지 확인"
+        params: ["Date date"]
+        returns: "boolean"
+        
+  - category: "Validation Utils"
+    functions:
+      - name: "isValidEmail"
+        description: "이메일 형식 유효성 검사"
+        params: ["String email"]
+        returns: "boolean"
+      - name: "isValidPhoneNumber"
+        description: "전화번호 형식 유효성 검사"
+        params: ["String phoneNumber"]
+        returns: "boolean"
+      - name: "isStrongPassword"
+        description: "강력한 비밀번호인지 확인"
+        params: ["String password"]
+        returns: "boolean"
+      - name: "sanitizeInput"
+        description: "사용자 입력 데이터 정제"
+        params: ["String input"]
+        returns: "String"
+        
+  - category: "Collection Utils"
+    functions:
+      - name: "isEmpty"
+        description: "컬렉션이 비어있는지 확인"
+        params: ["Collection<?> collection"]
+        returns: "boolean"
+      - name: "partition"
+        description: "리스트를 지정된 크기로 분할"
+        params: ["List<T> list", "int size"]
+        returns: "List<List<T>>"
+      - name: "findDuplicates"
+        description: "중복 요소 찾기"
+        params: ["List<T> list"]
+        returns: "Set<T>"
+      - name: "groupBy"
+        description: "조건에 따라 그룹핑"
+        params: ["List<T> list", "Function<T, K> keyExtractor"]
+        returns: "Map<K, List<T>>"
+        
+  - category: "JSON Utils"
+    functions:
+      - name: "toJson"
+        description: "객체를 JSON 문자열로 변환"
+        params: ["Object object"]
+        returns: "String"
+      - name: "fromJson"
+        description: "JSON 문자열을 객체로 변환"
+        params: ["String json", "Class<T> clazz"]
+        returns: "T"
+      - name: "prettyPrint"
+        description: "JSON을 보기 좋게 포맷팅"
+        params: ["String json"]
+        returns: "String"
+        
+  - category: "Security Utils"
+    functions:
+      - name: "hashPassword"
+        description: "비밀번호 해싱"
+        params: ["String password"]
+        returns: "String"
+      - name: "verifyPassword"
+        description: "비밀번호 검증"
+        params: ["String password", "String hash"]
+        returns: "boolean"
+      - name: "generateToken"
+        description: "랜덤 토큰 생성"
+        params: ["int length"]
+        returns: "String"
+      - name: "encryptData"
+        description: "데이터 암호화"
+        params: ["String data", "String key"]
+        returns: "String"
+        
+  - category: "File Utils"
+    functions:
+      - name: "readFile"
+        description: "파일 내용 읽기"
+        params: ["String filePath"]
+        returns: "String"
+      - name: "writeFile"
+        description: "파일에 내용 쓰기"
+        params: ["String filePath", "String content"]
+        returns: "void"
+      - name: "getFileExtension"
+        description: "파일 확장자 추출"
+        params: ["String fileName"]
+        returns: "String"
+      - name: "createTempFile"
+        description: "임시 파일 생성"
+        params: ["String prefix", "String suffix"]
+        returns: "File"
+
+# 상수 및 열거형 정의
+constants:
+  - name: "CommonConstants"
+    values:
+      DEFAULT_PAGE_SIZE: 20
+      MAX_PAGE_SIZE: 100
+      DEFAULT_TIMEOUT: 30000
+      DATE_FORMAT_ISO: "yyyy-MM-dd'T'HH:mm:ss'Z'"
+      EMAIL_REGEX: "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+      
+  - name: "HttpStatus"
+    type: "enum"
+    values:
+      OK: 200
+      CREATED: 201
+      BAD_REQUEST: 400
+      UNAUTHORIZED: 401
+      FORBIDDEN: 403
+      NOT_FOUND: 404
+      INTERNAL_SERVER_ERROR: 500
+
+# 테스트 요구사항
+tests:
+  unit_test_coverage: 95
+  integration_tests: false  # 유틸리티는 단위 테스트가 중심
+  performance_tests: true   # 성능 중요한 함수들 테스트
+  test_data:
+    - "test-strings.json"
+    - "test-dates.json"
+    - "test-validation-cases.json"
+
+# 환경 설정
+configuration:
+  environment_variables:
+    - name: "DEFAULT_TIMEZONE"
+      description: "기본 타임존"
+      default_value: "UTC"
+    - name: "ENCRYPTION_KEY"
+      description: "데이터 암호화용 키"
+      required: false
+      sensitive: true
+    - name: "MAX_FILE_SIZE"
+      description: "최대 파일 크기 (bytes)"
+      default_value: "10485760"  # 10MB
+
+# 성능 요구사항
+performance:
+  max_response_time: "1ms"     # 유틸리티 함수는 매우 빨라야 함
+  memory_limit: "100MB"
+  cpu_usage: "< 5%"
+
+# 보안 설정
+security:
+  authentication: "none"       # 유틸리티 라이브러리
+  sensitive_data: false
+  encryption: true             # 암호화 기능 제공
+
+# 문서화
+documentation:
+  api_docs: true
+  javadoc: true               # Java 문서화
+  usage_examples: true
+  performance_benchmarks: true
+
+# 배포 설정
+deployment:
+  maven_central: true         # Maven Central 배포
+  artifact_id: "common-utils"
+  group_id: "com.autodev"
+  packaging: "jar"
+
+# 버전 관리
+versioning:
+  semantic_versioning: true
+  changelog: true
+  migration_guide: true      # 버전 업그레이드 가이드
+
+# 품질 관리
+quality_assurance:
+  code_coverage: "> 95%"
+  mutation_testing: true
+  static_analysis: true      # SpotBugs, PMD
+  dependency_check: true     # 보안 취약점 검사
+
+# 호환성
+compatibility:
+  java_version: "11+"
+  spring_boot: "2.x, 3.x"
+  backward_compatibility: true
+
+# 모니터링 (라이브러리 사용 현황)
+monitoring:
+  metrics:
+    - "function_call_count"
+    - "function_execution_time"
+    - "error_rate"
+    - "memory_usage"
+  logging:
+    level: "WARN"  # 에러/경고만 로깅
+    format: "json"
+
+# 메타데이터
+metadata:
+  author: "Auto Development System"
+  created_date: "2025-06-23"
+  tags: ["utility", "common", "helpers", "library", "java"]
+  estimated_effort: "3-4 days"
+  license: "MIT"
