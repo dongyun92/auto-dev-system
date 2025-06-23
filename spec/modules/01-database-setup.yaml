@@ -1,0 +1,169 @@
+# Database Setup for Todo API
+# 할일 관리 시스템의 기본 데이터베이스 스키마
+
+name: "database-setup"
+description: "Todo API 시스템의 기본 데이터베이스 스키마 및 설정"
+version: "1.0.0"
+module_type: "database"
+priority: "high"
+
+# 최우선 모듈이므로 의존성 없음
+depends_on: []
+
+# 기술 스택
+tech_stack:
+  - "postgresql"
+  - "flyway"
+  - "docker"
+
+# 데이터베이스 스키마
+database:
+  tables:
+    # 사용자 테이블
+    - name: "users"
+      columns:
+        - name: "id"
+          type: "BIGSERIAL"
+          primary_key: true
+          nullable: false
+        - name: "username"
+          type: "VARCHAR(50)"
+          unique: true
+          nullable: false
+        - name: "email"
+          type: "VARCHAR(255)"
+          unique: true
+          nullable: false
+        - name: "password_hash"
+          type: "VARCHAR(255)"
+          nullable: false
+        - name: "created_at"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: false
+        - name: "updated_at"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: false
+      indexes:
+        - name: "idx_users_email"
+          columns: ["email"]
+          unique: true
+        - name: "idx_users_username"
+          columns: ["username"]
+          unique: true
+    
+    # 할일 테이블
+    - name: "todos"
+      columns:
+        - name: "id"
+          type: "BIGSERIAL"
+          primary_key: true
+          nullable: false
+        - name: "user_id"
+          type: "BIGINT"
+          nullable: false
+        - name: "title"
+          type: "VARCHAR(255)"
+          nullable: false
+        - name: "description"
+          type: "TEXT"
+          nullable: true
+        - name: "completed"
+          type: "BOOLEAN"
+          nullable: false
+        - name: "due_date"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: true
+        - name: "priority"
+          type: "VARCHAR(10)"
+          nullable: false
+        - name: "created_at"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: false
+        - name: "updated_at"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: false
+      indexes:
+        - name: "idx_todos_user"
+          columns: ["user_id"]
+        - name: "idx_todos_completed"
+          columns: ["completed"]
+        - name: "idx_todos_due_date"
+          columns: ["due_date"]
+
+  # 마이그레이션 파일들
+  migrations:
+    - "V001__create_users_table.sql"
+    - "V002__create_todos_table.sql"
+    - "V003__add_indexes.sql"
+    - "V004__insert_test_data.sql"
+
+# 테스트 요구사항
+tests:
+  unit_test_coverage: 90
+  integration_tests: true
+  e2e_tests: false
+  test_data:
+    - "test-users.sql"
+    - "test-todos.sql"
+
+# 환경 설정
+configuration:
+  environment_variables:
+    - name: "POSTGRES_DB"
+      description: "데이터베이스 이름"
+      default_value: "todoapi"
+      required: true
+    - name: "POSTGRES_USER"
+      description: "데이터베이스 사용자"
+      default_value: "postgres"
+      required: true
+    - name: "POSTGRES_PASSWORD"
+      description: "데이터베이스 비밀번호"
+      required: true
+      sensitive: true
+
+# 보안 설정
+security:
+  authentication: "none"
+  sensitive_data: true
+  encryption: false
+
+# 성능 요구사항
+performance:
+  max_response_time: "50ms"
+  throughput: "1000 queries/sec"
+  memory_limit: "1GB"
+
+# 문서화
+documentation:
+  api_docs: false
+  user_guide: true
+  deployment_guide: true
+
+# 배포 설정
+deployment:
+  docker: true
+  kubernetes: false
+  health_check:
+    path: "/health"
+    method: "GET"
+
+# 모니터링
+monitoring:
+  metrics:
+    - "connection_count"
+    - "query_duration"
+    - "database_size"
+  logging:
+    level: "INFO"
+    format: "json"
+  alerts:
+    - "connection_count > 80% of max"
+    - "query_duration > 500ms"
+
+# 메타데이터
+metadata:
+  author: "Auto Development System - Test"
+  created_date: "2025-06-23"
+  tags: ["database", "postgresql", "todo", "test"]
+  estimated_effort: "1 day"
