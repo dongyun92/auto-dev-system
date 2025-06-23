@@ -9,7 +9,7 @@ metadata:
   priority: "medium"
   estimated_hours: 6
   depends_on:
-    - "adsd-data-simulator"
+    - "adsb-data-simulator"
     - "aircraft-tracking"
   enables:
     - "conflict-detection-engine"
