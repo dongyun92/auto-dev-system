@@ -1,0 +1,254 @@
+name: "taxiway-management"
+description: "김포공항 유도로 관리 및 항공기 이동 경로 최적화 시스템"
+version: "1.0.0"
+
+metadata:
+  project: "gimpo-rwsl-system"
+  owner: "dongyun92"
+  phase: 2
+  priority: "medium"
+  estimated_hours: 6
+  depends_on:
+    - "adsd-data-simulator"
+    - "aircraft-tracking"
+  enables:
+    - "conflict-detection-engine"
+    - "system-integration"
+
+airport_specifics:
+  location: "김포국제공항 (RKSS)"
+  coordinates: "37.5583°N, 126.7908°E"
+  taxiways:
+    main_taxiways: ["A", "B", "C", "D", "E", "F", "G", "H"]
+    rapid_exit_taxiways: ["A1", "A2", "B1", "B2", "C1", "C2"]
+    service_roads: ["S1", "S2", "S3", "S4"]
+  
+  gate_areas:
+    domestic_gates: 
+      terminal_1: ["1-20"]
+      terminal_2: ["21-40"]
+    international_gates: ["41-60"]
+    cargo_gates: ["C1-C20"]
+
+architecture:
+  type: "microservice"
+  deployment: "kubernetes"
+  database: "postgresql"
+  cache: "redis"
+  messaging: "kafka"
+
+technical_requirements:
+  runtime: "java"
+  framework: "spring-boot"
+  version: "3.2.0"
+  
+  dependencies:
+    - spring-boot-starter-web
+    - spring-boot-starter-data-jpa
+    - spring-boot-starter-security
+    - spring-kafka
+    - redis
+    - postgresql
+    - mapbox-gl-js
+
+database:
+  tables:
+    taxiways:
+      - id: "SERIAL PRIMARY KEY"
+      - name: "VARCHAR(10) NOT NULL"
+      - type: "VARCHAR(20)"
+      - start_point: "POINT"
+      - end_point: "POINT"
+      - width: "DECIMAL(5,2)"
+      - surface_type: "VARCHAR(20)"
+      - lighting: "BOOLEAN DEFAULT true"
+      - status: "VARCHAR(20) DEFAULT 'operational'"
+      - created_at: "TIMESTAMP DEFAULT NOW()"
+      - updated_at: "TIMESTAMP DEFAULT NOW()"
+    
+    taxiway_routes:
+      - id: "SERIAL PRIMARY KEY"
+      - route_name: "VARCHAR(50)"
+      - start_gate: "VARCHAR(10)"
+      - end_runway: "VARCHAR(10)"
+      - taxiway_sequence: "TEXT[]"
+      - estimated_time: "INTEGER"
+      - distance: "DECIMAL(8,2)"
+      - difficulty_level: "INTEGER DEFAULT 1"
+      - created_at: "TIMESTAMP DEFAULT NOW()"
+    
+    aircraft_positions:
+      - id: "SERIAL PRIMARY KEY"
+      - flight_id: "VARCHAR(20) NOT NULL"
+      - current_taxiway: "VARCHAR(10)"
+      - latitude: "DECIMAL(10,8)"
+      - longitude: "DECIMAL(11,8)"
+      - heading: "DECIMAL(5,2)"
+      - speed: "DECIMAL(5,2)"
+      - timestamp: "TIMESTAMP DEFAULT NOW()"
+
+apis:
+  rest_endpoints:
+    - path: "/api/taxiways"
+      method: "GET"
+      description: "모든 유도로 정보 조회"
+      responses:
+        200:
+          description: "유도로 목록"
+          content:
+            - id: 1
+            - name: "A"
+            - type: "main_taxiway"
+            - status: "operational"
+    
+    - path: "/api/taxiways/{id}"
+      method: "GET"
+      description: "특정 유도로 상세 정보"
+      parameters:
+        - name: "id"
+          type: "integer"
+          required: true
+    
+    - path: "/api/taxiways/{id}/status"
+      method: "PUT"
+      description: "유도로 상태 업데이트"
+      request_body:
+        status: "maintenance|operational|closed"
+        reason: "string"
+    
+    - path: "/api/routes/calculate"
+      method: "POST"
+      description: "최적 유도로 경로 계산"
+      request_body:
+        from_gate: "string"
+        to_runway: "string"
+        aircraft_type: "string"
+        priority: "normal|high|emergency"
+      responses:
+        200:
+          content:
+            route: ["A", "B", "C"]
+            estimated_time: 180
+            distance: 1250.5
+    
+    - path: "/api/aircraft/{flight_id}/position"
+      method: "GET"
+      description: "항공기 현재 위치 조회"
+    
+    - path: "/api/aircraft/{flight_id}/route"
+      method: "POST"
+      description: "항공기 유도로 이동 지시"
+      request_body:
+        target_taxiway: "string"
+        route: "array"
+        instructions: "string"
+
+business_logic:
+  route_optimization:
+    factors:
+      - current_traffic_density
+      - taxiway_surface_conditions
+      - weather_impact
+      - aircraft_size_category
+      - gate_availability
+      - runway_assignment
+    
+    algorithms:
+      - "A* pathfinding algorithm"
+      - "Real-time traffic flow optimization"
+      - "Dynamic route adjustment"
+  
+  safety_rules:
+    - "Minimum separation distance: 50m"
+    - "Speed limits by taxiway type"
+    - "Priority handling for emergency vehicles"
+    - "Restricted areas enforcement"
+  
+  korean_airlines_priority:
+    - "대한항공 (KAL)"
+    - "아시아나항공 (AAR)" 
+    - "제주항공 (JJA)"
+    - "티웨이항공 (TWB)"
+
+monitoring:
+  metrics:
+    - taxiway_utilization_rate
+    - average_taxi_time
+    - route_efficiency_score
+    - conflict_prevention_count
+    - emergency_response_time
+  
+  alerts:
+    - taxiway_congestion_threshold
+    - aircraft_deviation_from_route
+    - maintenance_required_notification
+    - weather_impact_warning
+
+integration:
+  kafka_topics:
+    consumes:
+      - "aircraft.tracking.updates"
+      - "runway.status.changes"
+      - "weather.conditions"
+      - "gate.assignments"
+    
+    produces:
+      - "taxiway.route.assigned"
+      - "aircraft.movement.instructions"
+      - "taxiway.status.updates"
+      - "traffic.density.reports"
+  
+  external_apis:
+    - runway_status_manager
+    - aircraft_tracking
+    - gimpo_map_service
+    - notification_service
+
+tasks:
+  setup_and_configuration:
+    - task: "프로젝트 구조 생성"
+      estimate: "30분"
+      details: "Spring Boot 프로젝트 초기화"
+    
+    - task: "데이터베이스 설계"
+      estimate: "1시간"
+      details: "유도로, 경로, 항공기 위치 테이블 생성"
+    
+    - task: "Kafka 설정"
+      estimate: "45분"
+      details: "토픽 설정 및 컨슈머/프로듀서 구성"
+  
+  core_development:
+    - task: "유도로 관리 서비스"
+      estimate: "2시간"
+      details: "유도로 정보 CRUD 및 상태 관리"
+    
+    - task: "경로 최적화 알고리즘"
+      estimate: "1.5시간" 
+      details: "A* 알고리즘 기반 최적 경로 계산"
+    
+    - task: "실시간 위치 추적"
+      estimate: "1시간"
+      details: "항공기 현재 위치 및 이동 경로 추적"
+  
+  testing_and_integration:
+    - task: "단위 테스트"
+      estimate: "45분"
+      details: "핵심 로직 테스트 케이스 작성"
+    
+    - task: "통합 테스트"  
+      estimate: "30분"
+      details: "외부 서비스 연동 테스트"
+
+file_structure:
+  - "src/main/java/com/gimpo/taxiway/"
+  - "controller/TaxiwayController.java"
+  - "service/TaxiwayService.java"
+  - "service/RouteOptimizationService.java"
+  - "repository/TaxiwayRepository.java"
+  - "model/Taxiway.java"
+  - "model/TaxiwayRoute.java"
+  - "model/AircraftPosition.java"
+  - "config/KafkaConfig.java"
+  - "src/main/resources/application.yml"
+  - "src/test/java/com/gimpo/taxiway/"
