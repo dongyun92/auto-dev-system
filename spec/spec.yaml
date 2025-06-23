@@ -1,0 +1,36 @@
+# 프로젝트 자동화 시스템 메타 설정
+project:
+  name: "auto-dev-system"
+  version: "1.0.0"
+  description: "Claude Desktop + GitHub + Claude Code 자동 개발 시스템"
+
+# 공통 설정
+common:
+  language: "java"  # 또는 python, nodejs 등
+  framework: "spring-boot"  # 또는 fastapi, express 등
+  database: "postgresql"
+  testing_framework: "junit"
+  
+# 개발 단계 정의
+development_phases:
+  - name: "implementation"
+    description: "기본 기능 구현"
+    labels: ["dev", "implementation"]
+  - name: "testing"
+    description: "단위 테스트 및 통합 테스트"
+    labels: ["test", "quality"]
+  - name: "integration"
+    description: "모듈 간 통합 및 API 연결"
+    labels: ["integration", "api"]
+
+# 품질 기준
+quality_gates:
+  code_coverage: 80
+  max_complexity: 10
+  security_scan: true
+
+# Orchestrator 설정
+orchestrator:
+  max_parallel_tasks: 3
+  retry_failed_tasks: 3
+  notification_webhook: ""  # 선택사항
