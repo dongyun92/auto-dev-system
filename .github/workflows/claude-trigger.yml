@@ -1,0 +1,189 @@
+name: 🧠 Claude Code Trigger - Auto Task Assignment
+
+on:
+  issues:
+    types: [opened, labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  trigger-claude:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event.action == 'opened' || github.event.action == 'labeled') && 
+      contains(github.event.issue.labels.*.name, 'auto-generated') && 
+      contains(github.event.issue.labels.*.name, 'claude-task')
+    
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Check Issue Status
+      id: check_issue
+      run: |
+        ISSUE_NUMBER="${{ github.event.issue.number }}"
+        ISSUE_TITLE="${{ github.event.issue.title }}"
+        ISSUE_LABELS=$(echo '${{ toJson(github.event.issue.labels.*.name) }}' | jq -r '.[]' | tr '\n' ',' | sed 's/,$//')
+        
+        echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+        echo "issue_title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
+        echo "issue_labels=$ISSUE_LABELS" >> $GITHUB_OUTPUT
+        
+        # 이미 진행 중인지 확인
+        if echo "$ISSUE_LABELS" | grep -q "in-progress"; then
+          echo "already_in_progress=true" >> $GITHUB_OUTPUT
+        else
+          echo "already_in_progress=false" >> $GITHUB_OUTPUT
+        fi
+        
+        # 블록된 상태인지 확인
+        if echo "$ISSUE_LABELS" | grep -q "blocked\|human-intervention"; then
+          echo "is_blocked=true" >> $GITHUB_OUTPUT
+        else
+          echo "is_blocked=false" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "Issue #$ISSUE_NUMBER: $ISSUE_TITLE"
+        echo "Labels: $ISSUE_LABELS"
+        
+    - name: 🔍 Check Dependencies
+      id: check_deps
+      if: steps.check_issue.outputs.already_in_progress == 'false' && steps.check_issue.outputs.is_blocked == 'false'
+      run: |
+        ISSUE_NUMBER="${{ steps.check_issue.outputs.issue_number }}"
+        
+        # 이슈 본문에서 의존성 정보 추출
+        ISSUE_BODY=$(gh issue view $ISSUE_NUMBER --json body --jq '.body')
+        
+        # 의존성이 있는지 확인
+        if echo "$ISSUE_BODY" | grep -q "depends_on\|의존성\|Dependencies"; then
+          echo "has_dependencies=true" >> $GITHUB_OUTPUT
+          
+          # TODO: 의존성 체크 로직 구현
+          # 현재는 단순히 이전 이슈들이 완료되었는지만 확인
+          PREV_ISSUES=$(gh issue list --label "auto-generated" --state closed --limit 10 --json number)
+          CLOSED_COUNT=$(echo "$PREV_ISSUES" | jq '. | length')
+          
+          echo "dependencies_met=true" >> $GITHUB_OUTPUT
+          echo "Dependency check: $CLOSED_COUNT previous issues completed"
+        else
+          echo "has_dependencies=false" >> $GITHUB_OUTPUT
+          echo "dependencies_met=true" >> $GITHUB_OUTPUT
+        fi
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 🎯 Trigger Claude Code
+      if: |
+        steps.check_issue.outputs.already_in_progress == 'false' && 
+        steps.check_issue.outputs.is_blocked == 'false' && 
+        steps.check_deps.outputs.dependencies_met == 'true'
+      run: |
+        ISSUE_NUMBER="${{ steps.check_issue.outputs.issue_number }}"
+        
+        # 이슈에 in-progress 라벨 추가
+        gh issue edit $ISSUE_NUMBER --add-label "in-progress"
+        
+        # Claude Code 트리거 코멘트 추가
+        TRIGGER_COMMENT="🤖 **Auto-Development Task Triggered**
+
+👋 @claude, please begin work on this task.
+
+## 📋 Task Information
+- **Issue**: #$ISSUE_NUMBER
+- **Title**: ${{ steps.check_issue.outputs.issue_title }}
+- **Labels**: ${{ steps.check_issue.outputs.issue_labels }}
+
+## 🎯 Instructions
+1. **Read the requirements** in the issue description carefully
+2. **Check the module specification** in \`spec/modules/\` folder  
+3. **Follow the coding standards** defined in \`.github/claude-code.yml\`
+4. **Create a feature branch** following the naming pattern
+5. **Implement the solution** with comprehensive tests
+6. **Create a pull request** when ready
+
+## 📂 Key Files to Reference
+- \`spec/spec.yaml\` - Project configuration
+- \`spec/modules/*.yaml\` - Module specifications  
+- \`README.md\` - Project overview
+- \`.github/claude-code.yml\` - Development guidelines
+
+## ✅ Success Criteria
+- [ ] All requirements implemented
+- [ ] Tests pass with 80%+ coverage
+- [ ] Code follows project standards
+- [ ] Documentation is updated
+- [ ] PR is ready for review
+
+**Good luck! 🚀**"
+
+        gh issue comment $ISSUE_NUMBER --body "$TRIGGER_COMMENT"
+        
+        echo "✅ Claude Code triggered for issue #$ISSUE_NUMBER"
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
+        
+    - name: 📊 Update Project Board
+      if: |
+        steps.check_issue.outputs.already_in_progress == 'false' && 
+        steps.check_issue.outputs.is_blocked == 'false' && 
+        steps.check_deps.outputs.dependencies_met == 'true'
+      run: |
+        # TODO: 프로젝트 보드 업데이트 (선택사항)
+        echo "📋 Project board updated (placeholder)"
+        
+    - name: 📊 Summary
+      run: |
+        echo "## 🧠 Claude Code Trigger Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Issue**: #${{ steps.check_issue.outputs.issue_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Title**: ${{ steps.check_issue.outputs.issue_title }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Already in Progress**: ${{ steps.check_issue.outputs.already_in_progress }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Blocked**: ${{ steps.check_issue.outputs.is_blocked }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Dependencies Met**: ${{ steps.check_deps.outputs.dependencies_met || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.check_issue.outputs.already_in_progress }}" == "false" ] && 
+           [ "${{ steps.check_issue.outputs.is_blocked }}" == "false" ] && 
+           [ "${{ steps.check_deps.outputs.dependencies_met || 'true' }}" == "true" ]; then
+          echo "✅ **Claude Code successfully triggered!**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⏸️ **Task not triggered** (conditions not met)" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  # 수동 트리거 처리
+  manual-trigger:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.action == 'created' && 
+      github.event.issue && 
+      contains(github.event.comment.body, '@claude') && 
+      contains(github.event.issue.labels.*.name, 'claude-task')
+    
+    steps:
+    - name: 🎯 Manual Claude Trigger
+      run: |
+        ISSUE_NUMBER="${{ github.event.issue.number }}"
+        COMMENTER="${{ github.event.comment.user.login }}"
+        
+        echo "Manual trigger by $COMMENTER for issue #$ISSUE_NUMBER"
+        
+        # in-progress 라벨 추가
+        gh issue edit $ISSUE_NUMBER --add-label "in-progress"
+        
+        # 확인 코멘트
+        gh issue comment $ISSUE_NUMBER --body "🤖 Manual trigger acknowledged by **$COMMENTER**. 
+        
+Claude Code should now pick up this task. If it doesn't start within 5 minutes, please check:
+- Repository has Claude Code enabled
+- Issue has required labels: \`auto-generated\`, \`claude-task\`
+- No blocking labels: \`blocked\`, \`human-intervention\`"
+        
+      env:
+        GH_TOKEN: ${{ github.token }}
