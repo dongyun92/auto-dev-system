@@ -1,0 +1,167 @@
+# Claude Code Configuration for Auto-Development System
+
+# 프로젝트 설정
+project:
+  name: "auto-dev-system"
+  type: "auto-development"
+  language: "java"  # 기본값, spec.yaml에서 오버라이드 가능
+  framework: "spring-boot"
+
+# Claude Code 트리거 설정
+triggers:
+  # 이슈 코멘트 기반 트리거
+  issue_comment:
+    enabled: true
+    patterns:
+      - "@claude"
+      - "@claude begin"
+      - "@claude start"
+      - "@claude please begin work"
+    required_labels:
+      - "auto-generated"
+      - "claude-task"
+    exclude_labels:
+      - "completed"
+      - "blocked"
+      - "human-intervention"
+
+  # 이슈 할당 기반 트리거  
+  issue_assignment:
+    enabled: true
+    assignee_patterns:
+      - "claude"
+      - "claude-code"
+    required_labels:
+      - "auto-generated"
+
+# 작업 컨텍스트 설정
+context:
+  # 참조할 파일들
+  reference_files:
+    - "spec/spec.yaml"
+    - "spec/modules/*.yaml"
+    - "README.md"
+    - "docs/**/*.md"
+  
+  # 제외할 파일들
+  exclude_patterns:
+    - "node_modules/**"
+    - "target/**"
+    - "build/**"
+    - "*.log"
+    - ".git/**"
+
+# 개발 표준
+development_standards:
+  # 코딩 스타일
+  code_style:
+    - "Follow Google Java Style Guide"
+    - "Use meaningful variable and method names"
+    - "Add comprehensive Javadoc comments"
+    - "Follow SOLID principles"
+  
+  # 테스트 요구사항
+  testing:
+    - "Minimum 80% code coverage"
+    - "Unit tests for all public methods"
+    - "Integration tests for API endpoints"
+    - "Mock external dependencies"
+  
+  # 문서화
+  documentation:
+    - "Update API documentation"
+    - "Add README for each module"
+    - "Document configuration parameters"
+    - "Include usage examples"
+
+# 브랜치 전략
+branching:
+  strategy: "feature-branch"
+  naming_pattern: "feature/{issue-number}-{module-name}-{phase}"
+  base_branch: "main"
+  
+# PR 설정
+pull_request:
+  template_enabled: true
+  auto_assign_reviewers: false
+  draft_by_default: false
+  labels:
+    - "auto-generated"
+    - "ready-for-review"
+  
+  # PR 제목 패턴
+  title_pattern: "[{phase}] {module_name}: {description}"
+  
+# 품질 게이트
+quality_gates:
+  # 필수 체크
+  required_checks:
+    - "build"
+    - "test"
+    - "lint"
+  
+  # 코드 메트릭
+  metrics:
+    max_complexity: 10
+    min_coverage: 80
+    max_method_length: 50
+    max_class_length: 500
+
+# 알림 설정
+notifications:
+  # 작업 시작시
+  on_start:
+    comment: "🤖 Claude Code has started working on this task. Branch: `{branch_name}`"
+  
+  # PR 생성시  
+  on_pr_created:
+    comment: "🎉 Implementation completed! Pull request created: #{pr_number}"
+  
+  # 에러 발생시
+  on_error:
+    comment: "❌ Error occurred during development. Details: {error_message}"
+    labels:
+      - "ci-failed"
+      - "human-intervention"
+
+# 모듈별 특수 설정
+module_overrides:
+  # 데이터베이스 관련 모듈
+  "*database*":
+    additional_context:
+      - "database/schema/*.sql"
+      - "database/migrations/*.sql"
+    required_checks:
+      - "db-migration-test"
+  
+  # API 서비스 모듈
+  "*service*":
+    additional_context:
+      - "api-docs/*.yaml"
+      - "swagger/*.json"
+    required_checks:
+      - "api-contract-test"
+  
+  # 인증 관련 모듈
+  "*auth*":
+    additional_context:
+      - "security/*.md"
+      - "oauth/*.json"
+    required_checks:
+      - "security-scan"
+
+# 에러 처리
+error_handling:
+  max_retries: 3
+  retry_delay: "5m"
+  escalation_labels:
+    - "human-intervention"
+    - "claude-failed"
+  
+  # 자동 복구 시도
+  auto_recovery:
+    enabled: true
+    strategies:
+      - "clean_build"
+      - "dependency_update"
+      - "cache_clear"
