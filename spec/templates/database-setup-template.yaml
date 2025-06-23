@@ -1,0 +1,241 @@
+# Database Setup Template
+# 초기 데이터베이스 스키마 및 설정
+
+name: "database-setup"
+description: "프로젝트 초기 데이터베이스 스키마 및 기본 설정"
+version: "1.0.0"
+module_type: "database"
+priority: "high"
+
+# 이 모듈은 다른 모든 데이터베이스 의존 모듈의 기반이므로 의존성 없음
+depends_on: []
+
+# 기술 스택
+tech_stack:
+  - "postgresql"
+  - "flyway"
+  - "docker"
+  - "liquibase"
+
+# 데이터베이스 스키마 정의
+database:
+  tables:
+    # 사용자 테이블
+    - name: "users"
+      columns:
+        - name: "id"
+          type: "BIGSERIAL"
+          primary_key: true
+          nullable: false
+        - name: "username"
+          type: "VARCHAR(50)"
+          unique: true
+          nullable: false
+        - name: "email"
+          type: "VARCHAR(255)"
+          unique: true
+          nullable: false
+        - name: "password_hash"
+          type: "VARCHAR(255)"
+          nullable: false
+        - name: "first_name"
+          type: "VARCHAR(100)"
+          nullable: true
+        - name: "last_name"
+          type: "VARCHAR(100)"
+          nullable: true
+        - name: "is_active"
+          type: "BOOLEAN"
+          nullable: false
+        - name: "created_at"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: false
+        - name: "updated_at"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: false
+      indexes:
+        - name: "idx_users_email"
+          columns: ["email"]
+          unique: true
+        - name: "idx_users_username"
+          columns: ["username"]
+          unique: true
+        - name: "idx_users_active"
+          columns: ["is_active"]
+    
+    # 역할 테이블
+    - name: "roles"
+      columns:
+        - name: "id"
+          type: "BIGSERIAL"
+          primary_key: true
+        - name: "name"
+          type: "VARCHAR(50)"
+          unique: true
+          nullable: false
+        - name: "description"
+          type: "TEXT"
+          nullable: true
+        - name: "created_at"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: false
+      indexes:
+        - name: "idx_roles_name"
+          columns: ["name"]
+          unique: true
+    
+    # 사용자-역할 관계 테이블
+    - name: "user_roles"
+      columns:
+        - name: "user_id"
+          type: "BIGINT"
+          nullable: false
+        - name: "role_id"
+          type: "BIGINT"
+          nullable: false
+        - name: "assigned_at"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: false
+      indexes:
+        - name: "idx_user_roles_user"
+          columns: ["user_id"]
+        - name: "idx_user_roles_role"
+          columns: ["role_id"]
+        - name: "idx_user_roles_unique"
+          columns: ["user_id", "role_id"]
+          unique: true
+    
+    # 감사 로그 테이블
+    - name: "audit_logs"
+      columns:
+        - name: "id"
+          type: "BIGSERIAL"
+          primary_key: true
+        - name: "user_id"
+          type: "BIGINT"
+          nullable: true
+        - name: "action"
+          type: "VARCHAR(100)"
+          nullable: false
+        - name: "resource"
+          type: "VARCHAR(100)"
+          nullable: false
+        - name: "resource_id"
+          type: "VARCHAR(50)"
+          nullable: true
+        - name: "details"
+          type: "JSONB"
+          nullable: true
+        - name: "ip_address"
+          type: "INET"
+          nullable: true
+        - name: "user_agent"
+          type: "TEXT"
+          nullable: true
+        - name: "created_at"
+          type: "TIMESTAMP WITH TIME ZONE"
+          nullable: false
+      indexes:
+        - name: "idx_audit_logs_user"
+          columns: ["user_id"]
+        - name: "idx_audit_logs_action"
+          columns: ["action"]
+        - name: "idx_audit_logs_resource"
+          columns: ["resource"]
+        - name: "idx_audit_logs_created"
+          columns: ["created_at"]
+
+  # 마이그레이션 파일들
+  migrations:
+    - "V001__create_users_table.sql"
+    - "V002__create_roles_table.sql"
+    - "V003__create_user_roles_table.sql"
+    - "V004__create_audit_logs_table.sql"
+    - "V005__insert_default_roles.sql"
+    - "V006__create_indexes.sql"
+
+# 테스트 요구사항
+tests:
+  unit_test_coverage: 90
+  integration_tests: true
+  e2e_tests: false
+  test_data:
+    - "test-data.sql"
+    - "test-users.sql"
+    - "test-roles.sql"
+
+# 환경 설정
+configuration:
+  environment_variables:
+    - name: "POSTGRES_DB"
+      description: "데이터베이스 이름"
+      default_value: "autodev"
+      required: true
+    - name: "POSTGRES_USER"
+      description: "데이터베이스 사용자"
+      default_value: "postgres"
+      required: true
+    - name: "POSTGRES_PASSWORD"
+      description: "데이터베이스 비밀번호"
+      required: true
+      sensitive: true
+    - name: "POSTGRES_HOST"
+      description: "데이터베이스 호스트"
+      default_value: "localhost"
+      required: true
+    - name: "POSTGRES_PORT"
+      description: "데이터베이스 포트"
+      default_value: "5432"
+      required: true
+  config_files:
+    - "database.yml"
+    - "flyway.conf"
+
+# 보안 설정
+security:
+  authentication: "none"  # 데이터베이스 레벨 보안
+  sensitive_data: true
+  encryption: true  # 저장시 암호화 고려
+
+# 성능 요구사항
+performance:
+  max_response_time: "50ms"  # 쿼리 응답 시간
+  throughput: "10000 queries/sec"
+  memory_limit: "2GB"
+
+# 문서화
+documentation:
+  api_docs: false
+  user_guide: true
+  deployment_guide: true
+
+# 배포 설정
+deployment:
+  docker: true
+  kubernetes: true
+  health_check:
+    path: "/health"
+    method: "GET"
+
+# 모니터링
+monitoring:
+  metrics:
+    - "connection_count"
+    - "query_duration"
+    - "database_size"
+    - "table_sizes"
+    - "index_usage"
+  logging:
+    level: "INFO"
+    format: "json"
+  alerts:
+    - "connection_count > 80% of max"
+    - "query_duration > 1s"
+    - "database_size > 10GB"
+
+# 메타데이터
+metadata:
+  author: "Auto Development System"
+  created_date: "2025-06-23"
+  tags: ["database", "postgresql", "schema", "setup"]
+  estimated_effort: "2-3 days"
