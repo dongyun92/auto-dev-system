@@ -1,0 +1,308 @@
+name: runway-status-manager
+description: "활주로 점유 상태 관리 및 RWSL(Runway Wait Status Light) 등화 제어 시스템"
+version: "1.0.0"
+
+metadata:
+  module_type: "control_service"
+  priority: "high"
+  phase: 1
+  estimated_hours: 4
+  category: "기반 데이터 시스템"
+
+dependencies:
+  internal_modules: []
+  external_services:
+    - "PostgreSQL Database"
+    - "Hardware Interface (RWSL 등화)"
+    
+tech_stack:
+  - "spring-boot"
+  - "postgresql"
+  - "websocket"
+  - "hardware-interface"
+
+endpoints:
+  - method: "GET"
+    path: "/api/runway/status"
+    description: "모든 활주로의 현재 상태 조회"
+    response_format: "JSON"
+    
+  - method: "GET"
+    path: "/api/runway/{runway_id}/status"
+    description: "특정 활주로의 상세 상태 조회"
+    response_format: "JSON"
+    
+  - method: "POST"
+    path: "/api/runway/{runway_id}/occupy"
+    description: "활주로 점유 상태로 변경"
+    request_format: "JSON"
+    
+  - method: "POST"
+    path: "/api/runway/{runway_id}/clear"
+    description: "활주로 클리어 상태로 변경"
+    request_format: "JSON"
+    
+  - method: "GET"
+    path: "/api/rwsl/lights/status"
+    description: "모든 RWSL 등화 상태 조회"
+    response_format: "JSON"
+    
+  - method: "POST"
+    path: "/api/rwsl/lights/{zone_id}/control"
+    description: "특정 구역 RWSL 등화 제어"
+    request_format: "JSON"
+    
+  - method: "WebSocket"
+    path: "/ws/runway/status"
+    description: "실시간 활주로 상태 변경 알림"
+    protocol: "WebSocket"
+
+database_schema:
+  tables:
+    - name: "runway_status"
+      columns:
+        - name: "id"
+          type: "BIGSERIAL PRIMARY KEY"
+        - name: "runway_id"
+          type: "VARCHAR(10) NOT NULL UNIQUE"
+        - name: "status"
+          type: "VARCHAR(20) NOT NULL" # CLEAR, OCCUPIED, MAINTENANCE, CLOSED
+        - name: "occupying_aircraft"
+          type: "VARCHAR(20)"
+        - name: "operation_type"
+          type: "VARCHAR(20)" # LANDING, TAKEOFF, TAXI, MAINTENANCE
+        - name: "start_time"
+          type: "TIMESTAMP"
+        - name: "estimated_clear_time"
+          type: "TIMESTAMP"
+        - name: "last_updated"
+          type: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        - name: "weather_condition"
+          type: "VARCHAR(20)" # CLEAR, FOG, RAIN, SNOW, WIND
+      indexes:
+        - "CREATE INDEX idx_runway_id ON runway_status(runway_id)"
+        - "CREATE INDEX idx_runway_status ON runway_status(status)"
+        - "CREATE INDEX idx_runway_updated ON runway_status(last_updated)"
+        
+    - name: "rwsl_lights"
+      columns:
+        - name: "id"
+          type: "BIGSERIAL PRIMARY KEY"
+        - name: "zone_id"
+          type: "VARCHAR(20) NOT NULL"
+        - name: "light_type"
+          type: "VARCHAR(20) NOT NULL" # RED, AMBER, GREEN, OFF
+        - name: "position_lat"
+          type: "DECIMAL(10,7) NOT NULL"
+        - name: "position_lon"
+          type: "DECIMAL(10,7) NOT NULL"
+        - name: "associated_runway"
+          type: "VARCHAR(10)"
+        - name: "is_active"
+          type: "BOOLEAN DEFAULT TRUE"
+        - name: "last_status_change"
+          type: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        - name: "hardware_id"
+          type: "VARCHAR(50)"
+      indexes:
+        - "CREATE INDEX idx_rwsl_zone ON rwsl_lights(zone_id)"
+        - "CREATE INDEX idx_rwsl_runway ON rwsl_lights(associated_runway)"
+        - "CREATE INDEX idx_rwsl_type ON rwsl_lights(light_type)"
+
+gimpo_runway_configuration:
+  runways:
+    - runway_id: "14L"
+      orientation: "14/32"
+      length_m: 3200
+      width_m: 45
+      surface: "Asphalt"
+      ils_available: true
+      operating_hours: "24시간"
+      
+    - runway_id: "14R" 
+      orientation: "14/32"
+      length_m: 3600
+      width_m: 45
+      surface: "Asphalt"
+      ils_available: true
+      operating_hours: "24시간"
+      
+    - runway_id: "32L"
+      orientation: "32/14"
+      length_m: 3600
+      width_m: 45
+      surface: "Asphalt"
+      ils_available: true
+      operating_hours: "24시간"
+      
+    - runway_id: "32R"
+      orientation: "32/14"
+      length_m: 3200
+      width_m: 45
+      surface: "Asphalt" 
+      ils_available: true
+      operating_hours: "24시간"
+
+rwsl_zones:
+  hold_short_zones:
+    - zone_id: "HS_14L_A"
+      runway: "14L"
+      position_lat: 37.5583
+      position_lon: 126.7850
+      description: "14L 활주로 진입점 A"
+      
+    - zone_id: "HS_14L_B"
+      runway: "14L" 
+      position_lat: 37.5600
+      position_lon: 126.7900
+      description: "14L 활주로 진입점 B"
+      
+    - zone_id: "HS_14R_A"
+      runway: "14R"
+      position_lat: 37.5550
+      position_lon: 126.7800
+      description: "14R 활주로 진입점 A"
+      
+    - zone_id: "HS_14R_B"
+      runway: "14R"
+      position_lat: 37.5620
+      position_lon: 126.7950
+      description: "14R 활주로 진입점 B"
+      
+  runway_entrance_zones:
+    - zone_id: "RE_32L_N"
+      runway: "32L"
+      position_lat: 37.5650
+      position_lon: 126.8050
+      description: "32L 활주로 북쪽 진입점"
+      
+    - zone_id: "RE_32R_N"
+      runway: "32R"
+      position_lat: 37.5680
+      position_lon: 126.8100
+      description: "32R 활주로 북쪽 진입점"
+
+light_control_logic:
+  runway_clear:
+    rwsl_status: "GREEN"
+    description: "활주로 사용 가능"
+    
+  runway_occupied:
+    rwsl_status: "RED"
+    description: "활주로 점유 중 - 진입 금지"
+    
+  aircraft_approaching:
+    rwsl_status: "AMBER"
+    description: "항공기 접근 중 - 주의"
+    
+  maintenance_mode:
+    rwsl_status: "OFF"
+    description: "정비 모드 - 사용 불가"
+
+korean_weather_adaptations:
+  fog_conditions:
+    visibility_threshold: "600m"
+    enhanced_lighting: true
+    strobe_frequency: "2Hz"
+    
+  strong_wind:
+    wind_speed_threshold: "25kt"
+    preferred_runways: ["14L", "32R"]
+    cross_wind_limit: "15kt"
+    
+  rain_snow:
+    surface_condition: "WET/SNOW"
+    braking_action: "POOR"
+    increased_separation: "50%"
+
+operational_procedures:
+  normal_operations:
+    - step: "항공기 접근 감지"
+      action: "RWSL AMBER 점등"
+      timing: "5분 전"
+      
+    - step: "활주로 점유"
+      action: "RWSL RED 점등"
+      timing: "즉시"
+      
+    - step: "활주로 클리어"
+      action: "RWSL GREEN 점등"
+      timing: "항공기 완전 이탈 후"
+      
+  emergency_procedures:
+    - scenario: "비상 착륙"
+      priority: "HIGHEST"
+      action: "모든 교차 활주로 즉시 클리어"
+      
+    - scenario: "활주로 이물질"
+      priority: "HIGH"
+      action: "해당 활주로 CLOSED 상태 변경"
+
+hardware_interface:
+  led_controllers:
+    manufacturer: "ADB SAFEGATE"
+    model: "RWSL-2000"
+    communication: "Ethernet TCP/IP"
+    redundancy: "이중화 구성"
+    
+  control_protocol:
+    primary: "ICAO Annex 14 표준"
+    backup: "Manual override"
+    response_time: "< 100ms"
+
+monitoring_alarms:
+  system_failures:
+    - "RWSL 등화 장애"
+    - "통신 연결 끊김"
+    - "하드웨어 오류"
+    - "전원 공급 장애"
+    
+  operational_alerts:
+    - "장시간 활주로 점유"
+    - "예상 시간 초과"
+    - "날씨 조건 악화"
+    - "비정상 상태 변경"
+
+performance_requirements:
+  response_time: "< 500ms (상태 변경)"
+  light_activation: "< 100ms"
+  system_availability: "99.9%"
+  concurrent_operations: "4개 활주로 동시 관리"
+
+testing_scenarios:
+  unit_tests:
+    - "활주로 상태 변경 테스트"
+    - "RWSL 등화 제어 테스트"
+    - "하드웨어 인터페이스 테스트"
+    - "웨더 조건 적용 테스트"
+    
+  integration_tests:
+    - "실제 RWSL 하드웨어 연동 테스트"
+    - "다중 활주로 동시 운영 테스트"
+    - "비상상황 대응 테스트"
+    - "날씨 조건별 운영 테스트"
+    
+  performance_tests:
+    - "100ms 이내 등화 응답 테스트"
+    - "24시간 연속 운영 테스트"
+    - "동시 상태 변경 처리 테스트"
+
+completion_criteria:
+  functional:
+    - "4개 활주로 상태 실시간 관리"
+    - "RWSL 등화 자동 제어"
+    - "김포공항 특화 운영 절차 구현"
+    - "날씨 조건별 대응 로직"
+    - "비상상황 처리 절차"
+    
+  quality:
+    - "99.9% 시스템 가용성"
+    - "100ms 이내 등화 응답시간"
+    - "하드웨어 장애 자동 감지"
+    - "단위 테스트 커버리지 95% 이상"
+
+safety_compliance:
+  - "ICAO Annex 14 표준 준수"
+  - "국토교통부 항공안전 기준"
+  - "김포공항 운영 절차서"
+  - "이중화 안전장치 구현"

@@ -1,0 +1,511 @@
+name: atc-dashboard
+description: "김포타워 관제사용 RWSL 통합 대시보드 - 실시간 안전 모니터링 시스템"
+version: "1.0.0"
+module_type: frontend_dashboard
+priority: high
+estimated_hours: 10
+
+dependencies:
+  depends_on: ["conflict-detection-engine", "notification-service", "gimpo-map-service"]
+  provides_to: []
+
+tech_stack:
+  - "react-18"
+  - "typescript"
+  - "websocket"
+  - "tailwindcss"
+  - "recharts"
+  - "react-router"
+
+api_endpoints:
+  - method: GET
+    path: /dashboard
+    description: "메인 대시보드 페이지"
+    responses:
+      200: "React 대시보드 애플리케이션"
+
+  - method: GET
+    path: /dashboard/settings
+    description: "대시보드 설정 페이지"
+    responses:
+      200: "사용자 설정 인터페이스"
+
+  - method: WebSocket
+    path: /ws/dashboard/data
+    description: "대시보드 실시간 데이터 업데이트"
+    message_format:
+      aircraft_update:
+        type: "aircraft_positions"
+        data:
+          - callsign: "KAL123"
+            position: {lat: 37.5583, lng: 126.7908}
+            status: "taxiing"
+            heading: 140
+      conflict_alert:
+        type: "conflict_detected"
+        severity: "high"
+        aircraft: ["KAL123", "AAR456"]
+        location: "교차점 A-B"
+      rwsl_update:
+        type: "rwsl_state_change"
+        zone_id: "RW14L_ENTRY"
+        new_state: "RED"
+        timestamp: "2025-06-23T14:30:00Z"
+
+component_architecture:
+  main_layout:
+    header:
+      components:
+        - "SystemStatus"
+        - "WeatherWidget"
+        - "CurrentTime"
+        - "UserProfile"
+        - "NotificationBell"
+      height: "80px"
+      background: "dark"
+      
+    sidebar:
+      components:
+        - "NavigationMenu"
+        - "QuickActions"
+        - "SystemMonitor"
+      width: "280px"
+      collapsible: true
+      
+    main_content:
+      layout: "grid"
+      areas:
+        - "map_view" # 60% 화면
+        - "control_panel" # 40% 화면
+      responsive: true
+      
+    footer:
+      components:
+        - "SystemAlerts"
+        - "ConnectionStatus"
+        - "PerformanceMetrics"
+      height: "60px"
+
+  map_view_panel:
+    components:
+      - name: "GimpoAirportMap"
+        description: "김포공항 지도 시각화"
+        props:
+          zoom_level: "auto"
+          center_position: [37.5583, 126.7908]
+          layers: ["runways", "taxiways", "gates", "aircraft", "rwsl"]
+          
+      - name: "AircraftOverlay"
+        description: "실시간 항공기 위치 표시"
+        props:
+          show_trails: true
+          trail_duration: 300  # seconds
+          update_frequency: 1  # seconds
+          
+      - name: "RWSLOverlay"
+        description: "RWSL 등화 상태 표시"
+        props:
+          show_zones: true
+          animate_lights: true
+          brightness_scale: 1.0
+          
+      - name: "ConflictAlertOverlay"
+        description: "충돌 위험 시각화"
+        props:
+          show_predicted_paths: true
+          alert_radius: true
+          severity_colors: true
+
+  control_panel:
+    tabs:
+      - name: "LiveMonitoring"
+        description: "실시간 모니터링"
+        components:
+          - "ActiveAircraftList"
+          - "ConflictAlertsList"
+          - "RunwayStatusGrid"
+          - "RWSLControlPanel"
+          
+      - name: "TrafficFlow"
+        description: "교통 흐름 분석"
+        components:
+          - "TrafficDensityChart"
+          - "RouteOptimization"
+          - "CongestionHeatmap"
+          - "DelayStatistics"
+          
+      - name: "WeatherConditions"
+        description: "기상 조건"
+        components:
+          - "CurrentWeather"
+          - "VisibilityStatus"
+          - "WindConditions"
+          - "ForecastWidget"
+          
+      - name: "SystemHealth"
+        description: "시스템 상태"
+        components:
+          - "ComponentStatus"
+          - "PerformanceMetrics"
+          - "ErrorLogs"
+          - "MaintenanceAlerts"
+
+ui_components:
+  active_aircraft_list:
+    layout: "table"
+    columns:
+      - "Callsign"
+      - "Aircraft Type"
+      - "Status"
+      - "Current Location"
+      - "Destination"
+      - "ETA"
+      - "Priority"
+    features:
+      - "Real-time updates"
+      - "Click to focus on map"
+      - "Priority-based sorting"
+      - "Status color coding"
+    max_items: 50
+    
+  conflict_alerts_list:
+    layout: "priority_queue"
+    alert_types:
+      - "Runway Incursion"
+      - "Taxiway Collision"
+      - "Intersection Conflict"
+      - "Weather Warning"
+    features:
+      - "Severity-based coloring"
+      - "Auto-acknowledgment"
+      - "Escalation tracking"
+      - "Sound alerts"
+    max_alerts: 20
+    
+  runway_status_grid:
+    layout: "grid_2x2"
+    runways:
+      - id: "14L"
+        position: "top_left"
+        real_time_status: true
+      - id: "14R"
+        position: "top_right"
+        real_time_status: true
+      - id: "32L"
+        position: "bottom_left"
+        real_time_status: true
+      - id: "32R"
+        position: "bottom_right"
+        real_time_status: true
+    status_indicators:
+      - "Occupied/Clear"
+      - "Aircraft Count"
+      - "RWSL State"
+      - "Weather Impact"
+      
+  rwsl_control_panel:
+    layout: "zone_grid"
+    zones:
+      - "RW14L_ENTRY"
+      - "RW14L_EXIT"
+      - "RW14R_ENTRY"
+      - "RW14R_EXIT"
+      - "INTERSECTION_AB"
+      - "INTERSECTION_CD"
+    controls:
+      - "Manual Override"
+      - "Brightness Control"
+      - "Test Mode"
+      - "Emergency All-Red"
+    safety_features:
+      - "Two-person authorization"
+      - "Timeout protection"
+      - "Audit logging"
+
+real_time_features:
+  data_refresh:
+    aircraft_positions: "1초"
+    conflict_detection: "즉시"
+    rwsl_status: "500ms"
+    weather_data: "30초"
+    system_metrics: "5초"
+    
+  websocket_channels:
+    aircraft_tracking: "/ws/aircraft/positions"
+    conflict_alerts: "/ws/conflict/alerts"
+    rwsl_status: "/ws/runway/rwsl"
+    notifications: "/ws/notification/realtime"
+    system_health: "/ws/system/health"
+    
+  performance_optimizations:
+    virtual_scrolling: true
+    data_compression: true
+    delta_updates: true
+    connection_pooling: true
+    automatic_reconnection: true
+
+user_interface_design:
+  screen_resolutions:
+    primary: "1920x1080 (FHD)"
+    secondary: "3840x2160 (4K)"
+    minimum: "1366x768"
+    
+  responsive_breakpoints:
+    desktop: "> 1200px"
+    tablet: "768px - 1200px"
+    mobile: "< 768px (limited functionality)"
+    
+  color_scheme:
+    primary: "#1e40af (blue-800)"
+    secondary: "#374151 (gray-700)"
+    success: "#10b981 (emerald-500)"
+    warning: "#f59e0b (amber-500)"
+    error: "#ef4444 (red-500)"
+    background: "#f8fafc (slate-50)"
+    surface: "#ffffff"
+    text: "#1f2937 (gray-800)"
+    
+  dark_mode:
+    enabled: true
+    toggle_position: "header"
+    colors:
+      background: "#0f172a (slate-900)"
+      surface: "#1e293b (slate-800)"
+      text: "#f1f5f9 (slate-100)"
+      
+  typography:
+    primary_font: "Inter, sans-serif"
+    monospace_font: "JetBrains Mono, monospace"
+    korean_font: "Noto Sans CJK KR, 맑은 고딕"
+    
+    font_sizes:
+      title: "24px"
+      heading: "18px"
+      body: "14px"
+      caption: "12px"
+      code: "13px"
+
+interaction_design:
+  navigation:
+    primary_nav: "Sidebar menu"
+    breadcrumbs: "Context-aware"
+    quick_actions: "Keyboard shortcuts"
+    
+  keyboard_shortcuts:
+    global:
+      "F1": "Help"
+      "F11": "Fullscreen"
+      "Ctrl+R": "Refresh data"
+      "Ctrl+D": "Dark mode toggle"
+      "Esc": "Close modal/alert"
+      
+    aircraft_control:
+      "A": "Focus all aircraft"
+      "S": "Select aircraft"
+      "F": "Follow selected aircraft"
+      "C": "Clear selection"
+      
+    map_control:
+      "Z": "Zoom to fit"
+      "+/-": "Zoom in/out"
+      "Arrow keys": "Pan map"
+      "Space": "Center on airport"
+      
+    alerts:
+      "1-9": "Acknowledge alert by number"
+      "Ctrl+A": "Acknowledge all alerts"
+      "Alt+E": "Emergency broadcast"
+      
+  mouse_interactions:
+    single_click: "Select object"
+    double_click: "Focus/zoom to object"
+    right_click: "Context menu"
+    scroll: "Zoom map"
+    drag: "Pan map"
+    
+  touch_gestures:
+    tap: "Select"
+    double_tap: "Zoom to"
+    pinch: "Zoom"
+    pan: "Move map"
+    long_press: "Context menu"
+
+accessibility:
+  wcag_compliance: "AA level"
+  features:
+    keyboard_navigation: "Full keyboard access"
+    screen_reader: "ARIA labels and descriptions"
+    high_contrast: "High contrast mode option"
+    font_scaling: "Adjustable font sizes"
+    color_blind: "Color-blind friendly palette"
+    
+  internationalization:
+    languages: ["Korean", "English"]
+    default: "Korean"
+    rtl_support: false
+    
+  korean_localization:
+    interface_language: "한국어"
+    aviation_terms: "항공 전문 용어"
+    time_format: "24시간 형식"
+    date_format: "YYYY-MM-DD"
+    number_format: "한국 숫자 형식"
+    
+  english_support:
+    interface_toggle: "Language switcher in header"
+    aviation_icao: "ICAO standard terminology"
+    fallback: "English as fallback language"
+
+audio_visual_alerts:
+  visual_alerts:
+    notification_toast: "Top-right corner"
+    modal_alerts: "Center screen overlay"
+    status_indicators: "Color-coded icons"
+    progress_bars: "Loading states"
+    
+  animation_effects:
+    aircraft_movement: "Smooth interpolation"
+    alert_pulsing: "Attention-grabbing pulse"
+    state_transitions: "Smooth fade/slide"
+    loading_animations: "Skeleton screens"
+    
+  audio_alerts:
+    critical_alerts: "Continuous alarm (120dB)"
+    high_priority: "Beep sequence (100dB)"
+    medium_priority: "Single beep (80dB)"
+    low_priority: "Subtle notification (60dB)"
+    
+  audio_settings:
+    volume_control: "Per-category volume"
+    mute_toggle: "Quick mute button"
+    quiet_hours: "Automatic volume reduction"
+    audio_preview: "Sound test feature"
+
+performance_optimization:
+  rendering:
+    target_fps: "60 FPS"
+    frame_budget: "16.67ms per frame"
+    optimization_techniques:
+      - "React.memo for component memoization"
+      - "Virtual scrolling for large lists"
+      - "Canvas rendering for map layers"
+      - "WebGL for 3D effects"
+      - "Debounced user inputs"
+      
+  memory_management:
+    max_memory: "512MB browser heap"
+    garbage_collection: "Periodic cleanup"
+    data_retention: "Rolling window (1 hour)"
+    image_optimization: "Lazy loading"
+    
+  network_optimization:
+    data_compression: "gzip/brotli"
+    request_batching: "Multiple updates per request"
+    caching_strategy: "HTTP caching + localStorage"
+    offline_support: "Service worker caching"
+    
+  bundle_optimization:
+    code_splitting: "Route-based chunks"
+    tree_shaking: "Unused code elimination"
+    minification: "Production build optimization"
+    lazy_loading: "Dynamic imports"
+
+error_handling:
+  connection_errors:
+    websocket_disconnect: "Automatic reconnection with backoff"
+    api_timeout: "Retry mechanism with exponential backoff"
+    network_failure: "Offline mode with cached data"
+    
+  data_errors:
+    invalid_data: "Validation and sanitization"
+    missing_data: "Fallback values and placeholders"
+    stale_data: "Timestamp-based freshness checking"
+    
+  user_errors:
+    invalid_input: "Real-time validation with helpful messages"
+    unauthorized_action: "Permission-based UI hiding"
+    form_errors: "Inline error messages"
+    
+  system_errors:
+    javascript_errors: "Error boundary components"
+    memory_exhaustion: "Graceful degradation"
+    browser_compatibility: "Feature detection and polyfills"
+
+security_features:
+  authentication:
+    session_management: "JWT-based authentication"
+    auto_logout: "Idle timeout (30 minutes)"
+    multi_factor: "Optional 2FA support"
+    
+  authorization:
+    role_based_access: "Controller, Supervisor, Admin roles"
+    permission_levels: "Read, Write, Admin permissions"
+    audit_logging: "All user actions logged"
+    
+  data_protection:
+    sensitive_data: "No sensitive data in localStorage"
+    secure_websockets: "WSS protocol enforcement"
+    csrf_protection: "CSRF token validation"
+    xss_prevention: "Input sanitization"
+
+testing_strategy:
+  unit_tests:
+    components: "React component testing with Jest/RTL"
+    utilities: "Pure function testing"
+    hooks: "Custom hook testing"
+    services: "API service testing"
+    coverage_target: "85%"
+    
+  integration_tests:
+    user_flows: "Critical path testing"
+    api_integration: "Backend service integration"
+    websocket_tests: "Real-time data flow testing"
+    
+  e2e_tests:
+    user_scenarios: "Complete workflow testing"
+    browser_testing: "Cross-browser compatibility"
+    performance_testing: "Load time and responsiveness"
+    
+  accessibility_tests:
+    keyboard_navigation: "Tab order and focus management"
+    screen_reader: "ARIA compliance testing"
+    color_contrast: "WCAG contrast ratio testing"
+
+deployment_configuration:
+  build_process:
+    bundler: "Vite"
+    typescript: "Strict mode enabled"
+    linting: "ESLint + Prettier"
+    testing: "Jest + React Testing Library"
+    
+  environment_variables:
+    API_BASE_URL: "Backend API endpoint"
+    WS_BASE_URL: "WebSocket endpoint"
+    MAPS_API_KEY: "Map service API key"
+    SENTRY_DSN: "Error monitoring"
+    
+  deployment_targets:
+    development: "Local development server"
+    staging: "Testing environment"
+    production: "Production environment"
+    
+  monitoring:
+    error_tracking: "Sentry integration"
+    performance_monitoring: "Web Vitals tracking"
+    user_analytics: "Usage statistics"
+    uptime_monitoring: "Health check endpoints"
+
+completion_criteria:
+  - "김포공항 실시간 지도 시각화 완성 (1초 업데이트)"
+  - "50대 항공기 동시 표시 및 추적 가능"
+  - "충돌 경고 실시간 시각화 및 음성 알림"
+  - "RWSL 등화 상태 실시간 표시 및 수동 제어"
+  - "한국어/영어 다국어 인터페이스 완성"
+  - "키보드 단축키 전체 기능 지원"
+  - "다크/라이트 테마 지원"
+  - "60 FPS 렌더링 성능 달성"
+  - "웹소켓 실시간 데이터 스트리밍 안정성"
+  - "WCAG AA 접근성 기준 충족"
+  - "에러 바운드리 및 오프라인 모드 지원"
+  - "모바일/태블릿 반응형 레이아웃"
+  - "E2E 테스트 커버리지 90% 이상"

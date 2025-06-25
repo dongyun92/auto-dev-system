@@ -1,0 +1,286 @@
+name: Infinite Loop Prevention
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened, closed]
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+jobs:
+  check-loops:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Detect Issue Creation Loops
+        id: issue_loops
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date();
+            const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+            
+            // Get recent issues
+            const { data: recentIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              since: sixHoursAgo.toISOString(),
+              per_page: 100
+            });
+            
+            // Count issues by title pattern
+            const titleCounts = {};
+            recentIssues.forEach(issue => {
+              const titlePattern = issue.title.replace(/\d+/g, 'X'); // Replace numbers with X
+              titleCounts[titlePattern] = (titleCounts[titlePattern] || 0) + 1;
+            });
+            
+            // Find potential loops (same pattern > 5 times)
+            const loops = Object.entries(titleCounts).filter(([pattern, count]) => count > 5);
+            
+            if (loops.length > 0) {
+              core.setOutput('has_loops', 'true');
+              core.setOutput('loop_patterns', JSON.stringify(loops));
+              
+              // Create warning comment on latest issue
+              const latestIssue = recentIssues.find(i => i.state === 'open');
+              if (latestIssue) {
+                const warningComment = \`
+## 🔄 무한루프 감지
+                
+**감지된 패턴**: \${loops.map(([p, c]) => \`"\${p}" (x\${c})\`).join(', ')}
+                
+### 🚨 자동화 일시 중단
+시스템이 동일한 이슈를 반복 생성하고 있습니다. 
+자동화를 일시 중단하고 원인을 조사합니다.
+                
+### 🔧 해결 방법
+1. 중복 이슈들 확인 및 정리
+2. YAML 스펙 검토
+3. Orchestrator 로직 점검
+4. \`loop-detected\` 라벨 제거 후 재개
+                
+---
+*🤖 자동 감지 시스템*
+                \`;
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: latestIssue.number,
+                  body: warningComment
+                });
+                
+                // Add loop-detected label
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: latestIssue.number,
+                  labels: ['loop-detected', 'system-alert']
+                });
+              }
+            } else {
+              core.setOutput('has_loops', 'false');
+            }
+            
+            return loops.length;
+            
+      - name: Detect PR Creation Loops
+        id: pr_loops
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date();
+            const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+            
+            // Get recent PRs
+            const { data: recentPRs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              sort: 'created',
+              direction: 'desc',
+              per_page: 100
+            });
+            
+            const recentPRsFiltered = recentPRs.filter(pr => 
+              new Date(pr.created_at) > sixHoursAgo
+            );
+            
+            // Check for rapid PR creation by same author
+            const authorCounts = {};
+            recentPRsFiltered.forEach(pr => {
+              const author = pr.user.login;
+              authorCounts[author] = (authorCounts[author] || 0) + 1;
+            });
+            
+            // Check for Claude Code bot creating too many PRs
+            const claudePRs = authorCounts['claude-code[bot]'] || authorCounts['github-actions[bot]'] || 0;
+            
+            if (claudePRs > 10) {
+              core.setOutput('has_pr_loops', 'true');
+              core.setOutput('claude_pr_count', claudePRs);
+              
+              // Create system alert issue
+              const alertBody = \`
+# 🚨 PR 생성 루프 감지
+
+## 📊 감지 내용
+- **시간대**: 최근 6시간
+- **PR 개수**: \${claudePRs}개
+- **임계값**: 10개 초과
+
+## 🛑 자동 조치
+1. 새로운 자동 PR 생성 중단
+2. 시스템 관리자 알림
+3. 수동 검토 필요
+
+## 🔧 권장 조치
+1. 최근 PR들의 패턴 분석
+2. Claude Code 설정 점검
+3. 중복/실패 PR 정리
+4. 시스템 재시작
+
+---
+*자동 감지 시간: \${new Date().toISOString()}*
+              \`;
+              
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 System Alert: PR Creation Loop Detected',
+                body: alertBody,
+                labels: ['system-alert', 'urgent', 'loop-detected']
+              });
+            } else {
+              core.setOutput('has_pr_loops', 'false');
+            }
+            
+            return claudePRs;
+            
+      - name: Check Resource Usage
+        id: resource_check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Check workflow run count (API usage)
+            const now = new Date();
+            const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+            
+            const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              created: \`>\${oneHourAgo.toISOString()}\`,
+              per_page: 100
+            });
+            
+            const runCount = workflowRuns.total_count;
+            
+            if (runCount > 50) {
+              core.setOutput('high_usage', 'true');
+              core.setOutput('run_count', runCount);
+              
+              // Create usage warning
+              const warningBody = \`
+## ⚠️ 높은 시스템 사용량 감지
+
+**최근 1시간 워크플로우 실행**: \${runCount}회  
+**임계값**: 50회 초과
+
+### 🎛️ 권장 조치
+1. 불필요한 트리거 제거
+2. 워크플로우 최적화
+3. 배치 처리 고려
+
+시스템 사용량이 높아 성능에 영향을 줄 수 있습니다.
+              \`;
+              
+              // Add comment to latest open issue
+              const { data: openIssues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 1
+              });
+              
+              if (openIssues.length > 0) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: openIssues[0].number,
+                  body: warningBody
+                });
+              }
+            }
+            
+            return runCount;
+            
+      - name: Update Automation Block
+        if: steps.issue_loops.outputs.has_loops == 'true' || steps.pr_loops.outputs.has_pr_loops == 'true'
+        run: |
+          # Create or update automation block file
+          cat > .automation-blocked << EOF
+          {
+            "reason": "Infinite loop detected",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "issue_loops": "${{ steps.issue_loops.outputs.has_loops }}",
+            "pr_loops": "${{ steps.pr_loops.outputs.has_pr_loops }}",
+            "loop_patterns": ${{ steps.issue_loops.outputs.loop_patterns || '[]' }},
+            "auto_resume": false
+          }
+          EOF
+          
+          # Commit the block
+          git config user.name "Loop Detection System"
+          git config user.email "system@auto-dev.local"
+          git add .automation-blocked
+          git commit -m "🚨 SYSTEM: Block automation due to detected loops" || true
+          git push || true
+          
+      - name: Cleanup Old Issues (if loops detected)
+        if: steps.issue_loops.outputs.has_loops == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const loopPatterns = JSON.parse('${{ steps.issue_loops.outputs.loop_patterns }}');
+            
+            for (const [pattern, count] of loopPatterns) {
+              // Find issues matching this pattern
+              const { data: issues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 100
+              });
+              
+              const matchingIssues = issues.filter(issue => {
+                const titlePattern = issue.title.replace(/\d+/g, 'X');
+                return titlePattern === pattern;
+              });
+              
+              // Close all but the latest one
+              if (matchingIssues.length > 1) {
+                const latestIssue = matchingIssues[0]; // GitHub returns newest first
+                const duplicateIssues = matchingIssues.slice(1);
+                
+                for (const duplicate of duplicateIssues) {
+                  await github.rest.issues.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: duplicate.number,
+                    state: 'closed'
+                  });
+                  
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: duplicate.number,
+                    body: \`🔄 Closed as duplicate due to loop detection. See #\${latestIssue.number} for the active issue.\`
+                  });
+                }
+              }
+            }

@@ -1,0 +1,270 @@
+name: "conflict-detection-engine"
+description: "김포공항 항공기 충돌 위험 탐지 및 예방 시스템"
+version: "1.0.0"
+
+metadata:
+  project: "gimpo-rwsl-system"
+  owner: "dongyun92"
+  phase: 3
+  priority: "critical"
+  estimated_hours: 12
+  depends_on:
+    - "aircraft-tracking"
+    - "taxiway-management"
+    - "runway-status-manager"
+  enables:
+    - "notification-service"
+    - "atc-dashboard"
+    - "system-integration"
+
+airport_specifics:
+  location: "김포국제공항 (RKSS)"
+  coordinates: "37.5583°N, 126.7908°E"
+  runways:
+    primary: "14L/32R (3,200m)"
+    secondary: "14R/32L (3,600m)"
+  
+  critical_zones:
+    runway_intersections: ["RW14L-RW14R", "TWY-A-RW14L"]
+    hot_spots: ["Gate_Area_2", "Cargo_Ramp", "Maintenance_Area"]
+    restricted_areas: ["Military_Zone", "VIP_Terminal"]
+
+safety_parameters:
+  separation_minimums:
+    aircraft_to_aircraft: "150m"
+    aircraft_to_vehicle: "50m"
+    runway_approach: "500m"
+    taxiway_intersection: "75m"
+  
+  speed_limits:
+    taxiway_straight: "40kts"
+    taxiway_turn: "10kts"
+    gate_area: "5kts"
+    emergency_response: "unlimited"
+  
+  weather_factors:
+    visibility_minimum: "800m"
+    wind_speed_maximum: "35kts"
+    crosswind_limit: "25kts"
+    fog_operations: "CAT_III_enabled"
+
+architecture:
+  type: "microservice"
+  deployment: "kubernetes"
+  database: "postgresql"
+  cache: "redis"
+  messaging: "kafka"
+  ai_engine: "tensorflow"
+
+technical_requirements:
+  runtime: "python"
+  framework: "fastapi"
+  version: "3.11"
+  
+  dependencies:
+    - fastapi
+    - uvicorn
+    - tensorflow
+    - numpy
+    - pandas
+    - redis
+    - kafka-python
+    - psycopg2
+    - geopy
+    - shapely
+
+database:
+  tables:
+    conflict_rules:
+      - id: "SERIAL PRIMARY KEY"
+      - rule_name: "VARCHAR(100) NOT NULL"
+      - rule_type: "VARCHAR(50)"
+      - conditions: "JSON"
+      - severity_level: "INTEGER"
+      - auto_resolve: "BOOLEAN DEFAULT false"
+      - created_at: "TIMESTAMP DEFAULT NOW()"
+      - updated_at: "TIMESTAMP DEFAULT NOW()"
+    
+    conflict_events:
+      - id: "SERIAL PRIMARY KEY"
+      - flight_id_1: "VARCHAR(20)"
+      - flight_id_2: "VARCHAR(20)"
+      - conflict_type: "VARCHAR(50)"
+      - predicted_time: "TIMESTAMP"
+      - confidence_score: "DECIMAL(3,2)"
+      - resolved: "BOOLEAN DEFAULT false"
+      - resolution_action: "TEXT"
+      - created_at: "TIMESTAMP DEFAULT NOW()"
+    
+    prediction_models:
+      - id: "SERIAL PRIMARY KEY"
+      - model_name: "VARCHAR(100)"
+      - model_version: "VARCHAR(20)"
+      - accuracy_score: "DECIMAL(5,4)"
+      - last_trained: "TIMESTAMP"
+      - active: "BOOLEAN DEFAULT true"
+
+apis:
+  rest_endpoints:
+    - path: "/api/conflicts/predict"
+      method: "POST"
+      description: "실시간 충돌 위험 예측"
+      request_body:
+        aircraft_data: "array"
+        time_horizon: "integer (seconds)"
+        weather_conditions: "object"
+      responses:
+        200:
+          content:
+            conflicts: []
+            predictions: []
+            confidence: 0.95
+    
+    - path: "/api/conflicts/active"
+      method: "GET"
+      description: "현재 활성 충돌 경고"
+      responses:
+        200:
+          content:
+            - conflict_id: 1
+            - severity: "high"
+            - estimated_time: "2024-12-25T10:30:00Z"
+    
+    - path: "/api/conflicts/{id}/resolve"
+      method: "POST"
+      description: "충돌 경고 해결 처리"
+      request_body:
+        resolution_action: "string"
+        resolved_by: "string"
+    
+    - path: "/api/rules"
+      method: "GET"
+      description: "충돌 탐지 규칙 목록"
+    
+    - path: "/api/rules"
+      method: "POST"
+      description: "새 충돌 탐지 규칙 추가"
+      request_body:
+        rule_name: "string"
+        conditions: "object"
+        severity_level: 1-5
+
+business_logic:
+  ai_models:
+    trajectory_prediction:
+      algorithm: "LSTM Neural Network"
+      input_features: ["position", "velocity", "heading", "weather"]
+      prediction_horizon: "5 minutes"
+      update_frequency: "1 second"
+    
+    collision_detection:
+      algorithm: "3D Spatial Analysis with ML"
+      confidence_threshold: 0.85
+      false_positive_reduction: "Ensemble method"
+    
+    risk_assessment:
+      factors: ["separation_distance", "relative_speed", "weather", "aircraft_type"]
+      scoring: "Multi-criteria decision analysis"
+  
+  conflict_types:
+    - "runway_incursion"
+    - "taxiway_collision"
+    - "wake_turbulence"
+    - "ground_vehicle_conflict"
+    - "weather_related"
+  
+  severity_levels:
+    1: "Advisory (>300 seconds)"
+    2: "Caution (120-300 seconds)"
+    3: "Warning (60-120 seconds)"
+    4: "Alert (30-60 seconds)"
+    5: "Critical (<30 seconds)"
+
+monitoring:
+  performance_metrics:
+    - prediction_accuracy_rate
+    - false_positive_rate
+    - false_negative_rate
+    - average_prediction_time
+    - system_response_time
+  
+  alerts:
+    - model_accuracy_degradation
+    - high_false_positive_rate
+    - system_processing_delay
+    - critical_conflict_detected
+
+integration:
+  kafka_topics:
+    consumes:
+      - "aircraft.tracking.realtime"
+      - "taxiway.status.updates"
+      - "runway.status.changes"
+      - "weather.conditions.live"
+    
+    produces:
+      - "conflicts.predicted"
+      - "conflicts.critical"
+      - "conflicts.resolved"
+      - "safety.alerts"
+  
+  external_apis:
+    - aircraft_tracking
+    - taxiway_management
+    - runway_status_manager
+    - notification_service
+    - gimpo_map_service
+
+tasks:
+  setup_and_configuration:
+    - task: "AI 모델 환경 구축"
+      estimate: "2시간"
+      details: "TensorFlow, CUDA 환경 설정"
+    
+    - task: "데이터베이스 스키마 생성"
+      estimate: "1시간"
+      details: "충돌 규칙, 이벤트, 모델 테이블"
+    
+    - task: "Kafka 연동 설정"
+      estimate: "1시간"
+      details: "실시간 데이터 스트림 처리"
+  
+  ai_model_development:
+    - task: "궤적 예측 모델"
+      estimate: "3시간"
+      details: "LSTM 기반 항공기 경로 예측"
+    
+    - task: "충돌 탐지 알고리즘"
+      estimate: "2.5시간"
+      details: "3D 공간 분석 및 ML 모델"
+    
+    - task: "위험도 평가 엔진"
+      estimate: "2시간"
+      details: "다중 기준 의사결정 시스템"
+  
+  api_development:
+    - task: "실시간 예측 API"
+      estimate: "1.5시간"
+      details: "충돌 위험 실시간 분석"
+    
+    - task: "규칙 관리 API"
+      estimate: "1시간"
+      details: "충돌 탐지 규칙 CRUD"
+  
+  testing_and_optimization:
+    - task: "모델 성능 테스트"
+      estimate: "1시간"
+      details: "정확도, 속도 최적화"
+
+file_structure:
+  - "src/main/python/conflict_engine/"
+  - "models/trajectory_predictor.py"
+  - "models/collision_detector.py"
+  - "models/risk_assessor.py"
+  - "api/conflict_controller.py"
+  - "services/prediction_service.py"
+  - "services/conflict_service.py"
+  - "utils/spatial_analysis.py"
+  - "config/model_config.py"
+  - "requirements.txt"
+  - "tests/test_models.py"

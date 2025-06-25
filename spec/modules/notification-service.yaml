@@ -1,0 +1,285 @@
+name: "notification-service"
+description: "김포공항 실시간 알림 및 경고 전송 시스템"
+version: "1.0.0"
+
+metadata:
+  project: "gimpo-rwsl-system"
+  owner: "dongyun92"
+  phase: 4
+  priority: "high"
+  estimated_hours: 4
+  depends_on:
+    - "conflict-detection-engine"
+    - "runway-status-manager"
+    - "aircraft-tracking"
+  enables:
+    - "atc-dashboard"
+    - "system-integration"
+
+airport_specifics:
+  location: "김포국제공항 (RKSS)"
+  coordinates: "37.5583°N, 126.7908°E"
+  
+  notification_channels:
+    primary: "ATC Control Tower"
+    secondary: "Ground Control"
+    emergency: "Emergency Response Team"
+    maintenance: "Airport Operations"
+  
+  korean_recipients:
+    controllers: ["관제사", "지상관제사", "접근관제사"]
+    operations: ["운항팀", "정비팀", "보안팀"]
+    airlines: ["대한항공", "아시아나항공", "제주항공", "티웨이항공"]
+
+architecture:
+  type: "microservice"
+  deployment: "kubernetes"
+  database: "postgresql"
+  cache: "redis"
+  messaging: "kafka"
+  notifications: "firebase"
+
+technical_requirements:
+  runtime: "node.js"
+  framework: "express"
+  version: "18.0"
+  
+  dependencies:
+    - express
+    - socket.io
+    - firebase-admin
+    - twilio
+    - nodemailer
+    - kafka-node
+    - redis
+    - pg
+    - moment-timezone
+
+database:
+  tables:
+    notification_templates:
+      - id: "SERIAL PRIMARY KEY"
+      - template_name: "VARCHAR(100) NOT NULL"
+      - message_ko: "TEXT"
+      - message_en: "TEXT"
+      - priority_level: "INTEGER"
+      - channels: "TEXT[]"
+      - created_at: "TIMESTAMP DEFAULT NOW()"
+    
+    notification_history:
+      - id: "SERIAL PRIMARY KEY"
+      - recipient_id: "VARCHAR(100)"
+      - message: "TEXT"
+      - channel: "VARCHAR(50)"
+      - status: "VARCHAR(20)"
+      - sent_at: "TIMESTAMP DEFAULT NOW()"
+      - delivered_at: "TIMESTAMP"
+      - read_at: "TIMESTAMP"
+    
+    user_preferences:
+      - id: "SERIAL PRIMARY KEY"
+      - user_id: "VARCHAR(100) NOT NULL"
+      - user_name: "VARCHAR(100)"
+      - role: "VARCHAR(50)"
+      - email: "VARCHAR(255)"
+      - phone: "VARCHAR(20)"
+      - language: "VARCHAR(10) DEFAULT 'ko'"
+      - notification_channels: "TEXT[]"
+      - created_at: "TIMESTAMP DEFAULT NOW()"
+
+apis:
+  rest_endpoints:
+    - path: "/api/notifications/send"
+      method: "POST"
+      description: "즉시 알림 전송"
+      request_body:
+        recipients: "array"
+        message: "string"
+        priority: "low|medium|high|critical"
+        channels: "array"
+      responses:
+        200:
+          content:
+            notification_id: "string"
+            sent_count: 5
+            status: "sent"
+    
+    - path: "/api/notifications/broadcast"
+      method: "POST"
+      description: "전체 브로드캐스트"
+      request_body:
+        message_ko: "string"
+        message_en: "string"
+        target_roles: "array"
+        priority: "string"
+    
+    - path: "/api/notifications/history"
+      method: "GET"
+      description: "알림 기록 조회"
+      parameters:
+        - name: "user_id"
+          type: "string"
+        - name: "start_date"
+          type: "string"
+        - name: "end_date"
+          type: "string"
+    
+    - path: "/api/notifications/templates"
+      method: "GET"
+      description: "알림 템플릿 목록"
+    
+    - path: "/api/notifications/templates"
+      method: "POST"
+      description: "새 알림 템플릿 생성"
+      request_body:
+        template_name: "string"
+        message_ko: "string"
+        message_en: "string"
+        priority_level: 1-5
+    
+    - path: "/api/users/preferences"
+      method: "PUT"
+      description: "사용자 알림 설정 변경"
+      request_body:
+        notification_channels: "array"
+        language: "ko|en"
+
+websocket_events:
+  client_events:
+    - "join_room": "사용자 그룹 참여"
+    - "notification_read": "알림 읽음 확인"
+    - "subscribe_alerts": "실시간 경고 구독"
+  
+  server_events:
+    - "real_time_alert": "실시간 경고 전송"
+    - "system_announcement": "시스템 공지"
+    - "conflict_warning": "충돌 경고"
+    - "weather_update": "기상 업데이트"
+
+business_logic:
+  priority_routing:
+    critical: 
+      channels: ["sms", "push", "email", "websocket"]
+      delay: "즉시"
+      escalation: "30초 후 재전송"
+    
+    high:
+      channels: ["push", "email", "websocket"]
+      delay: "5초"
+      escalation: "2분 후 SMS"
+    
+    medium:
+      channels: ["push", "websocket"]
+      delay: "10초"
+      escalation: "없음"
+    
+    low:
+      channels: ["websocket"]
+      delay: "30초"
+      escalation: "없음"
+  
+  korean_message_templates:
+    runway_closure: "활주로 {runway_id} 폐쇄 - {reason}"
+    conflict_warning: "충돌 위험 감지 - {aircraft_1} vs {aircraft_2}"
+    weather_alert: "기상 경고 - {condition} (시정: {visibility}m)"
+    emergency: "비상상황 발생 - {description}"
+    maintenance: "정비 작업 시작 - {location} ({duration}분 예상)"
+  
+  channel_configuration:
+    sms:
+      provider: "twilio"
+      country_code: "+82"
+      rate_limit: "10/minute"
+    
+    email:
+      provider: "smtp"
+      server: "smtp.gmail.com"
+      templates: "html"
+    
+    push:
+      provider: "firebase"
+      platforms: ["android", "ios", "web"]
+    
+    websocket:
+      namespace: "/notifications"
+      rooms: ["controllers", "operators", "maintenance"]
+
+monitoring:
+  metrics:
+    - notification_delivery_rate
+    - average_delivery_time
+    - channel_success_rate
+    - user_engagement_rate
+    - escalation_trigger_count
+  
+  alerts:
+    - high_delivery_failure_rate
+    - channel_outage_detected
+    - critical_notification_delay
+    - user_acknowledgment_timeout
+
+integration:
+  kafka_topics:
+    consumes:
+      - "conflicts.critical"
+      - "runway.status.emergency"
+      - "weather.alerts"
+      - "aircraft.emergency"
+      - "system.announcements"
+    
+    produces:
+      - "notifications.sent"
+      - "notifications.delivered"
+      - "notifications.acknowledged"
+      - "user.engagement.metrics"
+  
+  external_services:
+    - conflict_detection_engine
+    - runway_status_manager
+    - aircraft_tracking
+    - atc_dashboard
+    - gimpo_map_service
+
+tasks:
+  setup_and_configuration:
+    - task: "Node.js 프로젝트 초기화"
+      estimate: "30분"
+      details: "Express, Socket.io 환경 설정"
+    
+    - task: "데이터베이스 스키마 생성"
+      estimate: "45분"
+      details: "알림 템플릿, 기록, 사용자 설정"
+    
+    - task: "외부 서비스 연동"
+      estimate: "1시간"
+      details: "Firebase, Twilio, SMTP 설정"
+  
+  core_development:
+    - task: "알림 전송 엔진"
+      estimate: "1.5시간"
+      details: "다중 채널 알림 전송 로직"
+    
+    - task: "실시간 WebSocket 서비스"
+      estimate: "1시간"
+      details: "Socket.io 기반 실시간 통신"
+    
+    - task: "템플릿 관리 시스템"
+      estimate: "45분"
+      details: "다국어 메시지 템플릿 엔진"
+  
+  testing_and_optimization:
+    - task: "알림 전송 테스트"
+      estimate: "30분"
+      details: "채널별 전송 성공률 검증"
+
+file_structure:
+  - "src/controllers/notificationController.js"
+  - "src/services/notificationService.js"
+  - "src/services/channelService.js"
+  - "src/services/templateService.js"
+  - "src/middleware/auth.js"
+  - "src/config/channels.js"
+  - "src/utils/messageFormatter.js"
+  - "src/websocket/socketHandler.js"
+  - "package.json"
+  - "src/tests/notification.test.js"
