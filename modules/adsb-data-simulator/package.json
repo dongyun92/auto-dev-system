@@ -1,0 +1,16 @@
+{
+  "name": "adsb-data-simulator",
+  "version": "1.0.0",
+  "description": "FlightRadar24 실시간 데이터를 시뮬레이션하는 ADSB(Automatic Dependent Surveillance-Broadcast) 시스템",
+  "main": "check_dashboard.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "puppeteer": "^24.10.2"
+  }
+}

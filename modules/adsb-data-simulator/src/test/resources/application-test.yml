@@ -1,0 +1,43 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+    show-sql: false
+    
+  h2:
+    console:
+      enabled: false
+
+# ADSB Test Configuration
+adsb:
+  gimpo:
+    latitude: 37.5583
+    longitude: 126.7906
+    radius: 50
+  simulation:
+    interval: 5000
+    aircraft-count: 5
+  flightradar24:
+    api-url: https://test-api.example.com/
+    enabled: false
+
+# WebSocket Test Configuration  
+websocket:
+  allowed-origins: "*"
+  
+# Logging
+logging:
+  level:
+    com.adsb.simulator: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN

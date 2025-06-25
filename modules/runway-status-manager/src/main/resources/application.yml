@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: runway-status-manager
+  
+  datasource:
+    url: jdbc:h2:mem:runwaydb
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+    
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+    show-sql: true
+    
+  h2:
+    console:
+      enabled: true
+      
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Asia/Seoul
+
+server:
+  port: 8086
+
+# Runway Configuration
+runway:
+  gimpo:
+    runways:
+      - id: 14L/32R
+        length: 3600
+        width: 60
+        surface: asphalt
+      - id: 14R/32L
+        length: 3200
+        width: 45
+        surface: asphalt
+  status:
+    update-interval: 30000 # ms
+    weather-check: true
+
+# Logging
+logging:
+  level:
+    com.runway.status: DEBUG
+    org.springframework.web: INFO

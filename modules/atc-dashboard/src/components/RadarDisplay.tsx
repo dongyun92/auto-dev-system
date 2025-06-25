@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { TrackedAircraft, Runway } from '../types';
 import {
   calculateAcceleration,
@@ -11,6 +11,13 @@ import {
   getGridKey,
   getNearbyGridKeys
 } from '../utils/rwslHelpers';
+import {
+  memoize,
+  isInViewport,
+  distanceSquared,
+  optimizeCanvas,
+  FPSMonitor
+} from '../utils/performanceOptimization';
 
 interface RadarDisplayProps {
   aircraft: TrackedAircraft[];
@@ -41,7 +48,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   const [mapOffsetY, setMapOffsetY] = useState(21.8);
   const [mapRotation, setMapRotation] = useState(224.95); // 기존 SVG 맵 회전 각도
   const [mapScaleAdjust, setMapScaleAdjust] = useState(0.420);
-  const [showOSMMap, setShowOSMMap] = useState(true); // OSM으로 공항 레이아웃 확인
+  const [showOSMMap, setShowOSMMap] = useState(false); // OSM 기본값 false로 변경 (성능 개선)
   const [osmTiles, setOsmTiles] = useState<Map<string, HTMLImageElement>>(new Map());
   const tileLoadQueueRef = useRef<Set<string>>(new Set());
   const loadingTilesRef = useRef<Set<string>>(new Set());
@@ -53,7 +60,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   const [rwslLines, setRwslLines] = useState<RWSLLine[]>([]);
   const [selectedRWSLType, setSelectedRWSLType] = useState<'REL' | 'THL' | 'RIL'>('REL');
   
-  // 시각화 옵션들
+  // 시각화 옵션들 - 성능 개선을 위해 기본값 false
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [showTrafficZones, setShowTrafficZones] = useState(false);
   const [showRunwayLines, setShowRunwayLines] = useState(false);
@@ -61,6 +68,8 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   const [showLightDirections, setShowLightDirections] = useState(false);
   const [showDetectionSectors, setShowDetectionSectors] = useState(false);
   const [showAircraftPaths, setShowAircraftPaths] = useState(false);
+  const [showTakeoffPositions, setShowTakeoffPositions] = useState(false);
+  const [showLightPositions, setShowLightPositions] = useState(false);
   
   // 김포공항 활주로 데이터 (centerline 포함) - 정확한 위치
   const localRunways = [
@@ -70,6 +79,10 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       centerline: {
         start: { lat: 37.5705, lng: 126.7784 }, // 14L 임계값
         end: { lat: 37.5478, lng: 126.8070 }    // 32R 임계값 (수정됨)
+      },
+      takeoffPositions: {
+        '14L': { lat: 37.5705, lng: 126.7784 }, // 14L 이륙 위치 (임계값)
+        '32R': { lat: 37.5478, lng: 126.8070 }  // 32R 이륙 위치 (임계값)
       }
     },
     {
@@ -78,6 +91,10 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       centerline: {
         start: { lat: 37.5683, lng: 126.7755 }, // 14R 임계값 
         end: { lat: 37.5481, lng: 126.8009 }    // 32L 임계값 (수정됨)
+      },
+      takeoffPositions: {
+        '14R': { lat: 37.5683, lng: 126.7755 }, // 14R 이륙 위치 (임계값)
+        '32L': { lat: 37.5481, lng: 126.8009 }  // 32L 이륙 위치 (임계값)
       }
     }
   ];
@@ -91,6 +108,11 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   const [systemHealthStatus, setSystemHealthStatus] = useState<{gpsHealth: boolean, radarHealth: boolean}>({gpsHealth: true, radarHealth: true});
   const [aircraftSpatialIndex, setAircraftSpatialIndex] = useState<Map<string, TrackedAircraft[]>>(new Map());
   const [runwayOccupancyTime, setRunwayOccupancyTime] = useState<Map<string, Map<number, number>>>(new Map());
+  
+  // 성능 모니터링
+  const fpsMonitorRef = useRef(new FPSMonitor());
+  const [showFPS, setShowFPS] = useState(false);
+  const [currentFPS, setCurrentFPS] = useState(60);
 
   // Gimpo Airport center coordinates - 터미널과 활주로의 중심점
   // 활주로 14L/32R과 14R/32L의 중간 지점 계산
@@ -111,11 +133,11 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         { x: 126.77554851740578, y: 37.568305855855854 },
         { x: 126.77669917782396, y: 37.567393693693695 }
       ]},
-      { id: 'THL_32R', points: [
+      { id: 'THL_32L', points: [
         { x: 126.80087725228985, y: 37.548114414414414 },
         { x: 126.79959874071409, y: 37.549150450450455 }
       ]},
-      { id: 'THL_32L', points: [
+      { id: 'THL_32R', points: [
         { x: 126.80695728511675, y: 37.54785540540541 },
         { x: 126.80563615648848, y: 37.54893648648649 }
       ]}
@@ -240,9 +262,10 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     };
   };
 
-  // 항공기 이력 업데이트 (가속도 계산용)
+  // 항공기 이력 업데이트 (가속도 계산용) - 데이터 도착 시 즉시 갱신
   useEffect(() => {
     const now = Date.now();
+    
     setAircraftHistory(prev => {
       const newHistory = new Map(prev);
       
@@ -250,18 +273,26 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         const history = newHistory.get(ac.id) || [];
         history.push({ aircraft: ac, timestamp: now });
         
-        // 최근 5초 데이터만 유지
-        const fiveSecondsAgo = now - 5000;
-        const filtered = history.filter(h => h.timestamp > fiveSecondsAgo);
+        // 최근 3초 데이터만 유지
+        const threeSecondsAgo = now - 3000;
+        const filtered = history.filter(h => h.timestamp > threeSecondsAgo);
         
         newHistory.set(ac.id, filtered);
+      });
+      
+      // 사라진 항공기 데이터 정리
+      const activeIds = new Set(aircraft.map(ac => ac.id));
+      newHistory.forEach((_, id) => {
+        if (!activeIds.has(id)) {
+          newHistory.delete(id);
+        }
       });
       
       return newHistory;
     });
   }, [aircraft]);
   
-  // 공간 인덱싱 업데이트
+  // 공간 인덱싱 업데이트 - 데이터 도착 시 즉시 갱신
   useEffect(() => {
     const index = new Map<string, TrackedAircraft[]>();
     
@@ -277,50 +308,52 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     setAircraftSpatialIndex(index);
   }, [aircraft]);
   
+  // 김포공항 활주로 정의 (14L/32R, 14R/32L) - 상수로 정의하여 재생성 방지
+  const GIMPO_RUNWAYS = useMemo(() => [
+    {
+      id: '14L/32R',
+      threshold14L: { lat: 37.57070, lng: 126.77840 },
+      threshold32R: { lat: 37.54785, lng: 126.80698 },
+      centerline: { start: { lat: 37.57070, lng: 126.77840 }, end: { lat: 37.54785, lng: 126.80698 } }
+    },
+    {
+      id: '14R/32L',
+      threshold14R: { lat: 37.56840, lng: 126.77570 },
+      threshold32L: { lat: 37.54555, lng: 126.80428 },
+      centerline: { start: { lat: 37.56840, lng: 126.77570 }, end: { lat: 37.54555, lng: 126.80428 } }
+    }
+  ], []);
+
+  // 활주로-유도로 종속성 매핑 (김포공항 실제 구조 기반) - 상수로 정의
+  const RUNWAY_TAXIWAY_MAPPING = useMemo(() => ({
+    '14L/32R': {
+      connectedRELs: [
+        'REL_G1_A', 'REL_G2_D', 'REL_F2_D', 'REL_E1_A', 'REL_E2_D', 
+        'REL_D1_A', 'REL_D2_D', 'REL_D3_D', 'REL_C1_A', 'REL_C2_D', 
+        'REL_C3_D', 'REL_B2_D', 'REL_B1_D', 'REL_B1_A', 'REL_A_D'  // REL_B1_A 추가
+      ],
+      thresholdTHLs: ['THL_14L', 'THL_32R']
+    },
+    '14R/32L': {
+      connectedRELs: [
+        'REL_B1_D', 'REL_W1_D', 'REL_C1_D', 'REL_W2_D', 
+        'REL_D1_D', 'REL_E1_D', 'REL_G1_D'
+      ],
+      thresholdTHLs: ['THL_14R', 'THL_32L']
+    }
+  }), []);
+
   // RWSL 자동화 시스템 - 항공기 위치 기반 등화 제어 (고급 기능 포함)
   const updateRWSLAutomation = useCallback((aircraftList: TrackedAircraft[], currentRwslLines: RWSLLine[]) => {
     if (!aircraftList.length || !currentRwslLines.length) return currentRwslLines;
+    
+    // 성능 측정 (개발 모드에서만)
+    const startTime = performance.now();
 
     const updatedLines = currentRwslLines.map(line => ({ ...line }));
-    
-    // 김포공항 활주로 정의 (14L/32R, 14R/32L)
-    const runways = [
-      {
-        id: '14L/32R',
-        threshold14L: { lat: 37.57070, lng: 126.77840 },
-        threshold32R: { lat: 37.54785, lng: 126.80698 },
-        centerline: { start: { lat: 37.57070, lng: 126.77840 }, end: { lat: 37.54785, lng: 126.80698 } }
-      },
-      {
-        id: '14R/32L',
-        threshold14R: { lat: 37.56840, lng: 126.77570 },
-        threshold32L: { lat: 37.54555, lng: 126.80428 },
-        centerline: { start: { lat: 37.56840, lng: 126.77570 }, end: { lat: 37.54555, lng: 126.80428 } }
-      }
-    ];
 
-    // 활주로-유도로 종속성 매핑 (김포공항 실제 구조 기반)
-    const runwayTaxiwayMapping = {
-      '14L/32R': {
-        // 14L/32R 활주로와 직접 연결된 유도로의 REL들
-        connectedRELs: [
-          'REL_G1_A', 'REL_G2_D', 'REL_F2_D', 'REL_E1_A', 'REL_E2_D', 
-          'REL_D1_A', 'REL_D2_D', 'REL_D3_D', 'REL_C1_A', 'REL_C2_D', 
-          'REL_C3_D', 'REL_B2_D', 'REL_B1_A', 'REL_A_D'
-        ],
-        // 14L/32R 활주로 임계점의 THL들
-        thresholdTHLs: ['THL_14L', 'THL_32R']
-      },
-      '14R/32L': {
-        // 14R/32L 활주로와 직접 연결된 유도로의 REL들
-        connectedRELs: [
-          'REL_B1_D', 'REL_W1_D', 'REL_C1_D', 'REL_W2_D', 
-          'REL_D1_D', 'REL_E1_D', 'REL_G1_D'
-        ],
-        // 14R/32L 활주로 임계점의 THL들
-        thresholdTHLs: ['THL_14R', 'THL_32L']
-      }
-    };
+    const runways = GIMPO_RUNWAYS;
+    const runwayTaxiwayMapping = RUNWAY_TAXIWAY_MAPPING;
 
     // 거리 계산 함수 (헬퍼 함수 사용)
     const calculateDistance = calculateDistanceHelper;
@@ -424,10 +457,70 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       };
 
       aircraftList.forEach(aircraft => {
-        // 이륙 단계: 활주로에서 가속 중 (30kt 이상) 또는 초기 상승
-        const isTakeoffPhase = (aircraft.altitude <= 50 && aircraft.speed >= 30) ||
-                              (aircraft.altitude > 50 && aircraft.altitude <= 500 && 
-                               (aircraft.verticalSpeed || 0) > 100);
+        // 이륙 단계 판단
+        // 1. 이륙 준비: 이륙 위치에서 정렬, 속도 < 30kt
+        // 2. 이륙 진행: 이륙 위치를 통과하여 가속 중
+        // 3. 초기 상승: 고도 50-500ft, 상승률 > 100fpm
+        
+        let isTakeoffPhase = false;
+        let takeoffRunway = '';
+        
+        // 각 활주로의 이륙 위치 확인
+        for (const runway of localRunways) {
+          const takeoffPositions = runway.takeoffPositions || {};
+          
+          for (const [posName, pos] of Object.entries(takeoffPositions)) {
+            const distToTakeoffPos = calculateDistance(
+              aircraft.latitude, aircraft.longitude,
+              pos.lat, pos.lng
+            );
+            
+            // 이륙 방향 확인
+            const expectedHeading = posName.includes('14') ? 143 : 323;
+            let headingDiff = Math.abs(aircraft.heading - expectedHeading);
+            if (headingDiff > 180) headingDiff = 360 - headingDiff;
+            const isAligned = headingDiff <= 15; // 15도 이내 정렬
+            
+            if (isAligned) {
+              if (distToTakeoffPos < 50 && aircraft.speed < 30) {
+                // 이륙 준비 단계
+                isTakeoffPhase = true;
+                takeoffRunway = runway.id;
+                break;
+              } else if (aircraft.speed >= 30 && aircraft.altitude <= 100) {
+                // 이륙 위치를 통과한 후 가속 중
+                // 이륙 방향으로 이동 중인지 확인
+                const runwayVector = {
+                  lat: runway.centerline.end.lat - runway.centerline.start.lat,
+                  lng: runway.centerline.end.lng - runway.centerline.start.lng
+                };
+                
+                // 현재 위치가 이륙 위치보다 활주로 중심 쪽에 있는지 확인
+                const fromTakeoffPos = {
+                  lat: aircraft.latitude - pos.lat,
+                  lng: aircraft.longitude - pos.lng
+                };
+                
+                const dotProduct = fromTakeoffPos.lat * runwayVector.lat + 
+                                 fromTakeoffPos.lng * runwayVector.lng;
+                
+                if (dotProduct > 0) {
+                  // 이륙 위치를 통과함
+                  isTakeoffPhase = true;
+                  takeoffRunway = runway.id;
+                  break;
+                }
+              }
+            }
+          }
+          if (isTakeoffPhase) break;
+        }
+        
+        // 초기 상승 단계도 포함
+        if (!isTakeoffPhase && aircraft.altitude > 50 && aircraft.altitude <= 500 && 
+            (aircraft.verticalSpeed || 0) > 100) {
+          isTakeoffPhase = true;
+        }
         
         // 착륙 단계: 낮은 고도에서 하강 중이고 착륙 속도 범위
         const isLandingPhase = aircraft.altitude <= 1500 && 
@@ -572,7 +665,9 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
 
     const runwayTrafficByRunway = getActiveRunwayTrafficByRunway();
 
-    // 디버깅을 위한 종속성 출력 (개발 모드에서만)
+    // 디버깅을 위한 종속성 출력 (개발 모드에서만) - 성능 개선을 위해 비활성화
+    // CPU 사용률이 높을 때는 주석 처리하세요
+    /*
     if (process.env.NODE_ENV === 'development') {
       console.log('=== RWSL 자동화 디버깅 ===');
       console.log('전체 항공기 수:', aircraftList.length);
@@ -722,6 +817,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         });
       }
     }
+    */
 
     // THL (Takeoff Hold Lights) 제어 로직 - 활주로별 종속성 및 날씨 고려
     updatedLines.forEach(line => {
@@ -738,44 +834,53 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
           // 해당 활주로에 트래픽이 있는지 확인
           const hasActiveTraffic = runwayTrafficByRunway[relevantRunway].length > 0;
 
-          // THL 근처에 대기 중인 항공기 확인
+          // THL 근처에 대기 중인 항공기 확인 (직사각형 영역)
           const waitingAircraft = aircraftList.filter(aircraft => {
             if (aircraft.altitude > 50 || aircraft.speed > 30) return false; // 지상 대기 중만
             const position = getEstimatedPosition(aircraft);
-            const thlPosition = {
+            const thlMidpoint = {
               lat: (line.points[0].y + line.points[1].y) / 2,
               lng: (line.points[0].x + line.points[1].x) / 2
             };
-            const distance = calculateDistance(
-              position.lat, position.lng,
-              thlPosition.lat, thlPosition.lng
-            );
-            return distance <= 250; // 250m 이내 대기 중 (표준 대기 위치)
+            
+            // THL 임계값 근처인지 확인 (직사각형 영역)
+            // THL 위치에서 활주로 방향으로 100m x 활주로 폭 영역
+            const runwayWidth = 60; // 활주로 폭 60m
+            const waitingAreaLength = 100; // 임계값에서 100m
+            
+            // 활주로 방향 벡터 (예: 14L THL의 경우 143도 방향)
+            const runwayHeading = line.id.includes('14') ? 143 : 323;
+            const headingRad = runwayHeading * Math.PI / 180;
+            const runwayVector = {
+              lat: Math.cos(headingRad),
+              lng: Math.sin(headingRad)
+            };
+            
+            // 항공기에서 THL까지의 벡터
+            const toAircraft = {
+              lat: position.lat - thlMidpoint.lat,
+              lng: position.lng - thlMidpoint.lng
+            };
+            
+            // 활주로 방향 투영 (진행 방향)
+            const alongRunway = toAircraft.lat * runwayVector.lat + toAircraft.lng * runwayVector.lng;
+            // 활주로 수직 방향 투영
+            const acrossRunway = Math.abs(toAircraft.lat * (-runwayVector.lng) + toAircraft.lng * runwayVector.lat);
+            
+            // 직사각형 영역 내에 있는지 확인
+            const alongRunwayMeters = alongRunway * 111000; // degrees to meters
+            const acrossRunwayMeters = acrossRunway * 111000;
+            
+            // THL 위치에서 활주로 방향으로 -100m부터 0m 범위 (임계값 전 100m)
+            return alongRunwayMeters >= -waitingAreaLength && alongRunwayMeters <= 0 && 
+                   acrossRunwayMeters <= runwayWidth / 2;
           });
           
           const hasWaitingAircraft = waitingAircraft.length > 0;
           
-          // 측풍 검사 (안전 기준)
-          let isCrosswindSafe = true;
-          if (weatherData.windSpeed > 0) {
-            const runwayHeading = relevantRunway.includes('14') ? 143 : 323;
-            const crosswind = calculateCrosswindComponent(
-              weatherData.windSpeed,
-              weatherData.windDirection,
-              runwayHeading
-            );
-            
-            // 측풍이 25kt 초과시 THL 활성화 (안전 경고)
-            if (crosswind > 25) {
-              isCrosswindSafe = false;
-              console.warn(`경고: ${relevantRunway} 측풍 ${crosswind.toFixed(1)}kt`);
-            }
-          }
-
           // THL 활성화 조건:
-          // 1. 활주로에 트래픽이 있고 대기 중인 항공기가 있을 때
-          // 2. 위험한 측풍 조건일 때
-          line.active = (hasActiveTraffic && hasWaitingAircraft) || !isCrosswindSafe;
+          // 활주로에 트래픽이 있고 대기 중인 항공기가 있을 때
+          line.active = hasActiveTraffic && hasWaitingAircraft;
         } else {
           line.active = false; // 매핑되지 않은 THL은 비활성화
         }
@@ -796,6 +901,13 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         if (relevantRunway) {
           const runwayTraffic = runwayTrafficByRunway[relevantRunway];
           
+          // 디버깅: REL과 활주로 매핑 확인 (주석 처리)
+          /*
+          if (line.id === 'REL_B1_D' || line.id === 'REL_B2_D') {
+            console.log(`🔍 ${line.id} 매핑: 활주로=${relevantRunway}, 트래픽=${runwayTraffic.length}대`);
+          }
+          */
+          
           // 이륙 중인 항공기 확인 (이륙 의도 감지 + 가속도 고려)
           const takeoffAircraft = runwayTraffic.filter(aircraft => {
             // 지상에 있고
@@ -808,24 +920,39 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
             // GPS 손실 대응
             const position = getEstimatedPosition(aircraft);
             
-            // 활주로 시작점 근처 확인 (14L/14R 또는 32L/32R)
-            const dist14 = calculateDistance(
-              position.lat, position.lng,
-              runway.centerline.start.lat, runway.centerline.start.lng
-            );
-            const dist32 = calculateDistance(
-              position.lat, position.lng,
-              runway.centerline.end.lat, runway.centerline.end.lng
-            );
+            // 활주로 방향 확인 (14 또는 32)
+            const heading14 = 143;
+            const heading32 = 323;
+            let headingDiff14 = Math.abs(aircraft.heading - heading14);
+            if (headingDiff14 > 180) headingDiff14 = 360 - headingDiff14;
+            let headingDiff32 = Math.abs(aircraft.heading - heading32);
+            if (headingDiff32 > 180) headingDiff32 = 360 - headingDiff32;
             
-            // 이륙 위치 판단 (활주로 끝에서 500m 이내)
-            const isAtTakeoffPosition = dist14 <= 500 || dist32 <= 500;
+            // 어느 방향으로 이륙하는지 확인
+            const isTakeoff14Direction = headingDiff14 <= headingDiff32;
             
-            // 활주로 방향과 정렬 확인
-            const runwayHeading = relevantRunway.includes('14') ? 143 : 323;
-            let headingDiff = Math.abs(aircraft.heading - runwayHeading);
-            if (headingDiff > 180) headingDiff = 360 - headingDiff;
-            const isAligned = headingDiff <= 10; // 10도 이내
+            // 이륙 방향에 따른 이륙 위치 확인
+            let isAtTakeoffPosition = false;
+            if (isTakeoff14Direction) {
+              // 14 방향 이륙: 32R/32L 끝점에서 진행 방향 500m 이내
+              const dist32 = calculateDistance(
+                position.lat, position.lng,
+                runway.centerline.end.lat, runway.centerline.end.lng
+              );
+              isAtTakeoffPosition = dist32 <= 500;
+            } else {
+              // 32 방향 이륙: 14L/14R 끝점에서 진행 방향 500m 이내
+              const dist14 = calculateDistance(
+                position.lat, position.lng,
+                runway.centerline.start.lat, runway.centerline.start.lng
+              );
+              isAtTakeoffPosition = dist14 <= 500;
+            }
+            
+            // 이륙 방향과 정렬 확인 (이미 위에서 계산됨)
+            const isAligned = isTakeoff14Direction ? 
+              (headingDiff14 <= 10) : 
+              (headingDiff32 <= 10);
             
             // 가속도 확인
             const acceleration = getAircraftAcceleration(aircraft.id);
@@ -841,25 +968,70 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
           });
 
           if (takeoffAircraft.length > 0) {
-            // 이륙 항공기가 있으면 기본적으로 모든 REL 활성화
-            line.active = true;
+            // 기본값: 비활성
+            line.active = false;
             
-            // 각 이륙 항공기에 대해 REL과의 거리 확인
+            // 각 이륙 항공기에 대해 REL 활성화 판단
             takeoffAircraft.forEach(aircraft => {
               const relMidpoint = {
                 lat: (line.points[0].y + line.points[1].y) / 2,
                 lng: (line.points[0].x + line.points[1].x) / 2
               };
               
-              const distance = calculateDistance(
-                aircraft.latitude, aircraft.longitude,
-                relMidpoint.lat, relMidpoint.lng
-              );
+              // 항공기에서 REL로의 벡터
+              const toREL = {
+                lat: relMidpoint.lat - aircraft.latitude,
+                lng: relMidpoint.lng - aircraft.longitude
+              };
               
-              // 항공기가 교차점을 지나갔으면 (0.2 NM = 370m 이내) 해당 REL 소등
-              if (distance <= 370) {
-                line.active = false;
-              }
+              // 항공기 진행 방향 벡터 (heading 사용)
+              const aircraftHeadingRad = aircraft.heading * Math.PI / 180;
+              const aircraftDirection = {
+                lat: Math.cos(aircraftHeadingRad),
+                lng: Math.sin(aircraftHeadingRad)
+              };
+              
+              // 항공기가 REL로 향하고 있는지 확인 (내적 > 0)
+              const dotProduct = toREL.lat * aircraftDirection.lat + toREL.lng * aircraftDirection.lng;
+              
+              // 모든 REL은 기본적으로 활성화 (차단 신호)
+              line.active = true;
+              
+              // 하지만 고속 트래픽이 REL로 접근 중이면 안전 통과를 위해 미리 소등
+              takeoffAircraft.forEach(ac => {
+                // 항공기에서 REL로의 벡터
+                const toREL = {
+                  lat: relMidpoint.lat - ac.latitude,
+                  lng: relMidpoint.lng - ac.longitude
+                };
+                
+                // 항공기 진행 방향
+                const headingRad = ac.heading * Math.PI / 180;
+                const direction = {
+                  lat: Math.cos(headingRad),
+                  lng: Math.sin(headingRad)
+                };
+                
+                // 항공기가 REL로 향하고 있는지 (내적 > 0)
+                const dotProduct = toREL.lat * direction.lat + toREL.lng * direction.lng;
+                
+                if (dotProduct > 0) {
+                  // REL까지의 거리
+                  const distance = calculateDistance(
+                    ac.latitude, ac.longitude,
+                    relMidpoint.lat, relMidpoint.lng
+                  );
+                  
+                  // FAA 기준: 항공기가 REL에 도달하기 2-3초 전에 소등
+                  const aircraftSpeedMs = ac.speed * 0.514; // knots to m/s
+                  const timeToReachREL = aircraftSpeedMs > 0 ? distance / aircraftSpeedMs : Infinity;
+                  const anticipatedSeparationTime = 2.5; // 2-3초의 중간값
+                  
+                  if (timeToReachREL <= anticipatedSeparationTime) {
+                    line.active = false; // 안전 통과를 위해 미리 소등
+                  }
+                }
+              });
             });
             
             // Airborne (고도 > 200ft) 항공기가 있으면 모든 REL 소등
@@ -867,6 +1039,13 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
               line.active = false;
             }
           } else {
+            // 활주로에 고속 트래픽(30kt 이상)이 없을 때만 유도로 택시 감지
+            const hasHighSpeedTraffic = runwayTraffic.some(aircraft => 
+              aircraft.speed >= 30 && aircraft.altitude < 100
+            );
+            
+            if (!hasHighSpeedTraffic) {
+              // 활주로에 고속 트래픽이 없을 때만 유도로 택시 감지
             // 이륙 항공기가 없으면 접근하는 유도로 항공기 확인 (공간 인덱싱 활용)
             const relMidpoint = {
               lat: (line.points[0].y + line.points[1].y) / 2,
@@ -881,62 +1060,67 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
               nearbyAircraft.push(...gridAircraft);
             });
             
-            const hasApproachingAircraft = nearbyAircraft.some(aircraft => {
-              if (aircraft.altitude > 50) return false; // 지상 항공기만
-              if (aircraft.speed < 10 || aircraft.speed > 50) return false; // 유도로 택시 속도
-
-              // REL까지의 거리 (이미 위에서 계산된 relMidpoint 사용)
-              const distance = calculateDistance(
+            // REL 방향 벡터 계산
+            const relVector = {
+              x: line.points[1].x - line.points[0].x,
+              y: line.points[1].y - line.points[0].y
+            };
+            
+            // D = Departure (TO RWY), A = Arrival (FROM RWY)
+            const isDepartureREL = line.id.endsWith('D');
+            
+            // REL 방향 계산 (시각화와 동일하게)
+            const length = Math.sqrt(relVector.x * relVector.x + relVector.y * relVector.y);
+            const relNormalized = {
+              x: relVector.x / length,
+              y: relVector.y / length
+            };
+            
+            // 등화 방향 (시각화의 toRunwayVector와 동일)
+            const perpVector = isDepartureREL ? 
+              { x: -relNormalized.y, y: relNormalized.x } :  // 왼쪽 90도
+              { x: relNormalized.y, y: -relNormalized.x };   // 오른쪽 90도
+            
+            const toRunwayVector = isDepartureREL ? 
+              { x: perpVector.y, y: -perpVector.x } :   // TO RWY(D)
+              { x: -perpVector.y, y: perpVector.x };     // FROM RWY(A)
+            
+            // REL 감지 방향 (도 단위)
+            const detectionDirection = Math.atan2(toRunwayVector.y, toRunwayVector.x) * 180 / Math.PI;
+            
+            // REL 주변 항공기 확인 (부채꼴 감지 영역)
+            let hasObstacle = false;
+            
+            nearbyAircraft.forEach(aircraft => {
+              if (aircraft.altitude > 50) return; // 지상 항공기만
+              if (aircraft.speed < 10 || aircraft.speed > 50) return; // 택시 속도만
+              
+              const distance = calculateDistanceHelper(
                 aircraft.latitude, aircraft.longitude,
                 relMidpoint.lat, relMidpoint.lng
               );
-
-              // 감지 영역: REL 근처 50-200m
-              if (distance < 50 || distance > 200) return false;
-
-              // REL의 방향 벡터
-              const relVector = {
-                x: line.points[1].x - line.points[0].x,
-                y: line.points[1].y - line.points[0].y
-              };
               
-              // D = Departure (TO RWY), A = Arrival (FROM RWY)
-              const isDepartureREL = line.id.endsWith('D');
-              const toRunwayVector = isDepartureREL ? 
-                { x: -relVector.y, y: relVector.x } :  // 왼쪽 90도 (활주로 방향)
-                { x: relVector.y, y: -relVector.x };   // 오른쪽 90도 (활주로 방향)
-              
-              // 정규화
-              const length = Math.sqrt(toRunwayVector.x * toRunwayVector.x + toRunwayVector.y * toRunwayVector.y);
-              toRunwayVector.x /= length;
-              toRunwayVector.y /= length;
-
-              // 항공기에서 REL까지의 벡터
-              const toRELVector = {
-                x: relMidpoint.lng - aircraft.longitude,
-                y: relMidpoint.lat - aircraft.latitude
-              };
-
-              // 항공기가 REL 뒤에 있는지 확인 (내적 사용)
-              const dotProduct = toRELVector.x * toRunwayVector.x + toRELVector.y * toRunwayVector.y;
-              if (dotProduct > 0) return false; // REL 앞쪽(활주로 쪽)에 있음
-
-            // 항공기 진행 방향이 활주로 방향과 일치하는지 확인
-            const headingRad = aircraft.heading * Math.PI / 180;
-            const aircraftVector = {
-              x: Math.sin(headingRad),
-              y: Math.cos(headingRad)
-            };
-
-            // 항공기 진행 방향과 활주로 방향의 내적 (일치도)
-            const alignment = aircraftVector.x * toRunwayVector.x + aircraftVector.y * toRunwayVector.y;
+              // REL 감지 영역: 50-200m 반경
+              if (distance >= 50 && distance <= 200) {
+                // 항공기가 감지 영역(부채꼴) 내에 있는지 확인
+                const dLng = aircraft.longitude - relMidpoint.lng;
+                const dLat = aircraft.latitude - relMidpoint.lat;
+                const bearingFromREL = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360;
+                
+                // 감지 방향과의 각도 차이
+                let angleDiff = Math.abs(bearingFromREL - detectionDirection);
+                if (angleDiff > 180) angleDiff = 360 - angleDiff;
+                
+                // 부채꼴 영역 내에 있으면 활성화 (±45도 = 90도 섹터)
+                if (angleDiff <= 45) {
+                  hasObstacle = true;
+                }
+              }
+            });
             
-            // 0.7 이상이면 같은 방향 (약 45도 이내)
-            return alignment > 0.7;
-          });
-
-            // REL은 접근 항공기가 있을 때 활성화
-            line.active = hasApproachingAircraft;
+            // 장애물이 있으면 REL 활성화 (정지 신호)
+            line.active = hasObstacle;
+            }
           }
         } else {
           line.active = false; // 매핑되지 않은 REL은 비활성화
@@ -996,7 +1180,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
           
           // 긴급 상황: 60초 이상 활주로 점유
           if (newTime > 60) {
-            console.warn(`경고: ${aircraft.callsign}이 ${runwayId} 활주로를 ${newTime}초간 점유 중`);
+            // console.warn(`경고: ${aircraft.callsign}이 ${runwayId} 활주로를 ${newTime}초간 점유 중`);
           }
         });
         
@@ -1012,6 +1196,10 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       
       return newOccupancy;
     });
+    
+    // 성능 측정 결과 (개발 모드에서만)
+    const endTime = performance.now();
+    // 성능 측정 로그 비활성화 (성능 개선)
 
     return updatedLines;
   }, [aircraftHistory, systemHealthStatus, weatherData, aircraftSpatialIndex, localRunways]);
@@ -1021,10 +1209,18 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     if (rwslLines.length === 0) {
       const initialRwslLines = generateGimpoRWSL();
       setRwslLines(initialRwslLines);
+      
+      // 디버깅: 생성된 REL 확인 (로그 비활성화)
+      // const b1d = initialRwslLines.find(l => l.id === 'REL_B1_D');
+      // const b2d = initialRwslLines.find(l => l.id === 'REL_B2_D');
+      // console.log('🔍 REL_B1_D 존재:', !!b1d);
+      // console.log('🔍 REL_B2_D 존재:', !!b2d);
+      // console.log('🔍 전체 REL 목록:', initialRwslLines.filter(l => l.type === 'REL').map(l => l.id));
     }
   }, []);
 
-  // RWSL 자동화를 위한 상태 업데이트
+
+  // RWSL 자동화를 위한 상태 업데이트 - 데이터 도착 시 즉시 갱신
   useEffect(() => {
     if (aircraft.length > 0 && rwslLines.length > 0) {
       const updatedRwslLines = updateRWSLAutomation(aircraft, rwslLines);
@@ -1239,13 +1435,30 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    
+    // 렌더링 성능 측정
+    const renderStartTime = performance.now();
 
+    // 캔버스 최적화 설정
+    optimizeCanvas(ctx);
+    
+    // FPS 모니터링이 켜져있을 때만 업데이트
+    if (showFPS && fpsMonitorRef.current) {
+      fpsMonitorRef.current.update();
+    }
+    
     // Clear canvas
     ctx.clearRect(0, 0, CANVAS_SIZE.width, CANVAS_SIZE.height);
     
     // Set canvas background
     ctx.fillStyle = '#0a0f1b';
     ctx.fillRect(0, 0, CANVAS_SIZE.width, CANVAS_SIZE.height);
+    
+    // FPS 모니터링
+    if (showFPS) {
+      const fps = fpsMonitorRef.current.update();
+      setCurrentFPS(fps);
+    }
     
     // Draw OSM tiles if enabled
     if (showOSMMap) {
@@ -1377,16 +1590,18 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     displayAircraft.forEach((ac) => {
       const pos = latLngToCanvas(ac.latitude, ac.longitude);
       
-      // Skip if aircraft is outside visible area
-      if (pos.x < -20 || pos.x > CANVAS_SIZE.width + 20 || 
-          pos.y < -20 || pos.y > CANVAS_SIZE.height + 20) {
+      // 뷰포트 컬링 (성능 최적화)
+      if (!isInViewport(pos.x, pos.y, CANVAS_SIZE.width, CANVAS_SIZE.height, 50)) {
         return;
       }
 
       // Draw aircraft symbol
       ctx.save();
       ctx.translate(pos.x, pos.y);
-      ctx.rotate((ac.heading * Math.PI) / 180);
+      // 푸시백 감지: 음수 속도는 푸시백
+      const isPushback = ac.speed < -2;
+      const displayHeading = isPushback ? (ac.heading + 180) % 360 : ac.heading;
+      ctx.rotate((displayHeading * Math.PI) / 180);
       
       // Aircraft color based on status - 더 밝고 선명한 색상 사용
       let color = '#3b82f6'; // 더 밝은 파란색
@@ -1716,6 +1931,34 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       ctx.save();
       
       rwslLines.filter(line => line.type === 'REL').forEach(line => {
+        // REL이 어느 활주로에 연결되어 있는지 확인
+        let relevantRunway = '';
+        Object.keys(RUNWAY_TAXIWAY_MAPPING).forEach(runwayId => {
+          if (RUNWAY_TAXIWAY_MAPPING[runwayId as keyof typeof RUNWAY_TAXIWAY_MAPPING].connectedRELs.includes(line.id)) {
+            relevantRunway = runwayId;
+          }
+        });
+        
+        // 현재 활주로에 이륙 항공기가 있는지 간단히 확인
+        const hasTakeoffAircraft = displayAircraft.some(ac => {
+          if (ac.altitude > 100) return false;
+          if (ac.speed < 30) return false;
+          
+          // 해당 활주로 근처에 있는지 확인
+          const runway = localRunways.find(r => r.id === relevantRunway);
+          if (!runway) return false;
+          
+          const dist14 = calculateDistanceHelper(
+            ac.latitude, ac.longitude,
+            runway.centerline.start.lat, runway.centerline.start.lng
+          );
+          const dist32 = calculateDistanceHelper(
+            ac.latitude, ac.longitude,
+            runway.centerline.end.lat, runway.centerline.end.lng
+          );
+          
+          return Math.min(dist14, dist32) < 1000; // 1km 이내
+        });
         const start = { lat: line.points[0].y, lng: line.points[0].x };
         const end = { lat: line.points[1].y, lng: line.points[1].x };
         const midpoint = {
@@ -1736,51 +1979,131 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         // REL에서 활주로로 향하는 방향 (등화 방향 표시와 동일하게)
         // D = Departure (TO RWY), A = Arrival (FROM RWY)
         const isDepartureREL = line.id.endsWith('D');
+        // 등화 방향과 동일하게 설정
         const perpVector = isDepartureREL ? 
           { x: -relVector.y, y: relVector.x } :  // 왼쪽 90도 (활주로 방향)
           { x: relVector.y, y: -relVector.x };   // 오른쪽 90도 (활주로 방향)
         
-        // 감지 방향: FROM RWY(A)는 perpVector를 반시계 90도, TO RWY(D)는 시계 90도 (180도 회전)
+        // 감지 방향: 등화 화살표 방향과 동일
         const toRunwayVector = isDepartureREL ? 
-          { x: perpVector.y, y: -perpVector.x } :   // TO RWY(D): perpVector를 시계방향 90도 + 180도
-          { x: -perpVector.y, y: perpVector.x };     // FROM RWY(A): perpVector를 반시계방향 90도 + 180도
+          { x: perpVector.y, y: -perpVector.x } :   // TO RWY(D): perpVector를 시계방향 90도
+          { x: -perpVector.y, y: perpVector.x };     // FROM RWY(A): perpVector를 반시계방향 90도
         
         // 정규화
         const length = Math.sqrt(toRunwayVector.x * toRunwayVector.x + toRunwayVector.y * toRunwayVector.y);
         toRunwayVector.x /= length;
         toRunwayVector.y /= length;
         
-        // 감지 섹터 그리기 (50-200m, 90도 섹터)
-        ctx.strokeStyle = line.active ? 'rgba(255, 0, 0, 0.6)' : 'rgba(100, 100, 100, 0.4)';
-        ctx.fillStyle = line.active ? 'rgba(255, 0, 0, 0.1)' : 'rgba(100, 100, 100, 0.05)';
-        ctx.lineWidth = 2;
+        // 이륙 항공기가 있으면 거리 제한 없이 방향만 표시
+        if (hasTakeoffAircraft) {
+          // 이륙 모드: 방향성만 표시 (거리 제한 없음)
+          ctx.strokeStyle = line.active ? 'rgba(255, 0, 0, 0.8)' : 'rgba(255, 100, 100, 0.4)';
+          ctx.lineWidth = 3;
+          
+          // 방향 표시 (큰 화살표)
+          const arrowLength = 100 / 111000 * 4000 * scale;
+          const arrowEnd = {
+            x: centerPoint.x + toRunwayVector.x * arrowLength,
+            y: centerPoint.y + toRunwayVector.y * arrowLength
+          };
+          
+          ctx.beginPath();
+          ctx.moveTo(centerPoint.x, centerPoint.y);
+          ctx.lineTo(arrowEnd.x, arrowEnd.y);
+          ctx.stroke();
+          
+          // 화살표 머리
+          const headLength = 20;
+          const headAngle = Math.PI / 6;
+          const arrowAngle = Math.atan2(toRunwayVector.y, toRunwayVector.x);
+          ctx.beginPath();
+          ctx.moveTo(arrowEnd.x, arrowEnd.y);
+          ctx.lineTo(
+            arrowEnd.x - Math.cos(arrowAngle - headAngle) * headLength,
+            arrowEnd.y - Math.sin(arrowAngle - headAngle) * headLength
+          );
+          ctx.moveTo(arrowEnd.x, arrowEnd.y);
+          ctx.lineTo(
+            arrowEnd.x - Math.cos(arrowAngle + headAngle) * headLength,
+            arrowEnd.y - Math.sin(arrowAngle + headAngle) * headLength
+          );
+          ctx.stroke();
+          
+          // "이륙" 라벨
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+          ctx.font = 'bold 12px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('이륙', centerPoint.x, centerPoint.y - 30);
+        } else {
+          // 유도로 택시 모드: 50-200m 섹터
+          ctx.strokeStyle = line.active ? 'rgba(255, 255, 0, 0.6)' : 'rgba(100, 100, 100, 0.4)';
+          ctx.fillStyle = line.active ? 'rgba(255, 255, 0, 0.1)' : 'rgba(100, 100, 100, 0.05)';
+          ctx.lineWidth = 2;
+          
+          const innerRadius = 50 / 111000 * 4000 * scale;
+          const outerRadius = 200 / 111000 * 4000 * scale;
+          
+          // 섹터 각도 계산
+          const centerAngle = Math.atan2(toRunwayVector.y, toRunwayVector.x);
+          const sectorAngle = Math.PI / 4; // 45도 양쪽 = 90도 섹터
+          
+          ctx.beginPath();
+          ctx.arc(centerPoint.x, centerPoint.y, innerRadius, centerAngle - sectorAngle, centerAngle + sectorAngle);
+          ctx.arc(centerPoint.x, centerPoint.y, outerRadius, centerAngle + sectorAngle, centerAngle - sectorAngle, true);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          
+          // "택시" 라벨
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+          ctx.font = '10px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('택시', centerPoint.x, centerPoint.y - 20);
+        }
         
-        const innerRadius = 50 / 111000 * 4000 * scale;
-        const outerRadius = 200 / 111000 * 4000 * scale;
+      });
+      
+      ctx.restore();
+    }
+    
+    // 등화 위치 시각화 (디버깅용)
+    if (showLightPositions) {
+      ctx.save();
+      ctx.font = '10px monospace';
+      ctx.fillStyle = '#00ff00';
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 1;
+      
+      rwslLines.forEach(line => {
+        // 각 등화의 시작점과 끝점에 원 그리기
+        const start = latLngToCanvas(line.points[0].y, line.points[0].x);
+        const end = latLngToCanvas(line.points[1].y, line.points[1].x);
         
-        // 섹터 각도 계산
-        const centerAngle = Math.atan2(-toRunwayVector.y, -toRunwayVector.x);
-        const sectorAngle = Math.PI / 4; // 45도 양쪽 = 90도 섹터
-        
+        // 시작점
         ctx.beginPath();
-        ctx.arc(centerPoint.x, centerPoint.y, innerRadius, centerAngle - sectorAngle, centerAngle + sectorAngle);
-        ctx.arc(centerPoint.x, centerPoint.y, outerRadius, centerAngle + sectorAngle, centerAngle - sectorAngle, true);
-        ctx.closePath();
+        ctx.arc(start.x, start.y, 3, 0, Math.PI * 2);
         ctx.fill();
-        ctx.stroke();
+        ctx.fillText(`${line.id} S`, start.x + 5, start.y - 5);
         
-        // 감지 방향 화살표
-        const arrowLength = (innerRadius + outerRadius) / 2;
-        const arrowEnd = {
-          x: centerPoint.x - toRunwayVector.x * arrowLength,
-          y: centerPoint.y - toRunwayVector.y * arrowLength
-        };
-        
-        ctx.strokeStyle = line.active ? '#ff0000' : '#666666';
+        // 끝점
         ctx.beginPath();
-        ctx.moveTo(centerPoint.x, centerPoint.y);
-        ctx.lineTo(arrowEnd.x, arrowEnd.y);
-        ctx.stroke();
+        ctx.arc(end.x, end.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillText(`${line.id} E`, end.x + 5, end.y - 5);
+        
+        // 중점에 ID 표시
+        const midX = (start.x + end.x) / 2;
+        const midY = (start.y + end.y) / 2;
+        ctx.font = 'bold 12px monospace';
+        ctx.fillStyle = line.active ? '#ffff00' : '#00ff00';
+        ctx.fillText(line.id, midX - 20, midY - 10);
+        
+        // 위도/경도 표시
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#00ff00';
+        const midLat = (line.points[0].y + line.points[1].y) / 2;
+        const midLng = (line.points[0].x + line.points[1].x) / 2;
+        ctx.fillText(`${midLat.toFixed(5)}, ${midLng.toFixed(5)}`, midX - 30, midY + 15);
       });
       
       ctx.restore();
@@ -1798,15 +2121,50 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         
         const centerPoint = latLngToCanvas(midpoint.lat, midpoint.lng);
         
-        // THL 감지 원 (250m 반경)
+        // THL 감지 영역 (직사각형 100m x 60m)
         ctx.strokeStyle = line.active ? 'rgba(255, 51, 51, 0.6)' : 'rgba(100, 100, 100, 0.4)';
         ctx.fillStyle = line.active ? 'rgba(255, 51, 51, 0.1)' : 'rgba(100, 100, 100, 0.05)';
         ctx.lineWidth = 2;
         
-        const radius = 250 / 111000 * 4000 * scale;
+        const waitingAreaLength = 100 / 111000 * 4000 * scale; // 100m
+        const waitingAreaWidth = 60 / 111000 * 4000 * scale;   // 60m
+        
+        // 활주로 방향 계산
+        const runwayHeading = line.id.includes('14') ? 143 : 323;
+        const headingRad = runwayHeading * Math.PI / 180;
+        const runwayVector = {
+          x: Math.sin(headingRad),
+          y: -Math.cos(headingRad)
+        };
+        const perpVector = {
+          x: -runwayVector.y,
+          y: runwayVector.x
+        };
+        
+        // 직사각형 모서리 (THL 위치에서 활주로 반대 방향 100m)
+        const corners = [
+          { // 왼쪽 뒤
+            x: centerPoint.x - runwayVector.x * waitingAreaLength - perpVector.x * waitingAreaWidth / 2,
+            y: centerPoint.y - runwayVector.y * waitingAreaLength - perpVector.y * waitingAreaWidth / 2
+          },
+          { // 오른쪽 뒤
+            x: centerPoint.x - runwayVector.x * waitingAreaLength + perpVector.x * waitingAreaWidth / 2,
+            y: centerPoint.y - runwayVector.y * waitingAreaLength + perpVector.y * waitingAreaWidth / 2
+          },
+          { // 오른쪽 앞
+            x: centerPoint.x + perpVector.x * waitingAreaWidth / 2,
+            y: centerPoint.y + perpVector.y * waitingAreaWidth / 2
+          },
+          { // 왼쪽 앞
+            x: centerPoint.x - perpVector.x * waitingAreaWidth / 2,
+            y: centerPoint.y - perpVector.y * waitingAreaWidth / 2
+          }
+        ];
         
         ctx.beginPath();
-        ctx.arc(centerPoint.x, centerPoint.y, radius, 0, 2 * Math.PI);
+        ctx.moveTo(corners[0].x, corners[0].y);
+        corners.forEach(corner => ctx.lineTo(corner.x, corner.y));
+        ctx.closePath();
         ctx.fill();
         ctx.stroke();
         
@@ -1814,7 +2172,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         ctx.fillStyle = line.active ? '#ff3333' : '#666666';
         ctx.font = '10px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('250m', centerPoint.x, centerPoint.y);
+        ctx.fillText('100m x 60m', centerPoint.x, centerPoint.y);
         ctx.textAlign = 'left';
       });
       
@@ -1879,55 +2237,140 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       ctx.setLineDash([]);
       ctx.restore();
     }
-
-    // 디버그 정보 시각화
-    if (showDebugInfo) {
+    
+    // 이륙 위치 시각화
+    if (showTakeoffPositions) {
       ctx.save();
       
-      // 항공기별 상태 정보 표시
-      displayAircraft.forEach((ac) => {
-        const pos = latLngToCanvas(ac.latitude, ac.longitude);
-        
-        if (pos.x < -50 || pos.x > CANVAS_SIZE.width + 50 || 
-            pos.y < -50 || pos.y > CANVAS_SIZE.height + 50) {
-          return;
-        }
-
-        // 디버그 정보 박스
-        const isOnGround = ac.altitude <= 50 && Math.abs(ac.verticalSpeed || 0) < 100;
-        const phase = isOnGround ? 
-          (ac.speed > 30 ? 'TAXI/TO' : 'PARKED') :
-          (ac.altitude <= 1500 && (ac.verticalSpeed || 0) < -100 ? 'LANDING' : 
-           (ac.altitude <= 500 && (ac.verticalSpeed || 0) > 100 ? 'TAKEOFF' : 'AIRBORNE'));
-        
-        const debugText = [
-          `ALT: ${ac.altitude}ft VS: ${ac.verticalSpeed || 0}fpm`,
-          `SPD: ${ac.speed}kt HDG: ${ac.heading}°`,
-          `Phase: ${phase}`
-        ];
-        
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillRect(pos.x - 50, pos.y + 25, 100, 45);
-        ctx.strokeStyle = '#000000';
-        ctx.strokeRect(pos.x - 50, pos.y + 25, 100, 45);
-        
-        ctx.fillStyle = '#000000';
-        ctx.font = '8px monospace';
-        debugText.forEach((text, index) => {
-          ctx.fillText(text, pos.x - 48, pos.y + 38 + index * 12);
+      localRunways.forEach(runway => {
+        Object.entries(runway.takeoffPositions).forEach(([name, position]) => {
+          const pos = latLngToCanvas(position.lat, position.lng);
+          
+          // 이륙 위치 마커 (큰 원)
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, 15, 0, 2 * Math.PI);
+          ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+          ctx.fill();
+          ctx.strokeStyle = '#00ff00';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // 중심점
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, 3, 0, 2 * Math.PI);
+          ctx.fillStyle = '#00ff00';
+          ctx.fill();
+          
+          // 방향 화살표
+          const headingDeg = name.includes('14') ? 143 : 323;
+          const headingRad = headingDeg * Math.PI / 180;
+          const arrowLength = 30;
+          // 캔버스 좌표계에서 북쪽(0도)이 -Y 방향이므로 조정
+          const arrowEnd = {
+            x: pos.x + Math.sin(headingRad) * arrowLength,
+            y: pos.y - Math.cos(headingRad) * arrowLength
+          };
+          
+          ctx.strokeStyle = '#00ff00';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(pos.x, pos.y);
+          ctx.lineTo(arrowEnd.x, arrowEnd.y);
+          ctx.stroke();
+          
+          // 화살표 머리
+          const arrowHeadLength = 10;
+          const arrowHeadAngle = Math.PI / 6;
+          
+          ctx.beginPath();
+          ctx.moveTo(arrowEnd.x, arrowEnd.y);
+          ctx.lineTo(
+            arrowEnd.x - Math.sin(headingRad - arrowHeadAngle) * arrowHeadLength,
+            arrowEnd.y + Math.cos(headingRad - arrowHeadAngle) * arrowHeadLength
+          );
+          ctx.moveTo(arrowEnd.x, arrowEnd.y);
+          ctx.lineTo(
+            arrowEnd.x - Math.sin(headingRad + arrowHeadAngle) * arrowHeadLength,
+            arrowEnd.y + Math.cos(headingRad + arrowHeadAngle) * arrowHeadLength
+          );
+          ctx.stroke();
+          
+          // 라벨
+          ctx.fillStyle = '#00ff00';
+          ctx.font = 'bold 12px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${name} T/O`, pos.x, pos.y - 20);
+          
+          // 이륙 대기 구역 (직사각형 100m x 60m)
+          const waitingAreaLength = 100 / 111000 * 4000 * scale; // 100m
+          const waitingAreaWidth = 60 / 111000 * 4000 * scale;   // 60m (활주로 폭)
+          
+          // 활주로 방향 벡터 - 화살표와 동일한 방향 사용
+          const runwayVector = {
+            x: (arrowEnd.x - pos.x) / arrowLength,
+            y: (arrowEnd.y - pos.y) / arrowLength
+          };
+          const perpVector = {
+            x: -runwayVector.y,
+            y: runwayVector.x
+          };
+          
+          // 디버깅: 각도 출력
+          // 캔버스 좌표계에서 각도 계산 (북쪽이 -Y 방향)
+          const canvasAngle = Math.atan2(runwayVector.x, -runwayVector.y) * 180 / Math.PI;
+          const normalizedAngle = (canvasAngle + 360) % 360;
+          ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+          ctx.font = '10px monospace';
+          ctx.fillText(`각도: ${normalizedAngle.toFixed(1)}° (예상: ${headingDeg}°)`, pos.x, pos.y - 35);
+          
+          // 직사각형 모서리 계산 (이륙 위치에서 진행 방향으로 100m)
+          const corners = [
+            { // 왼쪽 시작
+              x: pos.x - perpVector.x * waitingAreaWidth / 2,
+              y: pos.y - perpVector.y * waitingAreaWidth / 2
+            },
+            { // 오른쪽 시작
+              x: pos.x + perpVector.x * waitingAreaWidth / 2,
+              y: pos.y + perpVector.y * waitingAreaWidth / 2
+            },
+            { // 오른쪽 끝
+              x: pos.x + runwayVector.x * waitingAreaLength + perpVector.x * waitingAreaWidth / 2,
+              y: pos.y + runwayVector.y * waitingAreaLength + perpVector.y * waitingAreaWidth / 2
+            },
+            { // 왼쪽 끝
+              x: pos.x + runwayVector.x * waitingAreaLength - perpVector.x * waitingAreaWidth / 2,
+              y: pos.y + runwayVector.y * waitingAreaLength - perpVector.y * waitingAreaWidth / 2
+            }
+          ];
+          
+          ctx.beginPath();
+          ctx.moveTo(corners[0].x, corners[0].y);
+          corners.forEach(corner => ctx.lineTo(corner.x, corner.y));
+          ctx.closePath();
+          ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([5, 5]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // 좌표 표시
+          ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+          ctx.font = '8px monospace';
+          ctx.fillText(`${position.lat.toFixed(4)}°N`, pos.x, pos.y + 40);
+          ctx.fillText(`${position.lng.toFixed(4)}°E`, pos.x, pos.y + 50);
         });
       });
       
       ctx.restore();
     }
 
-    // Draw aircraft data blocks LAST (on top of everything)
+    
+    // Draw aircraft data blocks (on top of everything except debug)
     displayAircraft.forEach((ac) => {
       const pos = latLngToCanvas(ac.latitude, ac.longitude);
       
-      // Skip if aircraft is outside visible area
-      if (pos.x < -20 || pos.x > CANVAS_SIZE.width + 20 || 
-          pos.y < -20 || pos.y > CANVAS_SIZE.height + 20) {
+      // 뷰포트 컬링 (성능 최적화)
+      if (!isInViewport(pos.x, pos.y, CANVAS_SIZE.width, CANVAS_SIZE.height, 50)) {
         return;
       }
 
@@ -1963,8 +2406,65 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         ctx.fillText(ac.squawk, pos.x + 55, pos.y + 8);
       }
     });
+
+    // 디버그 정보 시각화 (LAST - 최상위)
+    if (showDebugInfo) {
+      ctx.save();
+      
+      // 항공기별 상태 정보 표시
+      displayAircraft.forEach((ac) => {
+        const pos = latLngToCanvas(ac.latitude, ac.longitude);
+        
+        if (pos.x < -50 || pos.x > CANVAS_SIZE.width + 50 || 
+            pos.y < -50 || pos.y > CANVAS_SIZE.height + 50) {
+          return;
+        }
+
+        // 디버그 정보 박스
+        const isOnGround = ac.altitude <= 50 && Math.abs(ac.verticalSpeed || 0) < 100;
+        
+        // 이륙 위치 확인
+        let isAtTakeoffPosition = false;
+        localRunways.forEach(runway => {
+          Object.entries(runway.takeoffPositions).forEach(([name, position]) => {
+            const dist = calculateDistanceHelper(ac.latitude, ac.longitude, position.lat, position.lng);
+            if (dist <= 100) isAtTakeoffPosition = true;
+          });
+        });
+        
+        const phase = isOnGround ? 
+          (ac.speed > 50 ? 'TAKEOFF' :
+           ac.speed > 5 ? (isAtTakeoffPosition ? 'T/O READY' : 'TAXI') : 
+           'PARKED') :
+          (ac.altitude <= 1500 && (ac.verticalSpeed || 0) < -100 ? 'LANDING' : 
+           (ac.altitude <= 500 && (ac.verticalSpeed || 0) > 100 ? 'TAKEOFF' : 'AIRBORNE'));
+        
+        const debugText = [
+          `ALT: ${ac.altitude}ft VS: ${ac.verticalSpeed || 0}fpm`,
+          `SPD: ${ac.speed}kt HDG: ${ac.heading}°`,
+          `Phase: ${phase}`
+        ];
+        
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillRect(pos.x - 50, pos.y + 25, 100, 45);
+        ctx.strokeStyle = '#000000';
+        ctx.strokeRect(pos.x - 50, pos.y + 25, 100, 45);
+        
+        ctx.fillStyle = '#000000';
+        ctx.font = '8px monospace';
+        debugText.forEach((text, index) => {
+          ctx.fillText(text, pos.x - 48, pos.y + 38 + index * 12);
+        });
+      });
+      
+      ctx.restore();
+    }
     
-  }, [displayAircraft, runways, selectedAircraft, scale, panX, panY, mapImage, mapOffsetX, mapOffsetY, mapRotation, mapScaleAdjust, showOSMMap, osmTiles, tileCache, loadOSMTile, rwslLines, isDrawingRWSL, drawingPoints, showDebugInfo, showTrafficZones, showDetectionSectors, showRunwayLines, showDistanceRings, showLightDirections, showAircraftPaths, GIMPO_CENTER.lat, GIMPO_CENTER.lng, CANVAS_SIZE.width, CANVAS_SIZE.height]);
+    // 렌더링 성능 측정 결과
+    const renderEndTime = performance.now();
+    // 렌더링 성능 로그 비활성화 (성능 개선)
+    
+  }, [displayAircraft, runways, selectedAircraft, scale, panX, panY, mapImage, mapOffsetX, mapOffsetY, mapRotation, mapScaleAdjust, showOSMMap, osmTiles, tileCache, loadOSMTile, rwslLines, isDrawingRWSL, drawingPoints, showDebugInfo, showTrafficZones, showDetectionSectors, showRunwayLines, showDistanceRings, showLightDirections, showAircraftPaths, showTakeoffPositions, showLightPositions, GIMPO_CENTER.lat, GIMPO_CENTER.lng, CANVAS_SIZE.width, CANVAS_SIZE.height]);
   
   // pan이나 scale 변경 시 타일 미리 로드 및 인접 줌 레벨 프리로드
   useEffect(() => {
@@ -2138,6 +2638,36 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
               />
               <span className="text-xs text-gray-300">예상경로</span>
             </label>
+            
+            <label className="flex items-center space-x-1">
+              <input
+                type="checkbox"
+                checked={showTakeoffPositions}
+                onChange={(e) => setShowTakeoffPositions(e.target.checked)}
+                className="w-3 h-3"
+              />
+              <span className="text-xs text-gray-300">이륙위치</span>
+            </label>
+            
+            <label className="flex items-center space-x-1">
+              <input
+                type="checkbox"
+                checked={showLightPositions}
+                onChange={(e) => setShowLightPositions(e.target.checked)}
+                className="w-3 h-3"
+              />
+              <span className="text-xs text-gray-300">등화위치</span>
+            </label>
+            
+            <label className="flex items-center space-x-1">
+              <input
+                type="checkbox"
+                checked={showFPS}
+                onChange={(e) => setShowFPS(e.target.checked)}
+                className="w-3 h-3"
+              />
+              <span className="text-xs text-gray-300">FPS</span>
+            </label>
           </div>
           
           {/* RWSL 도구 */}
@@ -2245,6 +2775,11 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         <div className="text-gray-400">
           지상: {aircraft.filter(ac => !ac.isActive || ac.altitude === 0).length}대
         </div>
+        {showFPS && (
+          <div className="text-yellow-400 mt-1">
+            FPS: {currentFPS}
+          </div>
+        )}
       </div>
     </div>
   );

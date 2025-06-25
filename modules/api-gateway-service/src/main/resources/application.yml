@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: api-gateway-service
+
+server:
+  port: 3110
+
+# Gateway Configuration
+gateway:
+  routes:
+    auth-service:
+      uri: http://localhost:3102
+      predicates:
+        - Path=/auth/**
+    aircraft-tracking:
+      uri: http://localhost:3103
+      predicates:
+        - Path=/tracking/**
+    conflict-detection:
+      uri: http://localhost:3104
+      predicates:
+        - Path=/conflicts/**
+    gimpo-map:
+      uri: http://localhost:3105
+      predicates:
+        - Path=/map/**
+    notifications:
+      uri: http://localhost:3106
+      predicates:
+        - Path=/notifications/**
+    runway-status:
+      uri: http://localhost:3107
+      predicates:
+        - Path=/runway/**
+    weather:
+      uri: http://localhost:3108
+      predicates:
+        - Path=/weather/**
+    system-integration:
+      uri: http://localhost:3109
+      predicates:
+        - Path=/system/**
+
+# Logging
+logging:
+  level:
+    com.api.gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG

@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: adsb-postgres
+    environment:
+      POSTGRES_DB: adsb_db
+      POSTGRES_USER: adsb_user
+      POSTGRES_PASSWORD: adsb_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - adsb_postgres_data:/var/lib/postgresql/data
+    networks:
+      - adsb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adsb_user -d adsb_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  adsb-simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: adsb-data-simulator
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/adsb_db
+      SPRING_DATASOURCE_USERNAME: adsb_user
+      SPRING_DATASOURCE_PASSWORD: adsb_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+    networks:
+      - adsb-network
+
+volumes:
+  adsb_postgres_data:
+
+networks:
+  adsb-network:
+    driver: bridge

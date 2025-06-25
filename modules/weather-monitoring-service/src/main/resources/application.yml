@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: weather-monitoring-service
+
+server:
+  port: 3108
+
+# Weather Configuration
+weather:
+  api:
+    provider: openweathermap
+    key: ${WEATHER_API_KEY:}
+    base-url: https://api.openweathermap.org/data/2.5
+  monitoring:
+    update-interval: 300000 # 5 minutes
+    locations:
+      - name: Gimpo Airport
+        latitude: 37.5583
+        longitude: 126.7906
+
+# Logging
+logging:
+  level:
+    com.weather.monitoring: DEBUG
+    org.springframework.web: INFO

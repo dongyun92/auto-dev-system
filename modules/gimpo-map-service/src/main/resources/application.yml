@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: gimpo-map-service
+
+server:
+  port: 3105
+
+# Map Configuration
+map:
+  gimpo:
+    latitude: 37.5583
+    longitude: 126.7906
+    zoom-level: 15
+    tile-server: https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}
+  cache:
+    enabled: true
+    ttl-seconds: 3600
+
+# Logging
+logging:
+  level:
+    com.gimpo.map: DEBUG
+    org.springframework.web: INFO

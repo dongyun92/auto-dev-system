@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: system-integration-service
+
+server:
+  port: 3109
+
+# System Integration Configuration
+integration:
+  services:
+    auth-service: http://localhost:3102
+    aircraft-tracking: http://localhost:3103
+    conflict-detection: http://localhost:3104
+    gimpo-map: http://localhost:3105
+    notifications: http://localhost:3106
+    runway-status: http://localhost:3107
+    weather-monitoring: http://localhost:3108
+    adsb-simulator: http://localhost:3101
+  health-check:
+    enabled: true
+    interval: 30000 # ms
+
+# Logging
+logging:
+  level:
+    com.system.integration: DEBUG
+    org.springframework.web: INFO

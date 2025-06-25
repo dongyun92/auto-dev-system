@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: aircraft-tracking
+  
+  datasource:
+    url: jdbc:h2:mem:trackingdb
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+    
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+    show-sql: true
+    
+  h2:
+    console:
+      enabled: true
+    
+  # redis:
+  #   host: localhost
+  #   port: 6379
+  #   timeout: 2000ms
+  #   lettuce:
+  #     pool:
+  #       max-active: 8
+  #       max-idle: 8
+  #       min-idle: 0
+    
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Asia/Seoul
+
+server:
+  port: 8082
+  
+# Aircraft Tracking Configuration
+tracking:
+  update-interval: 5000 # ms
+  prediction:
+    enabled: true
+    horizon-minutes: 30
+  cache:
+    ttl-seconds: 300
+  runway:
+    approach-distance-km: 20
+    
+# WebSocket Configuration  
+websocket:
+  allowed-origins: "*"
+  
+# Logging
+logging:
+  level:
+    com.aircraft.tracking: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG

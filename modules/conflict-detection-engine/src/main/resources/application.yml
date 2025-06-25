@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: conflict-detection-engine
+
+server:
+  port: 3104
+
+# Conflict Detection Configuration
+conflict:
+  detection:
+    enabled: true
+    check-interval: 1000 # ms
+    algorithm: advanced
+    threshold:
+      distance: 5.0 # nautical miles
+      time: 300 # seconds
+
+# Logging
+logging:
+  level:
+    com.conflict.detection: DEBUG
+    org.springframework.web: INFO

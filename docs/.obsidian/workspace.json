@@ -1,0 +1,210 @@
+{
+  "main": {
+    "id": "55dfbd89e5fb9f4f",
+    "type": "split",
+    "children": [
+      {
+        "id": "212b0f93f1307876",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "76a38b6a1de6c508",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "02_RWSL 알고리즘 설계 참조.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "02_RWSL 알고리즘 설계 참조"
+            }
+          },
+          {
+            "id": "b8965937d91f94ec",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "RWSL_ALGORITHM.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "RWSL_ALGORITHM"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "b89141d02472098e",
+    "type": "split",
+    "children": [
+      {
+        "id": "48eee64ad62daca6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a520b375eb8390ea",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "b7b802afe502d146",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "4f26b9bbe63e2432",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "2c5bba0ab242af53",
+    "type": "split",
+    "children": [
+      {
+        "id": "ee84c48dbf1bfede",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "184337c2fb7617c3",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "RWSL_ALGORITHM.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for RWSL_ALGORITHM"
+            }
+          },
+          {
+            "id": "aec6ef3ad28b46b4",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "RWSL_ALGORITHM.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from RWSL_ALGORITHM"
+            }
+          },
+          {
+            "id": "ba680fa8acb6e4f9",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "5d5419943dffe6cb",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "RWSL_ALGORITHM.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of RWSL_ALGORITHM"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "b8965937d91f94ec",
+  "lastOpenFiles": [
+    "RWSL_DETECTION_LOGIC_UPDATE.md",
+    "RWSL_REALTIME_OPTIMIZATION.md",
+    "RWSL_PERFORMANCE_FIXES_APPLIED.md",
+    "RWSL_PERFORMANCE_QUICK_FIXES.md",
+    "RWSL_PERFORMANCE_OPTIMIZATION.md",
+    "RWSL_REL_DIRECTION_UPDATE.md",
+    "RWSL_TAKEOFF_POSITIONS.md",
+    "error-handling.md",
+    "RWSL_RULES_TABLE.md",
+    "RWSL_INTEGRATION_PLAN.md",
+    "RWSL_FLOWCHARTS.md",
+    "RWSL_DESIGN_SUMMARY.md",
+    "RWSL_DEPENDENCIES_AND_RULES.md",
+    "RWSL_ALGORITHM.md",
+    "README.md",
+    "safety-systems.md",
+    "user-guide.md",
+    "test-results.md",
+    "03_김포공항(RKSS) RWSL 알고리즘 맞춤 설계서.md",
+    "02_RWSL 알고리즘 설계 참조.md",
+    "01_RWSL 알고리즘.md"
+  ]
+}
