@@ -1,0 +1,212 @@
+{
+  "thls": [
+    {
+      "id": "THL_14L",
+      "type": "THL",
+      "points": [
+        { "x": 126.77842888338135, "y": 37.57059038535074 },
+        { "x": 126.77961763925401, "y": 37.56963416554981 }
+      ],
+      "active": false
+    },
+    {
+      "id": "THL_14R",
+      "type": "THL",
+      "points": [
+        { "x": 126.77554851740578, "y": 37.568305855855854 },
+        { "x": 126.77669917782396, "y": 37.567393693693695 }
+      ],
+      "active": false
+    },
+    {
+      "id": "THL_32R",
+      "type": "THL",
+      "points": [
+        { "x": 126.80087725228985, "y": 37.548114414414414 },
+        { "x": 126.79959874071409, "y": 37.549150450450455 }
+      ],
+      "active": false
+    },
+    {
+      "id": "THL_32L",
+      "type": "THL",
+      "points": [
+        { "x": 126.80695728511675, "y": 37.54785540540541 },
+        { "x": 126.80563615648848, "y": 37.54893648648649 }
+      ],
+      "active": false
+    }
+  ],
+  "departureRELs": [
+    {
+      "id": "REL_A_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.80769, "y": 37.54842 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_B1_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.80186, "y": 37.54886 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_B2_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.80452, "y": 37.55097 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_C1_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.79492, "y": 37.55440 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_C2_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.80034, "y": 37.55434 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_C3_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.79633, "y": 37.55754 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_D1_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.78908, "y": 37.55903 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_D2_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.79370, "y": 37.55958 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_D3_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.78976, "y": 37.56275 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_E1_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.78340, "y": 37.56353 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_E2_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.78537, "y": 37.56634 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_F2_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.78237, "y": 37.56860 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_G1_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.77650, "y": 37.56907 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_G2_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.77914, "y": 37.57116 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_W1_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.79391, "y": 37.55253 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_W2_D",
+      "type": "REL",
+      "points": [
+        { "x": 126.79070, "y": 37.55508 }
+      ],
+      "active": false
+    }
+  ],
+  "arrivalRELs": [
+    {
+      "id": "REL_B1_A",
+      "type": "REL",
+      "points": [
+        { "x": 126.80379, "y": 37.55038 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_C1_A",
+      "type": "REL",
+      "points": [
+        { "x": 126.79760, "y": 37.55529 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_D1_A",
+      "type": "REL",
+      "points": [
+        { "x": 126.79104, "y": 37.56056 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_E1_A",
+      "type": "REL",
+      "points": [
+        { "x": 126.78455, "y": 37.56570 }
+      ],
+      "active": false
+    },
+    {
+      "id": "REL_G1_A",
+      "type": "REL",
+      "points": [
+        { "x": 126.77840, "y": 37.57058 }
+      ],
+      "active": false
+    }
+  ]
+}
