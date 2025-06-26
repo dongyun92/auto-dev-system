@@ -1,0 +1,229 @@
+{
+  "aircraft_stands_general_aviation": {
+    "area": "general_aviation",
+    "elevation": 13,
+    "stands": [
+      {
+        "number": "301",
+        "lat": 37.571200,
+        "lon": 126.801739,
+        "lat_dms": "37°34'16.12\"N",
+        "lon_dms": "126°48'01.06\"E",
+        "aircraft_type": "GLF4"
+      },
+      {
+        "number": "302",
+        "lat": 37.570903,
+        "lon": 126.802375,
+        "lat_dms": "37°34'15.25\"N",
+        "lon_dms": "126°48'02.15\"E",
+        "aircraft_type": "B737-900"
+      },
+      {
+        "number": "303",
+        "lat": 37.570617,
+        "lon": 126.803175,
+        "lat_dms": "37°34'14.22\"N",
+        "lon_dms": "126°48'03.43\"E",
+        "aircraft_type": "B737-900"
+      },
+      {
+        "number": "304",
+        "lat": 37.570475,
+        "lon": 126.804214,
+        "lat_dms": "37°34'13.71\"N",
+        "lon_dms": "126°48'05.17\"E",
+        "aircraft_type": "B737MAX8, A321NEO"
+      },
+      {
+        "number": "305",
+        "lat": 37.570372,
+        "lon": 126.805206,
+        "lat_dms": "37°34'12.14\"N",
+        "lon_dms": "126°48'06.34\"E",
+        "aircraft_type": "B737MAX8, A321NEO"
+      },
+      {
+        "number": "306",
+        "lat": 37.570319,
+        "lon": 126.806489,
+        "lat_dms": "37°34'11.15\"N",
+        "lon_dms": "126°48'07.76\"E",
+        "aircraft_type": "B737MAX8, A321NEO"
+      },
+      {
+        "number": "307",
+        "lat": 37.570192,
+        "lon": 126.807478,
+        "lat_dms": "37°34'10.69\"N",
+        "lon_dms": "126°48'08.92\"E",
+        "aircraft_type": "B737MAX8, A321NEO"
+      }
+    ]
+  },
+  "aircraft_stands_small_aircraft": {
+    "area": "west_apron_small",
+    "elevation": 13,
+    "stands": [
+      {
+        "number": "501",
+        "lat": 37.554961,
+        "lon": 126.784458,
+        "lat_dms": "37°33'17.86\"N",
+        "lon_dms": "126°47'21.05\"E",
+        "aircraft_type": "C172R",
+        "dimensions": "9×11m"
+      },
+      {
+        "number": "502",
+        "lat": 37.554842,
+        "lon": 126.784881,
+        "lat_dms": "37°33'17.43\"N",
+        "lon_dms": "126°47'21.57\"E",
+        "aircraft_type": "C550",
+        "dimensions": "14.4×16m"
+      },
+      {
+        "number": "503",
+        "lat": 37.554719,
+        "lon": 126.785336,
+        "lat_dms": "37°33'16.99\"N",
+        "lon_dms": "126°47'22.12\"E",
+        "aircraft_type": "C-208B",
+        "dimensions": "13×16m"
+      },
+      {
+        "number": "504",
+        "lat": 37.554603,
+        "lon": 126.785736,
+        "lat_dms": "37°33'16.57\"N",
+        "lon_dms": "126°47'22.65\"E",
+        "aircraft_type": "C172R",
+        "dimensions": "9×11m"
+      },
+      {
+        "number": "505",
+        "lat": 37.554219,
+        "lon": 126.786775,
+        "lat_dms": "37°33'15.19\"N",
+        "lon_dms": "126°47'24.39\"E",
+        "aircraft_type": "C172R",
+        "dimensions": "9×11m"
+      }
+    ]
+  },
+  "helicopter_stands": {
+    "area": "west_apron_helicopter",
+    "elevation": 13,
+    "stands": [
+      {
+        "number": "701",
+        "lat": 37.551083,
+        "lon": 126.788328,
+        "lat_dms": "37°33'03.90\"N",
+        "lon_dms": "126°47'31.98\"E",
+        "aircraft_type": "CN235",
+        "dimensions": "25.8×21.4m"
+      },
+      {
+        "number": "702",
+        "lat": 37.551278,
+        "lon": 126.788086,
+        "lat_dms": "37°33'04.60\"N",
+        "lon_dms": "126°47'31.11\"E",
+        "aircraft_type": "CN235",
+        "dimensions": "25.8×21.4m"
+      },
+      {
+        "number": "703",
+        "lat": 37.551522,
+        "lon": 126.787225,
+        "lat_dms": "37°33'05.48\"N",
+        "lon_dms": "126°47'30.01\"E",
+        "aircraft_type": "CL-605",
+        "dimensions": "20.86×19.61m"
+      },
+      {
+        "number": "704",
+        "lat": 37.551664,
+        "lon": 126.786544,
+        "lat_dms": "37°33'05.99\"N",
+        "lon_dms": "126°47'29.36\"E",
+        "aircraft_type": "CL-605",
+        "dimensions": "20.86×19.61m"
+      },
+      {
+        "number": "902",
+        "lat": 37.552458,
+        "lon": 126.785875,
+        "lat_dms": "37°33'08.85\"N",
+        "lon_dms": "126°47'27.15\"E",
+        "aircraft_type": "MI-2",
+        "dimensions": "17.8×17.8m"
+      },
+      {
+        "number": "908",
+        "lat": 37.553556,
+        "lon": 126.783961,
+        "lat_dms": "37°33'12.80\"N",
+        "lon_dms": "126°47'22.26\"E",
+        "aircraft_type": "MI-2",
+        "dimensions": "17.8×17.8m"
+      },
+      {
+        "number": "908-2",
+        "lat": 37.554056,
+        "lon": 126.782361,
+        "lat_dms": "37°33'14.20\"N",
+        "lon_dms": "126°47'20.50\"E",
+        "aircraft_type": "BELL214B-1",
+        "dimensions": "19×19m"
+      },
+      {
+        "number": "912",
+        "lat": 37.555392,
+        "lon": 126.779544,
+        "lat_dms": "37°33'17.41\"N",
+        "lon_dms": "126°47'16.36\"E",
+        "aircraft_type": "KA32-T",
+        "dimensions": "16×16m"
+      },
+      {
+        "number": "917",
+        "lat": 37.557258,
+        "lon": 126.784231,
+        "lat_dms": "37°33'23.13\"N",
+        "lon_dms": "126°47'15.23\"E",
+        "aircraft_type": "KA32-T",
+        "dimensions": "16×16m"
+      },
+      {
+        "number": "937",
+        "lat": 37.551089,
+        "lon": 126.794231,
+        "lat_dms": "37°33'03.92\"N",
+        "lon_dms": "126°47'39.23\"E",
+        "aircraft_type": "EC-155B1",
+        "dimensions": "15×15m"
+      },
+      {
+        "number": "944",
+        "lat": 37.550814,
+        "lon": 126.789675,
+        "lat_dms": "37°33'02.93\"N",
+        "lon_dms": "126°47'34.03\"E",
+        "aircraft_type": "KA32-T",
+        "dimensions": "16×16m"
+      },
+      {
+        "number": "944-1",
+        "lat": 37.550514,
+        "lon": 126.790389,
+        "lat_dms": "37°33'01.85\"N",
+        "lon_dms": "126°47'35.40\"E",
+        "aircraft_type": "KA32-T",
+        "dimensions": "16×16m"
+      }
+    ]
+  }
+}

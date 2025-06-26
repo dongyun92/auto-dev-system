@@ -1,0 +1,55 @@
+{
+  "taxiways": {
+    "parallel_taxiways": [
+      {
+        "designation": "A",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 85/R/B/W/T",
+        "lighting": {
+          "edge": true,
+          "centerline": true
+        }
+      },
+      {
+        "designation": "P",
+        "width_m": 30,
+        "surface": "Asphalt/Concrete", 
+        "strength": "PCN 70/F/B/X/T (PCN 72/R/A/W/T partial)",
+        "lighting": {
+          "edge": true,
+          "centerline": true
+        },
+        "notes": "Main parallel taxiway, Code F capable"
+      }
+    ],
+    "connecting_taxiways": [
+      {
+        "designation": "B1",
+        "width_m": 30,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter": "F"
+      },
+      {
+        "designation": "B2",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter": "F"
+      },
+      {
+        "designation": "C1",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter": "E",
+        "rapid_exit": true,
+        "distance_from_threshold": "1950m from RW 14R"
+      }
+    ]
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "taxiways": {
+    "main_taxiways": [
+      {
+        "designation": "A",
+        "width": 35,
+        "surface": "Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "parallel",
+        "connects": ["runways", "aprons"]
+      },
+      {
+        "designation": "B1",
+        "width": 35,
+        "surface": "Asphalt",
+        "pcr": "PCR 693/F/B/X/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "B2",
+        "width": 30,
+        "surface": "Asphalt & Concrete", 
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "C1",
+        "width": 35,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 693/F/B/X/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "C2",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T", 
+        "type": "perpendicular"
+      },
+      {
+        "designation": "C3",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "D1",
+        "width": 40,
+        "surface": "Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "D2",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "D3",
+        "width": 30,
+        "surface": "Asphalt & Concrete", 
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "E1",
+        "width": 35,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 693/F/B/X/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "E2", 
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "F1",
+        "width": 30,
+        "surface": "Concrete",
+        "pcr": "PCR 693/F/B/X/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "F2",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "G1",
+        "width": 40,
+        "surface": "Concrete", 
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular"
+      },
+      {
+        "designation": "G2",
+        "width": 23,
+        "surface": "Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "holding_bay"
+      },
+      {
+        "designation": "W1",
+        "width": null,
+        "surface": "Asphalt",
+        "pcr": "PCR 67/R/B/W/T",
+        "type": "connector"
+      },
+      {
+        "designation": "W2", 
+        "width": null,
+        "surface": "Asphalt",
+        "pcr": "PCR 67/R/B/W/T",
+        "type": "connector"
+      }
+    ]
+  }
+}

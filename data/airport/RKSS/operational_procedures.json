@@ -1,0 +1,216 @@
+{
+  "operational_procedures": {
+    "description": "김포공항 RWSL 시스템 운영 절차 및 제어 규칙",
+    "version": "1.0",
+    "effective_date": "2025-06-26",
+    "authority": "ICAO Annex 14, FAA AC 150/5345-51"
+  },
+  "rwsl_activation_conditions": {
+    "system_status": {
+      "automatic_mode": true,
+      "manual_override": true,
+      "visibility_threshold_m": 550,
+      "operational_hours": "H24"
+    },
+    "weather_conditions": {
+      "low_visibility": {
+        "activation_threshold": "RVR < 550m",
+        "enhanced_monitoring": true
+      },
+      "night_operations": {
+        "sunset_to_sunrise": true,
+        "enhanced_sensitivity": true
+      },
+      "precipitation": {
+        "rain": "normal_operation",
+        "snow": "enhanced_monitoring",
+        "ice": "manual_oversight_required"
+      }
+    }
+  },
+  "rel_control_rules": {
+    "description": "Runway Entrance Lights 제어 규칙",
+    "activation_triggers": [
+      {
+        "condition": "runway_occupied",
+        "description": "활주로에 항공기가 있을 때",
+        "rules": [
+          "활주로 중심선에서 75m 이내에 항공기 감지시 활성화",
+          "지상 속도 5kt 이상인 항공기만 인식",
+          "고도 50ft 이하인 항공기만 대상"
+        ],
+        "light_state": "RED",
+        "duration": "조건 해제 후 5초 지연"
+      },
+      {
+        "condition": "approaching_traffic",
+        "description": "접근하는 항공기가 있을 때",
+        "rules": [
+          "활주로 중심선 3km 이내 접근 항공기 감지",
+          "접근 각도 15도 이내",
+          "예상 착륙 시간 60초 이내"
+        ],
+        "light_state": "RED", 
+        "duration": "착륙 완료 후 30초"
+      },
+      {
+        "condition": "departing_traffic",
+        "description": "출발하는 항공기가 있을 때", 
+        "rules": [
+          "이륙 활주 시작 시점부터",
+          "활주로 이탈 완료까지",
+          "지상 속도 40kt 이상 유지 중"
+        ],
+        "light_state": "RED",
+        "duration": "활주로 완전 이탈 후 5초"
+      }
+    ],
+    "priority_matrix": {
+      "emergency_vehicles": {
+        "priority": 1,
+        "override": "all_lights_off",
+        "notification": "ATC_immediate"
+      },
+      "aircraft_emergency": {
+        "priority": 2,
+        "override": "clear_runway_path",
+        "notification": "emergency_services"
+      },
+      "scheduled_arrivals": {
+        "priority": 3,
+        "ils_cat": {
+          "CAT_III": "highest",
+          "CAT_II": "high", 
+          "CAT_I": "normal"
+        }
+      },
+      "departures": {
+        "priority": 4,
+        "atc_clearance": "required"
+      }
+    }
+  },
+  "thl_control_rules": {
+    "description": "Takeoff Hold Lights 제어 규칙",
+    "activation_triggers": [
+      {
+        "condition": "traffic_on_runway",
+        "description": "활주로에 다른 항공기나 차량이 있을 때",
+        "rules": [
+          "동일 활주로에 다른 항공기 존재",
+          "활주로 점검 차량 운행 중",
+          "활주로 정비 작업 진행 중"
+        ],
+        "light_state": "RED",
+        "affected_aircraft": "queued_for_takeoff"
+      },
+      {
+        "condition": "converging_traffic",
+        "description": "교차 경로에 항공기가 있을 때",
+        "rules": [
+          "평행 활주로에서 이륙/착륙 진행 중",
+          "교차 유도로에 항공기 이동 중",
+          "분리 기준 미충족"
+        ],
+        "light_state": "RED",
+        "separation_required": "45초 또는 1500m"
+      }
+    ],
+    "takeoff_clearance_integration": {
+      "atc_clearance": "required_before_lights_off",
+      "automated_clearance": false,
+      "pilot_acknowledgment": "mandatory",
+      "light_state_after_clearance": "OFF"
+    }
+  },
+  "conflict_detection_parameters": {
+    "spatial_zones": {
+      "runway_protection_zone": {
+        "width": "75m each side of centerline",
+        "length": "runway_length + 300m each end"
+      },
+      "approach_zone": {
+        "length": "3000m from threshold",
+        "width": "150m each side of extended centerline"
+      },
+      "departure_zone": {
+        "length": "1500m from rotation point",
+        "width": "75m each side of centerline"
+      }
+    },
+    "temporal_parameters": {
+      "prediction_horizon": "30 seconds",
+      "update_frequency": "1 Hz",
+      "minimum_occupancy_time": "5 seconds",
+      "false_alarm_prevention": "3 second confirmation"
+    },
+    "aircraft_filtering": {
+      "minimum_ground_speed": "5 knots",
+      "maximum_altitude": "50 feet AGL",
+      "position_accuracy": "±3 meters",
+      "heading_validity": "±5 degrees"
+    }
+  },
+  "safety_margins": {
+    "runway_occupancy": {
+      "detection_buffer": "10m beyond actual aircraft position",
+      "clearance_delay": "5 seconds after runway clear"
+    },
+    "approach_protection": {
+      "final_approach_protection": "3 NM from threshold",
+      "missed_approach_consideration": "2 NM beyond threshold"
+    },
+    "wake_turbulence": {
+      "heavy_aircraft": "additional_60_seconds",
+      "separation_category": "ICAO_wake_turbulence_categories"
+    }
+  },
+  "system_maintenance": {
+    "periodic_tests": {
+      "daily": [
+        "lamp_functionality_check",
+        "communication_link_test",
+        "position_data_validation"
+      ],
+      "weekly": [
+        "complete_system_test",
+        "backup_system_verification",
+        "false_alarm_rate_analysis"
+      ],
+      "monthly": [
+        "calibration_verification",
+        "performance_statistics_review",
+        "software_update_check"
+      ]
+    },
+    "fault_handling": {
+      "light_failure": {
+        "single_light": "log_and_continue",
+        "multiple_lights": "maintenance_alert",
+        "critical_section": "manual_override_required"
+      },
+      "communication_failure": {
+        "radar_link": "switch_to_backup",
+        "backup_failure": "manual_mode_only"
+      },
+      "software_failure": {
+        "system_restart": "automatic_within_30_seconds",
+        "persistent_failure": "maintenance_mode"
+      }
+    }
+  },
+  "performance_metrics": {
+    "effectiveness_indicators": {
+      "runway_incursion_prevention": "target_100_percent",
+      "false_alarm_rate": "less_than_2_percent",
+      "response_time": "less_than_1_second",
+      "availability": "greater_than_99.5_percent"
+    },
+    "operational_statistics": {
+      "daily_activations": "log_by_light_group",
+      "peak_hour_analysis": "0600-0900, 1800-2100 local",
+      "weather_correlation": "visibility_vs_activation_rate",
+      "pilot_compliance": "observe_and_report"
+    }
+  }
+}

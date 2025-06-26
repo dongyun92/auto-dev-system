@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>김포공항 RWSL 벡터맵 - 정확한 레이아웃</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 800px;
+            background: #2d5016;
+            overflow: hidden;
+        }
+        
+        .info-panel {
+            padding: 20px;
+            background: #fafafa;
+            border-top: 1px solid #eee;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* 활주로 스타일 */
+        .runway {
+            position: absolute;
+            background: #404040;
+            border: 2px solid #333;
+        }
+        
+        .runway-marking {
+            position: absolute;
+            background: white;
+            font-family: 'Arial Black', sans-serif;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        /* 유도로 스타일 */
+        .taxiway {
+            position: absolute;
+            background: #666;
+            border: 1px solid #555;
+        }
+        
+        .taxiway-label {
+            position: absolute;
+            background: #ffff00;
+            color: #000;
+            font-weight: bold;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+        
+        /* RWSL 등화 스타일 */
+        .rwsl-light {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 1px solid #333;
+        }
+        
+        .rel-light {
+            background: #ff4444;
+            box-shadow: 0 0 10px #ff4444;
+        }
+        
+        .thl-light {
+            background: #44ff44;
+            box-shadow: 0 0 10px #44ff44;
+        }
+        
+        /* 터미널 */
+        .terminal {
+            position: absolute;
+            background: #e0e0e0;
+            border: 2px solid #999;
+            border-radius: 5px;
+        }
+        
+        .terminal-label {
+            position: absolute;
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        /* 애니메이션 */
+        .rwsl-light {
+            animation: pulse 2s infinite ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛩️ 김포국제공항 (RKSS) RWSL 벡터맵</h1>
+            <p>정확한 활주로/유도로 레이아웃 | 실제 AIP 데이터 기반</p>
+        </div>
+        
+        <div class="map-container" id="mapContainer">
+            <!-- SVG 기반 벡터맵이 여기에 렌더링됩니다 -->
+        </div>
+        
+        <div class="info-panel">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #404040;"></div>
+                    <span>활주로 (Runway)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #666;"></div>
+                    <span>유도로 (Taxiway)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff4444;"></div>
+                    <span>REL 등화 (Runway Entrance Light)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #44ff44;"></div>
+                    <span>THL 등화 (Takeoff Hold Light)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #e0e0e0;"></div>
+                    <span>터미널 (Terminal)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffff00;"></div>
+                    <span>유도로 표지 (Taxiway Sign)</span>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">활주로</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">17</div>
+                    <div class="stat-label">유도로</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">156</div>
+                    <div class="stat-label">REL 등화</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">48</div>
+                    <div class="stat-label">THL 등화</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">7</div>
+                    <div class="stat-label">Hot Spots</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 김포공항 정확한 레이아웃 데이터
+        const airportData = {
+            // 수정된 활주로 배치 (32R 북쪽, 32L 남쪽)
+            runways: [
+                {
+                    id: 'runway_32R_14L',
+                    designation: '32R/14L',
+                    position: 'north',
+                    length: 3600,
+                    width: 45,
+                    coordinates: {
+                        x1: 100, y1: 200,
+                        x2: 1200, y2: 200
+                    },
+                    thresholds: {
+                        '32R': { x: 1200, y: 200, bearing: 315 },
+                        '14L': { x: 100, y: 200, bearing: 135 }
+                    }
+                },
+                {
+                    id: 'runway_32L_14R',
+                    designation: '32L/14R',
+                    position: 'south', 
+                    length: 3200,
+                    width: 60,
+                    coordinates: {
+                        x1: 100, y1: 400,
+                        x2: 1100, y2: 400
+                    },
+                    thresholds: {
+                        '32L': { x: 1100, y: 400, bearing: 315 },
+                        '14R': { x: 100, y: 400, bearing: 135 }
+                    }
+                }
+            ],
+            
+            // 완전한 유도로 목록 (G1, G2, F1, F2, E1, E2, D1, D2, D3, C1, C2, C3, W1, W2, B1, B2, A)
+            taxiways: [
+                // 평행 유도로
+                { id: 'A', type: 'parallel', x: 1250, y: 150, width: 35, length: 500, orientation: 'vertical' },
+                { id: 'P', type: 'parallel', x: 650, y: 150, width: 30, length: 500, orientation: 'vertical' },
+                { id: 'G2', type: 'parallel', x: 50, y: 150, width: 40, length: 200, orientation: 'vertical' },
+                
+                // 연결 유도로 (서쪽에서 동쪽 순서)
+                { id: 'G1', type: 'connecting', x1: 50, y1: 300, x2: 650, y2: 300, width: 30 },
+                { id: 'F1', type: 'connecting', x1: 300, y1: 400, x2: 650, y2: 350, width: 23 },
+                { id: 'F2', type: 'connecting', x1: 300, y1: 200, x2: 650, y2: 250, width: 35 },
+                { id: 'E1', type: 'connecting', x1: 450, y1: 400, x2: 650, y2: 350, width: 35, rapid_exit: true },
+                { id: 'E2', type: 'connecting', x1: 450, y1: 200, x2: 650, y2: 250, width: 35 },
+                { id: 'D1', type: 'connecting', x1: 600, y1: 400, x2: 650, y2: 350, width: 30 },
+                { id: 'D2', type: 'connecting', x1: 600, y1: 400, x2: 650, y2: 300, width: 35 },
+                { id: 'D3', type: 'connecting', x1: 600, y1: 200, x2: 650, y2: 250, width: 35 },
+                { id: 'C1', type: 'connecting', x1: 750, y1: 400, x2: 650, y2: 350, width: 35, rapid_exit: true },
+                { id: 'C2', type: 'connecting', x1: 750, y1: 200, x2: 650, y2: 250, width: 35 },
+                { id: 'C3', type: 'connecting', x1: 750, y1: 400, x2: 650, y2: 300, width: 35 },
+                { id: 'B1', type: 'connecting', x1: 900, y1: 400, x2: 650, y2: 350, width: 30 },
+                { id: 'B2', type: 'connecting', x1: 900, y1: 400, x2: 650, y2: 300, width: 35 },
+                
+                // 일반항공기용 유도로
+                { id: 'W1', type: 'general_aviation', x: 150, y: 500, width: 30, length: 100, orientation: 'horizontal' },
+                { id: 'W2', type: 'general_aviation', x: 150, y: 550, width: 30, length: 100, orientation: 'horizontal' }
+            ],
+            
+            // 수정된 REL 등화 배치 (유도로와 활주로 교차점에 수직 배치)
+            relLights: [
+                // 32R/14L 활주로 REL 등화
+                ...generateRELLights('32R_14L', [
+                    { taxiway: 'G2', x: 120, y: 200, angle: 90 },
+                    { taxiway: 'F2', x: 300, y: 200, angle: 90 },
+                    { taxiway: 'E2', x: 450, y: 200, angle: 90 },
+                    { taxiway: 'D3', x: 600, y: 200, angle: 90 },
+                    { taxiway: 'C2', x: 750, y: 200, angle: 90 },
+                    { taxiway: 'P', x: 650, y: 200, angle: 90 },
+                    { taxiway: 'A', x: 1250, y: 200, angle: 90 }
+                ]),
+                
+                // 32L/14R 활주로 REL 등화
+                ...generateRELLights('32L_14R', [
+                    { taxiway: 'G1', x: 120, y: 400, angle: 90 },
+                    { taxiway: 'F1', x: 300, y: 400, angle: 45 },
+                    { taxiway: 'E1', x: 450, y: 400, angle: 45 },
+                    { taxiway: 'D1', x: 600, y: 400, angle: 90 },
+                    { taxiway: 'D2', x: 600, y: 400, angle: 90 },
+                    { taxiway: 'C1', x: 750, y: 400, angle: 45 },
+                    { taxiway: 'C3', x: 750, y: 400, angle: 90 },
+                    { taxiway: 'B1', x: 900, y: 400, angle: 90 },
+                    { taxiway: 'B2', x: 900, y: 400, angle: 90 },
+                    { taxiway: 'P', x: 650, y: 400, angle: 90 },
+                    { taxiway: 'A', x: 1250, y: 400, angle: 90 }
+                ])
+            ],
+            
+            // THL 등화 배치
+            thlLights: [
+                { runway: '32R', x: 1190, y: 190, count: 6 },
+                { runway: '14L', x: 110, y: 190, count: 6 },
+                { runway: '32L', x: 1090, y: 390, count: 6 },
+                { runway: '14R', x: 110, y: 390, count: 6 }
+            ],
+            
+            // 터미널 및 기타 시설
+            terminals: [
+                { id: 'domestic', x: 800, y: 100, width: 200, height: 80, label: '국내선 터미널' },
+                { id: 'international', x: 1000, y: 100, width: 150, height: 80, label: '국제선 터미널' }
+            ],
+            
+            // Hot Spots
+            hotSpots: [
+                { id: 'HS2', x: 650, y: 300, label: 'HS 2', description: 'C3,D2,P,R 교차점' },
+                { id: 'HS7', x: 750, y: 350, label: 'HS 7', description: '활주로 침입 이력 지역' }
+            ]
+        };
+
+        // REL 등화 생성 함수
+        function generateRELLights(runway, positions) {
+            const lights = [];
+            positions.forEach(pos => {
+                // 각 위치마다 4-6개의 등화를 배치
+                for (let i = 0; i < 5; i++) {
+                    lights.push({
+                        runway: runway,
+                        taxiway: pos.taxiway,
+                        x: pos.x + (i * 15) - 30,
+                        y: pos.y + (Math.sin(pos.angle * Math.PI / 180) * i * 10),
+                        type: 'REL'
+                    });
+                }
+            });
+            return lights;
+        }
+
+        // 벡터맵 렌더링 함수
+        function renderAirportMap() {
+            const container = document.getElementById('mapContainer');
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+            svg.setAttribute('viewBox', '0 0 1400 600');
+            
+            // 배경 그리드
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+            pattern.setAttribute('id', 'grid');
+            pattern.setAttribute('width', '50');
+            pattern.setAttribute('height', '50');
+            pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+            
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M 50 0 L 0 0 0 50');
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', '#3a5f1f');
+            path.setAttribute('stroke-width', '1');
+            path.setAttribute('opacity', '0.3');
+            
+            pattern.appendChild(path);
+            defs.appendChild(pattern);
+            svg.appendChild(defs);
+            
+            const gridRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            gridRect.setAttribute('width', '100%');
+            gridRect.setAttribute('height', '100%');
+            gridRect.setAttribute('fill', 'url(#grid)');
+            svg.appendChild(gridRect);
+            
+            // 활주로 렌더링
+            airportData.runways.forEach(runway => {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', runway.coordinates.x1);
+                rect.setAttribute('y', runway.coordinates.y1 - runway.width/2);
+                rect.setAttribute('width', runway.coordinates.x2 - runway.coordinates.x1);
+                rect.setAttribute('height', runway.width);
+                rect.setAttribute('fill', '#404040');
+                rect.setAttribute('stroke', '#333');
+                rect.setAttribute('stroke-width', '2');
+                svg.appendChild(rect);
+                
+                // 활주로 번호 표시
+                const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text1.setAttribute('x', runway.coordinates.x1 + 50);
+                text1.setAttribute('y', runway.coordinates.y1 + 5);
+                text1.setAttribute('fill', 'white');
+                text1.setAttribute('font-weight', 'bold');
+                text1.setAttribute('font-size', '16');
+                text1.setAttribute('text-anchor', 'middle');
+                text1.textContent = runway.designation.split('/')[1];
+                svg.appendChild(text1);
+                
+                const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text2.setAttribute('x', runway.coordinates.x2 - 50);
+                text2.setAttribute('y', runway.coordinates.y1 + 5);
+                text2.setAttribute('fill', 'white');
+                text2.setAttribute('font-weight', 'bold');
+                text2.setAttribute('font-size', '16');
+                text2.setAttribute('text-anchor', 'middle');
+                text2.textContent = runway.designation.split('/')[0];
+                svg.appendChild(text2);
+            });
+            
+            // 유도로 렌더링
+            airportData.taxiways.forEach(taxiway => {
+                if (taxiway.type === 'parallel') {
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', taxiway.x - taxiway.width/2);
+                    rect.setAttribute('y', taxiway.y);
+                    rect.setAttribute('width', taxiway.width);
+                    rect.setAttribute('height', taxiway.length);
+                    rect.setAttribute('fill', '#666');
+                    rect.setAttribute('stroke', '#555');
+                    svg.appendChild(rect);
+                } else if (taxiway.type === 'connecting') {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', taxiway.x1);
+                    line.setAttribute('y1', taxiway.y1);
+                    line.setAttribute('x2', taxiway.x2);
+                    line.setAttribute('y2', taxiway.y2);
+                    line.setAttribute('stroke', '#666');
+                    line.setAttribute('stroke-width', Math.max(taxiway.width/3, 8));
+                    svg.appendChild(line);
+                } else if (taxiway.type === 'general_aviation') {
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', taxiway.x);
+                    rect.setAttribute('y', taxiway.y);
+                    rect.setAttribute('width', taxiway.length);
+                    rect.setAttribute('height', taxiway.width);
+                    rect.setAttribute('fill', '#777');
+                    rect.setAttribute('stroke', '#555');
+                    svg.appendChild(rect);
+                }
+                
+                // 유도로 라벨
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                const labelX = taxiway.x1 ? (taxiway.x1 + taxiway.x2) / 2 : taxiway.x;
+                const labelY = taxiway.y1 ? (taxiway.y1 + taxiway.y2) / 2 : taxiway.y;
+                label.setAttribute('x', labelX);
+                label.setAttribute('y', labelY - 10);
+                label.setAttribute('fill', '#ffff00');
+                label.setAttribute('font-weight', 'bold');
+                label.setAttribute('font-size', '12');
+                label.setAttribute('text-anchor', 'middle');
+                label.textContent = taxiway.id;
+                svg.appendChild(label);
+            });
+            
+            // REL 등화 렌더링
+            airportData.relLights.forEach(light => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', light.x);
+                circle.setAttribute('cy', light.y);
+                circle.setAttribute('r', '4');
+                circle.setAttribute('fill', '#ff4444');
+                circle.setAttribute('stroke', '#333');
+                circle.setAttribute('stroke-width', '1');
+                
+                // 애니메이션 효과
+                const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                animate.setAttribute('attributeName', 'opacity');
+                animate.setAttribute('values', '0.7;1;0.7');
+                animate.setAttribute('dur', '2s');
+                animate.setAttribute('repeatCount', 'indefinite');
+                circle.appendChild(animate);
+                
+                svg.appendChild(circle);
+            });
+            
+            // THL 등화 렌더링
+            airportData.thlLights.forEach(thl => {
+                for (let i = 0; i < thl.count; i++) {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', thl.x + (i * 10));
+                    circle.setAttribute('cy', thl.y);
+                    circle.setAttribute('r', '3');
+                    circle.setAttribute('fill', '#44ff44');
+                    circle.setAttribute('stroke', '#333');
+                    circle.setAttribute('stroke-width', '1');
+                    svg.appendChild(circle);
+                }
+            });
+            
+            // 터미널 렌더링
+            airportData.terminals.forEach(terminal => {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', terminal.x);
+                rect.setAttribute('y', terminal.y);
+                rect.setAttribute('width', terminal.width);
+                rect.setAttribute('height', terminal.height);
+                rect.setAttribute('fill', '#e0e0e0');
+                rect.setAttribute('stroke', '#999');
+                rect.setAttribute('stroke-width', '2');
+                svg.appendChild(rect);
+                
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', terminal.x + terminal.width/2);
+                label.setAttribute('y', terminal.y + terminal.height/2);
+                label.setAttribute('fill', '#333');
+                label.setAttribute('font-weight', 'bold');
+                label.setAttribute('font-size', '14');
+                label.setAttribute('text-anchor', 'middle');
+                label.textContent = terminal.label;
+                svg.appendChild(label);
+            });
+            
+            // Hot Spots 렌더링
+            airportData.hotSpots.forEach(hs => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', hs.x);
+                circle.setAttribute('cy', hs.y);
+                circle.setAttribute('r', '15');
+                circle.setAttribute('fill', 'rgba(255, 165, 0, 0.3)');
+                circle.setAttribute('stroke', '#ff6600');
+                circle.setAttribute('stroke-width', '2');
+                svg.appendChild(circle);
+                
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', hs.x);
+                label.setAttribute('y', hs.y + 4);
+                label.setAttribute('fill', '#ff6600');
+                label.setAttribute('font-weight', 'bold');
+                label.setAttribute('font-size', '10');
+                label.setAttribute('text-anchor', 'middle');
+                label.textContent = hs.label;
+                svg.appendChild(label);
+            });
+            
+            container.appendChild(svg);
+        }
+
+        // 페이지 로드 시 맵 렌더링
+        document.addEventListener('DOMContentLoaded', renderAirportMap);
+    </script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+{
+  "updated_graph": {
+    "description": "김포공항 실제 유도로 시스템 반영 (AIP 기준)",
+    "coordinate_system": "Local Cartesian (ARP 기준)",
+    "units": "meters",
+    "source": "RKSS AIP 2021-01-14"
+  },
+  "nodes": {
+    "RW14R_THR": {
+      "id": "RW14R_THR",
+      "type": "runway_threshold",
+      "name": "Runway 14R Threshold",
+      "coordinates": {"local": {"x": 0, "y": 0}},
+      "runway": "14R/32L"
+    },
+    "RW32L_THR": {
+      "id": "RW32L_THR", 
+      "type": "runway_threshold",
+      "name": "Runway 32L Threshold",
+      "coordinates": {"local": {"x": 3200, "y": 0}},
+      "runway": "14R/32L"
+    },
+    "RW14L_THR": {
+      "id": "RW14L_THR",
+      "type": "runway_threshold", 
+      "name": "Runway 14L Threshold",
+      "coordinates": {"local": {"x": 0, "y": 150}},
+      "runway": "14L/32R"
+    },
+    "RW32R_THR": {
+      "id": "RW32R_THR",
+      "type": "runway_threshold",
+      "name": "Runway 32R Threshold", 
+      "coordinates": {"local": {"x": 3600, "y": 150}},
+      "runway": "14L/32R"
+    },
+    "RW14R_B1": {
+      "id": "RW14R_B1",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 800, "y": 0}},
+      "connects": ["14R/32L", "B1"]
+    },
+    "RW14R_B2": {
+      "id": "RW14R_B2",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 1200, "y": 0}},
+      "connects": ["14R/32L", "B2"]
+    },
+    "RW14R_C1": {
+      "id": "RW14R_C1",
+      "type": "rapid_exit_intersection",
+      "coordinates": {"local": {"x": 1950, "y": 0}},
+      "connects": ["14R/32L", "C1"],
+      "rapid_exit": true,
+      "distance_from_14R": 1950
+    },
+    "RW14R_C3": {
+      "id": "RW14R_C3",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 2400, "y": 0}},
+      "connects": ["14R/32L", "C3"]
+    },
+    "RW14R_D1": {
+      "id": "RW14R_D1",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 2600, "y": 0}},
+      "connects": ["14R/32L", "D1"]
+    },
+    "RW14R_D2": {
+      "id": "RW14R_D2",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 2800, "y": 0}},
+      "connects": ["14R/32L", "D2"]
+    },
+    "RW32L_E1": {
+      "id": "RW32L_E1",
+      "type": "rapid_exit_intersection",
+      "coordinates": {"local": {"x": 1215, "y": 0}},
+      "connects": ["14R/32L", "E1"],
+      "rapid_exit": true,
+      "distance_from_32L": 1985
+    },
+    "RW14R_G1": {
+      "id": "RW14R_G1",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 300, "y": 0}},
+      "connects": ["14R/32L", "G1"]
+    },
+    "RW14R_W1": {
+      "id": "RW14R_W1",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 1400, "y": 0}},
+      "connects": ["14R/32L", "W1"]
+    },
+    "RW14R_W2": {
+      "id": "RW14R_W2",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 1700, "y": 0}},
+      "connects": ["14R/32L", "W2"]
+    },
+    "RW14L_C2": {
+      "id": "RW14L_C2",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 2400, "y": 150}},
+      "connects": ["14L/32R", "C2"]
+    },
+    "RW14L_D3": {
+      "id": "RW14L_D3",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 2700, "y": 150}},
+      "connects": ["14L/32R", "D3"]
+    },
+    "RW14L_E2": {
+      "id": "RW14L_E2",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 1100, "y": 150}},
+      "connects": ["14L/32R", "E2"]
+    },
+    "RW32R_A": {
+      "id": "RW32R_A",
+      "type": "runway_taxiway_intersection",
+      "coordinates": {"local": {"x": 3450, "y": 150}},
+      "connects": ["14L/32R", "A"]
+    },
+    "TWY_P_B1": {
+      "id": "TWY_P_B1",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 800, "y": -120}},
+      "connects": ["P", "B1"]
+    },
+    "TWY_P_B2": {
+      "id": "TWY_P_B2",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 1200, "y": -120}},
+      "connects": ["P", "B2"]
+    },
+    "TWY_P_C1": {
+      "id": "TWY_P_C1",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 1950, "y": -120}},
+      "connects": ["P", "C1"]
+    },
+    "TWY_P_C2": {
+      "id": "TWY_P_C2",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 2400, "y": -120}},
+      "connects": ["P", "C2"]
+    },
+    "TWY_P_C3": {
+      "id": "TWY_P_C3",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 2400, "y": -120}},
+      "connects": ["P", "C3"]
+    },
+    "TWY_P_D1": {
+      "id": "TWY_P_D1",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 2600, "y": -120}},
+      "connects": ["P", "D1"]
+    },
+    "TWY_P_D2": {
+      "id": "TWY_P_D2",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 2800, "y": -120}},
+      "connects": ["P", "D2"]
+    },
+    "TWY_P_D3": {
+      "id": "TWY_P_D3",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 2700, "y": -120}},
+      "connects": ["P", "D3"]
+    },
+    "TWY_P_E1": {
+      "id": "TWY_P_E1",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 1215, "y": -120}},
+      "connects": ["P", "E1"]
+    },
+    "TWY_P_E2": {
+      "id": "TWY_P_E2",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 1100, "y": -120}},
+      "connects": ["P", "E2"]
+    },
+    "TWY_P_G1": {
+      "id": "TWY_P_G1",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 300, "y": -120}},
+      "connects": ["P", "G1"]
+    },
+    "TWY_P_G2": {
+      "id": "TWY_P_G2",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 150, "y": -120}},
+      "connects": ["P", "G2"]
+    },
+    "TWY_A_END": {
+      "id": "TWY_A_END",
+      "type": "taxiway_intersection",
+      "coordinates": {"local": {"x": 3450, "y": -200}},
+      "connects": ["A", "terminal"]
+    },
+    "TERMINAL_MAIN": {
+      "id": "TERMINAL_MAIN",
+      "type": "terminal_area",
+      "coordinates": {"local": {"x": 1800, "y": -400}},
+      "area": "main_terminal"
+    },
+    "NORTH_APRON": {
+      "id": "NORTH_APRON",
+      "type": "apron_area",
+      "coordinates": {"local": {"x": 1400, "y": 400}},
+      "area": "north_apron_international"
+    },
+    "WEST_APRON": {
+      "id": "WEST_APRON",
+      "type": "apron_area",
+      "coordinates": {"local": {"x": 1500, "y": -600}},
+      "area": "west_apron_ga"
+    }
+  },
+  "edges": {
+    "RW14R_MAIN": {
+      "id": "RW14R_MAIN",
+      "type": "runway_segment",
+      "start_node": "RW14R_THR",
+      "end_node": "RW32L_THR",
+      "length_m": 3200,
+      "width_m": 60,
+      "surface": "Asphalt"
+    },
+    "RW14L_MAIN": {
+      "id": "RW14L_MAIN",
+      "type": "runway_segment",
+      "start_node": "RW14L_THR",
+      "end_node": "RW32R_THR",
+      "length_m": 3600,
+      "width_m": 45,
+      "surface": "Asphalt/Concrete"
+    },
+    "TWY_P_MAIN": {
+      "id": "TWY_P_MAIN",
+      "type": "parallel_taxiway",
+      "name": "Taxiway P (Main Parallel)",
+      "start_node": "TWY_P_G2",
+      "end_node": "TWY_P_D2",
+      "length_m": 2650,
+      "width_m": 30,
+      "code_letter": "F"
+    },
+    "TWY_A_MAIN": {
+      "id": "TWY_A_MAIN",
+      "type": "parallel_taxiway",
+      "name": "Taxiway A",
+      "start_node": "RW32R_A",
+      "end_node": "TWY_A_END",
+      "length_m": 250,
+      "width_m": 35,
+      "code_letter": "E"
+    },
+    "TWY_B1": {
+      "id": "TWY_B1",
+      "type": "connecting_taxiway",
+      "start_node": "RW14R_B1",
+      "end_node": "TWY_P_B1",
+      "width_m": 30,
+      "code_letter": "F"
+    },
+    "TWY_B2": {
+      "id": "TWY_B2",
+      "type": "connecting_taxiway",
+      "start_node": "RW14R_B2",
+      "end_node": "TWY_P_B2",
+      "width_m": 35,
+      "code_letter": "F"
+    },
+    "TWY_C1": {
+      "id": "TWY_C1",
+      "type": "rapid_exit_taxiway",
+      "start_node": "RW14R_C1",
+      "end_node": "TWY_P_C1",
+      "width_m": 35,
+      "code_letter": "E",
+      "rapid_exit": true
+    },
+    "TWY_C2": {
+      "id": "TWY_C2",
+      "type": "connecting_taxiway",
+      "start_node": "RW14L_C2",
+      "end_node": "TWY_P_C2",
+      "width_m": 35,
+      "code_letter": "E"
+    },
+    "TWY_C3": {
+      "id": "TWY_C3",
+      "type": "connecting_taxiway",
+      "start_node": "RW14R_C3",
+      "end_node": "TWY_P_C3",
+      "width_m": 35,
+      "code_letter": "E"
+    },
+    "TWY_D1": {
+      "id": "TWY_D1",
+      "type": "connecting_taxiway",
+      "start_node": "RW14R_D1",
+      "end_node": "TWY_P_D1",
+      "width_m": 30,
+      "code_letter": "F"
+    },
+    "TWY_D2": {
+      "id": "TWY_D2",
+      "type": "connecting_taxiway",
+      "start_node": "RW14R_D2",
+      "end_node": "TWY_P_D2",
+      "width_m": 35,
+      "code_letter": "F"
+    },
+    "TWY_D3": {
+      "id": "TWY_D3",
+      "type": "connecting_taxiway",
+      "start_node": "RW14L_D3",
+      "end_node": "TWY_P_D3",
+      "width_m": 35,
+      "code_letter": "F"
+    },
+    "TWY_E1": {
+      "id": "TWY_E1",
+      "type": "rapid_exit_taxiway",
+      "start_node": "RW32L_E1",
+      "end_node": "TWY_P_E1",
+      "width_m": 35,
+      "code_letter": "E",
+      "rapid_exit": true
+    },
+    "TWY_E2": {
+      "id": "TWY_E2",
+      "type": "connecting_taxiway",
+      "start_node": "RW14L_E2",
+      "end_node": "TWY_P_E2",
+      "width_m": 35,
+      "code_letter": "E"
+    },
+    "TWY_G1": {
+      "id": "TWY_G1",
+      "type": "connecting_taxiway",
+      "start_node": "RW14R_G1",
+      "end_node": "TWY_P_G1",
+      "width_m": 30,
+      "code_letter": "E"
+    },
+    "TWY_G2": {
+      "id": "TWY_G2",
+      "type": "connecting_taxiway",
+      "start_node": "TWY_P_G2",
+      "end_node": "NORTH_APRON",
+      "width_m": 40,
+      "code_letter": "F"
+    }
+  },
+  "rwsl_updates": {
+    "additional_rel_positions": [
+      {"intersection": "RW14R_C3", "lights": 22},
+      {"intersection": "RW14R_D1", "lights": 22},
+      {"intersection": "RW14R_D2", "lights": 22},
+      {"intersection": "RW32L_E1", "lights": 22},
+      {"intersection": "RW14L_C2", "lights": 22},
+      {"intersection": "RW14L_D3", "lights": 22},
+      {"intersection": "RW14L_E2", "lights": 22}
+    ],
+    "additional_thl_positions": [
+      {"runway": "14L", "lights": 20},
+      {"runway": "32R", "lights": 20}
+    ]
+  }
+}

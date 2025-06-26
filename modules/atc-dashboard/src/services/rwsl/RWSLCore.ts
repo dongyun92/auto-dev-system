@@ -4,16 +4,16 @@
 
 import { TrackedAircraft } from '../../types';
 
-// 항공기 상태 정의 (RWSL 표준 기반)
+// 항공기 상태 정의 (FAA RWSL 표준)
 export enum AircraftState {
-  PARKED = 'PARKED',         // 속도 < 3kt
-  TAXI_OUT = 'TAXI_OUT',     // 3kt ≤ 속도 < 30kt, 게이트→활주로
+  PARKED = 'PARKED',         // 속도 < 5kt
+  TAXI_OUT = 'TAXI_OUT',     // 5kt ≤ 속도 < 34kt, 게이트→활주로
   LINEUP = 'LINEUP',         // 활주로 진입, 속도 < 10kt  
-  TAKEOFF_ROLL = 'TO_ROLL',  // 활주로, 속도 ≥ 30kt
+  TAKEOFF_ROLL = 'TO_ROLL',  // 활주로, 속도 ≥ 30kt (FAA 표준)
   AIRBORNE = 'AIRBORNE',     // 고도 > 50ft
-  APPROACH = 'APPROACH',     // 고도 < 1500ft, 하강중
-  LANDING_ROLL = 'LDG_ROLL', // 활주로, 속도 감속중
-  TAXI_IN = 'TAXI_IN',       // 3kt ≤ 속도 < 30kt, 활주로→게이트
+  APPROACH = 'APPROACH',     // 고도 < 1500ft, 하강중, 속도 ≥ 80kt
+  LANDING_ROLL = 'LDG_ROLL', // 활주로, 속도 < 80kt (FAA 표준)
+  TAXI_IN = 'TAXI_IN',       // 5kt ≤ 속도 < 34kt, 활주로→게이트
   EMERGENCY = 'EMERGENCY'    // 7700 스쿼크
 }
 
@@ -85,19 +85,21 @@ export interface SystemAlert {
   acknowledged: boolean;
 }
 
-// REL 활성화 규칙
+// REL 활성화 규칙 (FAA 표준)
 export interface RELActivationRules {
   highSpeedTraffic: {
-    speedThreshold: number; // knots
+    speedThreshold: number; // 30 knots (FAA)
+    taxiSpeedThreshold: number; // 34 knots (FAA)
+    landingSpeedThreshold: number; // 80 knots (FAA)
     scanRange: number; // meters
   };
   approachingAircraft: {
-    distanceThreshold: number; // meters
+    distanceThreshold: number; // 1 mile (FAA)
     altitudeThreshold: number; // feet AGL
   };
   cascadeOff: {
     enabled: boolean;
-    leadTime: number; // seconds
+    leadTime: number; // 2-3 seconds (FAA)
     sequence: 'PROGRESSIVE' | 'IMMEDIATE';
   };
 }
@@ -166,8 +168,8 @@ export class RWSLCore {
       return AircraftState.AIRBORNE;
     }
     
-    // 지상
-    if (aircraft.speed < 3) {
+    // 지상 - FAA 표준 속도 임계값
+    if (aircraft.speed < 5) {
       return AircraftState.PARKED;
     }
     
@@ -176,6 +178,7 @@ export class RWSLCore {
     
     if (onRunway) {
       if (aircraft.speed >= 30) {
+        // FAA: 30kt 이상 = 고속 이동
         // 가속 중이면 이륙, 감속 중이면 착륙
         const acceleration = this.calculateAcceleration(aircraft, history);
         return acceleration > 0 ? AircraftState.TAKEOFF_ROLL : AircraftState.LANDING_ROLL;
@@ -184,9 +187,14 @@ export class RWSLCore {
       }
     }
     
-    // 택시
-    // 방향 판단 로직 필요 (게이트→활주로 or 활주로→게이트)
-    return AircraftState.TAXI_OUT; // 단순화
+    // 택시 상태 (FAA: 5-34kt)
+    if (aircraft.speed < 34) {
+      // 방향 판단 로직 필요 (게이트→활주로 or 활주로→게이트)
+      return AircraftState.TAXI_OUT; // 단순화
+    }
+    
+    // 34kt 이상이지만 활주로에 없으면 택시 상태로 간주
+    return AircraftState.TAXI_OUT;
   }
   
   /**

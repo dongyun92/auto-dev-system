@@ -1,0 +1,153 @@
+{
+  "airport_facilities": {
+    "terminals": [
+      {
+        "name": "Domestic Terminal",
+        "type": "passenger",
+        "area": "central_south",
+        "elevation": 13,
+        "floors": "B1-4F",
+        "annual_capacity": 4800000,
+        "built_year": 1980,
+        "renovated": [1991, 1992, 1996, 1998]
+      },
+      {
+        "name": "International Terminal", 
+        "type": "passenger",
+        "area": "south",
+        "elevation": 13,
+        "floors": "B1-4F",
+        "annual_capacity": 4300000,
+        "built_year": 1988,
+        "area_sqm": 80200
+      }
+    ],
+    "control_facilities": [
+      {
+        "name": "Control Tower",
+        "type": "atc",
+        "location": "central",
+        "frequencies": {
+          "tower": ["118.05", "118.1", "240.9"],
+          "ground": ["121.9", "121.95"],
+          "apron": ["129.525", "130.875", "131.175"]
+        }
+      },
+      {
+        "name": "Radar Facility",
+        "type": "surveillance",
+        "location": "north_central"
+      }
+    ],
+    "fire_stations": [
+      {
+        "name": "Fire Station East",
+        "type": "emergency",
+        "location": "east_apron",
+        "category": "ARFF"
+      },
+      {
+        "name": "Fire Station West",
+        "type": "emergency", 
+        "location": "west_apron",
+        "category": "ARFF"
+      }
+    ],
+    "cargo_terminals": [
+      {
+        "name": "KAL Cargo Terminal",
+        "type": "cargo",
+        "location": "south_east",
+        "operator": "Korean Air"
+      },
+      {
+        "name": "AAR Cargo Terminal",
+        "type": "cargo",
+        "location": "east",
+        "operator": "AAR"
+      }
+    ],
+    "hangars": [
+      {
+        "name": "KAL Hangar",
+        "type": "maintenance",
+        "location": "south_east",
+        "operator": "Korean Air"
+      },
+      {
+        "name": "AAR Hangar",
+        "type": "maintenance",
+        "location": "east",
+        "operator": "AAR"
+      },
+      {
+        "name": "FC Hangar",
+        "type": "maintenance",
+        "location": "west"
+      },
+      {
+        "name": "SGBAC Hangar",
+        "type": "general_aviation",
+        "location": "south_west"
+      }
+    ],
+    "support_facilities": [
+      {
+        "name": "AIS Office",
+        "type": "information",
+        "location": "central"
+      },
+      {
+        "name": "MET Office",
+        "type": "meteorology",
+        "location": "central"
+      },
+      {
+        "name": "Police Station",
+        "type": "security",
+        "location": "central"
+      },
+      {
+        "name": "Coast Guard",
+        "type": "security",
+        "location": "central"
+      }
+    ]
+  },
+  "special_areas": [
+    {
+      "name": "Engine Run-up Area",
+      "type": "operational",
+      "location": "front_of_P6_taxiway",
+      "purpose": "Engine testing"
+    },
+    {
+      "name": "Helicopter Run-up Area",
+      "type": "operational",
+      "location": "west_apron",
+      "purpose": "Helicopter engine testing"
+    },
+    {
+      "name": "Fixed Wing Run-up Area",
+      "type": "operational",
+      "location": "west_apron",
+      "purpose": "Fixed wing aircraft engine testing"
+    },
+    {
+      "name": "Isolated Area",
+      "type": "security",
+      "location": "intersection_D3_P",
+      "purpose": "Aircraft isolation"
+    },
+    {
+      "name": "Helicopter Landing Area H3",
+      "type": "operational",
+      "location": "west_apron_north"
+    },
+    {
+      "name": "Helicopter Landing Area H4",
+      "type": "operational",
+      "location": "west_apron_north"
+    }
+  ]
+}

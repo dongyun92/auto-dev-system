@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>김포국제공항 완전 유도로 네트워크 - RWSL 벡터맵</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: #1a1a1a;
+            color: white;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            width: 320px;
+            background: #2d2d2d;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid #444;
+        }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: #0a0a0a;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        svg:active {
+            cursor: grabbing;
+        }
+        
+        .runway {
+            fill: #666;
+            stroke: #888;
+            stroke-width: 2;
+        }
+        
+        .taxiway-main {
+            stroke: #555;
+            stroke-width: 12;
+            fill: none;
+        }
+        
+        .taxiway-connecting {
+            stroke: #444;
+            stroke-width: 8;
+            fill: none;
+        }
+        
+        .taxiway-rapid {
+            stroke: #ffaa00;
+            stroke-width: 10;
+            fill: none;
+        }
+        
+        .apron-area {
+            fill: #333;
+            stroke: #555;
+            stroke-width: 1;
+            opacity: 0.7;
+        }
+        
+        .node {
+            cursor: pointer;
+        }
+        
+        .runway-threshold {
+            fill: #00ff00;
+            stroke: #fff;
+            stroke-width: 2;
+        }
+        
+        .intersection {
+            fill: #ffaa00;
+            stroke: #fff;
+            stroke-width: 1;
+        }
+        
+        .rapid-exit {
+            fill: #ff6600;
+            stroke: #fff;
+            stroke-width: 2;
+        }
+        
+        .apron-entry {
+            fill: #0099ff;
+            stroke: #fff;
+            stroke-width: 1;
+        }
+        
+        .rel-light {
+            fill: #ff0000;
+            opacity: 0.8;
+            cursor: pointer;
+        }
+        
+        .thl-light {
+            fill: #ff9900;
+            opacity: 0.8;
+            cursor: pointer;
+        }
+        
+        .rel-light:hover, .thl-light:hover {
+            opacity: 1;
+            stroke: #fff;
+            stroke-width: 1;
+        }
+        
+        .label {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            fill: white;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        
+        .runway-label {
+            font-size: 16px;
+            font-weight: bold;
+            fill: #00ff00;
+        }
+        
+        .taxiway-label {
+            font-size: 12px;
+            font-weight: bold;
+            fill: #ffaa00;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #555;
+        }
+        
+        .control-btn {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            margin: 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .control-btn:hover {
+            background: #555;
+        }
+        
+        .control-btn.active {
+            background: #0099ff;
+        }
+        
+        .info-panel {
+            background: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #555;
+        }
+        
+        .legend {
+            margin-top: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+            border: 1px solid #666;
+            border-radius: 2px;
+        }
+        
+        .legend-line {
+            width: 20px;
+            height: 4px;
+            margin-right: 6px;
+            border-radius: 2px;
+        }
+        
+        h3 {
+            margin: 0 0 15px 0;
+            color: #00ff00;
+            font-size: 16px;
+        }
+        
+        h4 {
+            margin: 10px 0 8px 0;
+            color: #ffaa00;
+            font-size: 14px;
+        }
+        
+        .coordinate-info {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        #element-info {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        
+        .stats {
+            font-size: 11px;
+            color: #ccc;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h3>김포국제공항 (RKSS)</h3>
+            <div class="info-panel">
+                <strong>완전 유도로 네트워크</strong><br>
+                실제 AIP 데이터 기반<br>
+                <div class="coordinate-info">
+                    좌표계: Local Cartesian (ARP 기준)<br>
+                    단위: 미터<br>
+                    데이터: RKSS AIP 2021-01-14
+                </div>
+            </div>
+            
+            <div class="stats">
+                <strong>시설 통계:</strong><br>
+                • 활주로: 2개 (14R/32L, 14L/32R)<br>
+                • 평행 유도로: 3개 (A, P, G2)<br>
+                • 연결 유도로: 11개<br>
+                • 급속탈출: 2개 (C1, E1)<br>
+                • RWSL 등화: 154개<br>
+                • Code F 지원: P, G2, B1, B2, D1, D2
+            </div>
+            
+            <div class="legend">
+                <h4>활주로 & 교차점</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00ff00;"></div>
+                    활주로 임계점 (Threshold)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffaa00;"></div>
+                    일반 교차점
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff6600;"></div>
+                    급속탈출유도로 (C1, E1)
+                </div>
+                
+                <h4>유도로 시스템</h4>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #555; height: 6px;"></div>
+                    평행 유도로 (A, P, G2)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #444; height: 4px;"></div>
+                    연결 유도로
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #ffaa00; height: 5px;"></div>
+                    급속탈출유도로
+                </div>
+                
+                <h4>RWSL 등화</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff0000;"></div>
+                    REL (활주로 진입등)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff9900;"></div>
+                    THL (이륙 대기등)
+                </div>
+                
+                <h4>터미널 영역</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #333; border: 1px solid #555;"></div>
+                    에이프런 (Apron)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #0099ff;"></div>
+                    터미널 시설
+                </div>
+            </div>
+            
+            <div id="element-info" class="info-panel">
+                <strong>요소 정보</strong><br>
+                요소를 클릭하면 상세 정보가 표시됩니다.<br>
+                <em>급속탈출유도로 C1, E1을 확인해보세요!</em>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div class="controls">
+                <button class="control-btn" onclick="zoomIn()">확대 (+)</button>
+                <button class="control-btn" onclick="zoomOut()">축소 (-)</button>
+                <button class="control-btn" onclick="resetView()">초기화</button>
+                <button class="control-btn active" onclick="toggleLights()" id="lights-btn">등화 표시</button>
+                <button class="control-btn" onclick="toggleLabels()" id="labels-btn">라벨 표시</button>
+            </div>
+            
+            <svg id="airport-map" viewBox="-800 -800 5200 1600">
+                <!-- 배경 그리드 -->
+                <defs>
+                    <pattern id="grid" width="200" height="200" patternUnits="userSpaceOnUse">
+                        <path d="M 200 0 L 0 0 0 200" fill="none" stroke="#333" stroke-width="0.5"/>
+                    </pattern>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#ffaa00"/>
+                    </marker>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" opacity="0.2"/>
+                
+                <!-- 활주로 -->
+                <rect x="0" y="-30" width="3200" height="60" class="runway" 
+                      data-info="Runway 14R/32L|길이: 3200m, 폭: 60m|표면: 아스팔트|강도: PCN 74/F/B/X/T|ILS: CAT II/III (14R), CAT I (32L)"/>
+                <rect x="0" y="127.5" width="3600" height="45" class="runway" 
+                      data-info="Runway 14L/32R|길이: 3600m, 폭: 45m|표면: 아스팔트/콘크리트|강도: PCN 74/F/B/X/T, 85/R/B/W/T|ILS: CAT I (양방향)"/>
+                
+                <!-- 활주로 라벨 -->
+                <text x="100" y="-45" class="label runway-label">14R</text>
+                <text x="3100" y="-45" class="label runway-label">32L</text>
+                <text x="100" y="190" class="label runway-label">14L</text>
+                <text x="3500" y="190" class="label runway-label">32R</text>
+                
+                <!-- 평행 유도로 P (메인) -->
+                <line x1="150" y1="-120" x2="2800" y2="-120" class="taxiway-main" 
+                      data-info="Taxiway P (Main Parallel)|폭: 30m|Code F 지원|길이: 2650m|속도 제한: 17kt (P6-F2 구간, Code F)"/>
+                
+                <!-- 평행 유도로 A -->
+                <line x1="3450" y1="-200" x2="3450" y2="0" class="taxiway-main" 
+                      data-info="Taxiway A|폭: 35m|Code E|터미널 연결"/>
+                
+                <!-- 연결 유도로들 -->
+                <line x1="300" y1="0" x2="300" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway G1|폭: 30m|Code E|14R/32L ↔ P"/>
+                <line x1="800" y1="0" x2="800" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway B1|폭: 30m|Code F|14R/32L ↔ P"/>
+                <line x1="1200" y1="0" x2="1200" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway B2|폭: 35m|Code F|14R/32L ↔ P"/>
+                <line x1="1215" y1="0" x2="1215" y2="-120" class="taxiway-rapid" 
+                      data-info="Taxiway E1 (Rapid Exit)|폭: 35m|Code E|32L 급속탈출|거리: 1985m from 32L"/>
+                <line x1="1100" y1="150" x2="1100" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway E2|폭: 35m|Code E|14L/32R ↔ P"/>
+                <line x1="1400" y1="0" x2="1400" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway W1|폭: 23m|Code B|West Apron"/>
+                <line x1="1700" y1="0" x2="1700" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway W2|폭: 23m|Code B|West Apron"/>
+                <line x1="1950" y1="0" x2="1950" y2="-120" class="taxiway-rapid" 
+                      data-info="Taxiway C1 (Rapid Exit)|폭: 35m|Code E|14R 급속탈출|거리: 1950m from 14R"/>
+                <line x1="2400" y1="0" x2="2400" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway C3|폭: 35m|Code E|14R/32L ↔ P"/>
+                <line x1="2400" y1="150" x2="2400" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway C2|폭: 35m|Code E|14L/32R ↔ P"/>
+                <line x1="2600" y1="0" x2="2600" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway D1|폭: 30m|Code F|14R/32L ↔ P"/>
+                <line x1="2700" y1="150" x2="2700" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway D3|폭: 35m|Code F|14L/32R ↔ P"/>
+                <line x1="2800" y1="0" x2="2800" y2="-120" class="taxiway-connecting" 
+                      data-info="Taxiway D2|폭: 35m|Code F|14R/32L ↔ P"/>
+                
+                <!-- 터미널 연결 유도로 -->
+                <line x1="150" y1="-120" x2="150" y2="300" class="taxiway-main" 
+                      data-info="Taxiway G2|폭: 40m|Code F|North Apron 연결"/>
+                <line x1="1800" y1="-120" x2="1800" y2="-400" class="taxiway-connecting" 
+                      data-info="Terminal Access|메인 터미널 연결"/>
+                
+                <!-- 에이프런 영역 -->
+                <rect x="900" y="-500" width="1800" height="250" class="apron-area" 
+                      data-info="Main Terminal Apron|국내선 터미널|게이트: 다수|Code E/F 지원"/>
+                <rect x="50" y="300" width="300" height="200" class="apron-area" 
+                      data-info="North Apron|국제선 터미널|게이트: NR 201-233, 301-307|Code E"/>
+                <rect x="1200" y="-650" width="600" height="150" class="apron-area" 
+                      data-info="West Apron|일반항공|소형 항공기|Code B|게이트: 502-514, 908, 909"/>
+                
+                <!-- 유도로 라벨 -->
+                <text x="300" y="-60" class="label taxiway-label">G1</text>
+                <text x="800" y="-60" class="label taxiway-label">B1</text>
+                <text x="1200" y="-60" class="label taxiway-label">B2</text>
+                <text x="1215" y="-60" class="label taxiway-label" style="fill: #ff6600;">E1</text>
+                <text x="1100" y="-60" class="label taxiway-label">E2</text>
+                <text x="1950" y="-60" class="label taxiway-label" style="fill: #ff6600;">C1</text>
+                <text x="2400" y="-60" class="label taxiway-label">C2/C3</text>
+                <text x="2600" y="-60" class="label taxiway-label">D1</text>
+                <text x="2700" y="-60" class="label taxiway-label">D3</text>
+                <text x="2800" y="-60" class="label taxiway-label">D2</text>
+                <text x="1800" y="-135" class="label taxiway-label" style="fill: #555; font-size: 14px;">P</text>
+                <text x="150" y="200" class="label taxiway-label">G2</text>
+                <text x="3465" y="-100" class="label taxiway-label">A</text>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        // 실제 김포공항 노드 데이터
+        const nodes = {
+            "RW14R_THR": {x: 0, y: 0, type: "runway_threshold", name: "Runway 14R Threshold"},
+            "RW32L_THR": {x: 3200, y: 0, type: "runway_threshold", name: "Runway 32L Threshold"},
+            "RW14L_THR": {x: 0, y: 150, type: "runway_threshold", name: "Runway 14L Threshold"},
+            "RW32R_THR": {x: 3600, y: 150, type: "runway_threshold", name: "Runway 32R Threshold"},
+            "RW14R_G1": {x: 300, y: 0, type: "intersection", name: "RW 14R/32L - TWY G1"},
+            "RW14R_B1": {x: 800, y: 0, type: "intersection", name: "RW 14R/32L - TWY B1"},
+            "RW14R_B2": {x: 1200, y: 0, type: "intersection", name: "RW 14R/32L - TWY B2"},
+            "RW32L_E1": {x: 1215, y: 0, type: "rapid_exit", name: "RW 32L - TWY E1 (급속탈출)"},
+            "RW14L_E2": {x: 1100, y: 150, type: "intersection", name: "RW 14L/32R - TWY E2"},
+            "RW14R_W1": {x: 1400, y: 0, type: "intersection", name: "RW 14R/32L - TWY W1"},
+            "RW14R_W2": {x: 1700, y: 0, type: "intersection", name: "RW 14R/32L - TWY W2"},
+            "RW14R_C1": {x: 1950, y: 0, type: "rapid_exit", name: "RW 14R/32L - TWY C1 (급속탈출)"},
+            "RW14R_C3": {x: 2400, y: 0, type: "intersection", name: "RW 14R/32L - TWY C3"},
+            "RW14L_C2": {x: 2400, y: 150, type: "intersection", name: "RW 14L/32R - TWY C2"},
+            "RW14R_D1": {x: 2600, y: 0, type: "intersection", name: "RW 14R/32L - TWY D1"},
+            "RW14L_D3": {x: 2700, y: 150, type: "intersection", name: "RW 14L/32R - TWY D3"},
+            "RW14R_D2": {x: 2800, y: 0, type: "intersection", name: "RW 14R/32L - TWY D2"},
+            "RW32R_A": {x: 3450, y: 150, type: "intersection", name: "RW 14L/32R - TWY A"},
+            "MAIN_TERMINAL": {x: 1800, y: -400, type: "apron_entry", name: "Main Terminal"},
+            "NORTH_APRON": {x: 200, y: 400, type: "apron_entry", name: "North Apron (International)"},
+            "WEST_APRON": {x: 1500, y: -575, type: "apron_entry", name: "West Apron (GA)"}
+        };
+
+        // 확장된 RWSL 등화 데이터
+        const allLights = {
+            REL: [
+                // B1 그룹
+                ...generateLightGroup(740, 0, 22, "REL_B1"),
+                // B2 그룹  
+                ...generateLightGroup(1140, 0, 22, "REL_B2"),
+                // C1 그룹 (급속탈출)
+                ...generateLightGroup(1890, 0, 22, "REL_C1"),
+                // C3 그룹
+                ...generateLightGroup(2340, 0, 22, "REL_C3"),
+                // D1 그룹
+                ...generateLightGroup(2540, 0, 22, "REL_D1"),
+                // D2 그룹
+                ...generateLightGroup(2740, 0, 22, "REL_D2"),
+                // E1 그룹 (급속탈출)
+                ...generateLightGroup(1155, 0, 22, "REL_E1"),
+                // 14L/32R 활주로용
+                ...generateLightGroup(2340, 150, 22, "REL_C2"),
+                ...generateLightGroup(2640, 150, 22, "REL_D3"),
+                ...generateLightGroup(1040, 150, 22, "REL_E2")
+            ],
+            THL: [
+                // 14R THL
+                ...generateTHLGroup(115, 0, 10, "THL_14R"),
+                // 32L THL
+                ...generateTHLGroup(3085, 0, 10, "THL_32L", -1),
+                // 14L THL
+                ...generateTHLGroup(115, 150, 10, "THL_14L"),
+                // 32R THL
+                ...generateTHLGroup(3485, 150, 10, "THL_32R", -1)
+            ]
+        };
+
+        function generateLightGroup(startX, y, count, prefix) {
+            const lights = [];
+            for (let i = 0; i < count; i++) {
+                lights.push({
+                    x: startX + (i * 3),
+                    y: y + (i % 2 === 0 ? -1.5 : 1.5),
+                    id: `${prefix}_${String(i + 1).padStart(3, '0')}`
+                });
+            }
+            return lights;
+        }
+
+        function generateTHLGroup(startX, y, count, prefix, direction = 1) {
+            const lights = [];
+            for (let i = 0; i < count; i++) {
+                const x = startX + (direction * i * 38);
+                lights.push({
+                    x: x,
+                    y: y - 11.5,
+                    id: `${prefix}_${String(i * 2 + 1).padStart(3, '0')}`
+                });
+                lights.push({
+                    x: x,
+                    y: y + 11.5,
+                    id: `${prefix}_${String(i * 2 + 2).padStart(3, '0')}`
+                });
+            }
+            return lights;
+        }
+
+        let lightsVisible = true;
+        let labelsVisible = true;
+        let currentScale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+        const svg = document.getElementById('airport-map');
+
+        // 노드 생성
+        function createNodes() {
+            Object.entries(nodes).forEach(([id, node]) => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', node.x);
+                circle.setAttribute('cy', node.y);
+                circle.setAttribute('r', getNodeRadius(node.type));
+                circle.setAttribute('class', `node ${node.type.replace('_', '-')}`);
+                circle.setAttribute('data-info', `${node.name}|타입: ${node.type}|좌표: (${node.x}, ${node.y})`);
+                circle.addEventListener('click', showElementInfo);
+                svg.appendChild(circle);
+
+                // 노드 라벨
+                if (labelsVisible && (node.type === 'runway_threshold' || node.type === 'rapid_exit')) {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', node.x);
+                    text.setAttribute('y', node.y - 20);
+                    text.setAttribute('class', 'label');
+                    text.setAttribute('font-size', '9');
+                    text.textContent = id.replace('RW', '').replace('_', ' ');
+                    text.classList.add('node-label');
+                    svg.appendChild(text);
+                }
+            });
+        }
+
+        // RWSL 등화 생성
+        function createLights() {
+            if (!lightsVisible) return;
+            
+            // REL 등화
+            allLights.REL.forEach((light) => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', light.x);
+                circle.setAttribute('cy', light.y);
+                circle.setAttribute('r', 1.5);
+                circle.setAttribute('class', 'rel-light');
+                circle.setAttribute('data-info', `${light.id}|활주로 진입등 (REL)|좌표: (${light.x}, ${light.y})|기능: 활주로 점유시 빨간불 점등`);
+                circle.addEventListener('click', showElementInfo);
+                svg.appendChild(circle);
+            });
+
+            // THL 등화
+            allLights.THL.forEach((light) => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', light.x);
+                circle.setAttribute('cy', light.y);
+                circle.setAttribute('r', 1.5);
+                circle.setAttribute('class', 'thl-light');
+                circle.setAttribute('data-info', `${light.id}|이륙 대기등 (THL)|좌표: (${light.x}, ${light.y})|기능: 이륙 대기시 빨간불 점등`);
+                circle.addEventListener('click', showElementInfo);
+                svg.appendChild(circle);
+            });
+        }
+
+        function getNodeRadius(type) {
+            switch(type) {
+                case 'runway_threshold': return 8;
+                case 'rapid_exit': return 7;
+                case 'intersection': return 5;
+                case 'apron_entry': return 6;
+                default: return 4;
+            }
+        }
+
+        function showElementInfo(event) {
+            const element = event.target;
+            const info = element.getAttribute('data-info');
+            if (info) {
+                const parts = info.split('|');
+                const infoPanel = document.getElementById('element-info');
+                infoPanel.innerHTML = `
+                    <strong>${parts[0]}</strong><br>
+                    ${parts.slice(1).join('<br>')}
+                `;
+            }
+        }
+
+        // 컨트롤 함수들
+        function zoomIn() {
+            currentScale *= 1.3;
+            updateTransform();
+        }
+
+        function zoomOut() {
+            currentScale /= 1.3;
+            updateTransform();
+        }
+
+        function resetView() {
+            currentScale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        }
+
+        function toggleLights() {
+            lightsVisible = !lightsVisible;
+            const btn = document.getElementById('lights-btn');
+            btn.classList.toggle('active', lightsVisible);
+            refreshMap();
+        }
+
+        function toggleLabels() {
+            labelsVisible = !labelsVisible;
+            const btn = document.getElementById('labels-btn');
+            btn.classList.toggle('active', labelsVisible);
+            refreshMap();
+        }
+
+        function refreshMap() {
+            // 기존 노드와 등화 제거
+            svg.querySelectorAll('.node, .rel-light, .thl-light, .node-label').forEach(el => el.remove());
+            // 재생성
+            createNodes();
+            createLights();
+        }
+
+        function updateTransform() {
+            svg.style.transform = `scale(${currentScale}) translate(${translateX}px, ${translateY}px)`;
+        }
+
+        // 마우스 이벤트
+        svg.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        svg.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = (e.clientX - lastMouseX) / currentScale;
+                const deltaY = (e.clientY - lastMouseY) / currentScale;
+                translateX += deltaX;
+                translateY += deltaY;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                updateTransform();
+            }
+        });
+
+        svg.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        svg.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomIn();
+            } else {
+                zoomOut();
+            }
+        });
+
+        // 활주로/유도로 정보 표시
+        document.querySelectorAll('.runway, .taxiway-main, .taxiway-connecting, .taxiway-rapid, .apron-area').forEach(element => {
+            element.addEventListener('click', showElementInfo);
+        });
+
+        // 초기화
+        createNodes();
+        createLights();
+        
+        // 초기 정보 표시
+        document.getElementById('element-info').innerHTML = `
+            <strong>김포공항 완전 유도로 네트워크</strong><br>
+            실제 AIP 기반 정확한 시설 배치<br><br>
+            <em>특징:</em><br>
+            • 급속탈출유도로 C1, E1<br>
+            • Code F 지원 유도로<br>
+            • 154개 RWSL 등화<br>
+            • 3개 터미널 영역<br><br>
+            <small>요소를 클릭하여 상세 정보를 확인하세요</small>
+        `;
+    </script>
+</body>
+</html>

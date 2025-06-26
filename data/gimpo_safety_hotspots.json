@@ -1,0 +1,114 @@
+{
+  "hot_spots": [
+    {
+      "id": "HS1",
+      "description": "Location on Gimpo airport movement area with a potential risk of runway incursion and where aircraft are frequently encountered",
+      "risk_level": "high",
+      "location": "multiple_locations",
+      "mitigation": "Extra caution required for runway incursion prevention"
+    },
+    {
+      "id": "HS2", 
+      "description": "Aircraft use caution when passing by this point that 4 taxiways (C3, D2, P and R) are intersecting",
+      "risk_level": "medium",
+      "location": "intersection_C3_D2_P_R",
+      "mitigation": "Caution at 4-way taxiway intersection"
+    },
+    {
+      "id": "HS3",
+      "description": "Location on Gimpo airport movement area with a potential risk of runway incursion and where aircraft are frequently encountered",
+      "risk_level": "high", 
+      "location": "multiple_locations",
+      "mitigation": "Extra caution required for runway incursion prevention"
+    },
+    {
+      "id": "HS4",
+      "description": "Location on Gimpo airport movement area with a potential risk of runway incursion",
+      "risk_level": "medium",
+      "location": "movement_area",
+      "mitigation": "Runway incursion prevention"
+    },
+    {
+      "id": "HS5",
+      "description": "Location on Gimpo airport movement area with a potential risk of runway incursion",
+      "risk_level": "medium",
+      "location": "movement_area", 
+      "mitigation": "Runway incursion prevention"
+    },
+    {
+      "id": "HS6",
+      "description": "A location on Gimpo airport movement area with a history of runway incursion",
+      "risk_level": "high",
+      "location": "movement_area",
+      "mitigation": "Historical runway incursion site - extreme caution"
+    },
+    {
+      "id": "HS7",
+      "description": "Pilots and ground handlers for towing aircraft shall maintain a good lookout to ensure sufficient wing tip clearance",
+      "risk_level": "medium",
+      "location": "aircraft_towing_areas",
+      "mitigation": "Wing tip clearance awareness"
+    },
+    {
+      "id": "HS8",
+      "description": "Pilots are to pay extra caution when they have 'hold short instruction' from ATC and to ensure sufficient wing tip clearance",
+      "risk_level": "medium",
+      "location": "hold_short_positions",
+      "mitigation": "Hold short compliance and wing tip clearance"
+    },
+    {
+      "id": "HS9",
+      "description": "Location on Gimpo airport movement area with a potential risk of runway incursion",
+      "risk_level": "medium",
+      "location": "movement_area",
+      "mitigation": "Runway incursion prevention"
+    }
+  ],
+  "deicing_pads": [
+    {
+      "aircraft_category": "B737-800WL (MD90)",
+      "stands": ["27", "28", "140", "127", "201L", "201R"],
+      "location": "various"
+    },
+    {
+      "aircraft_category": "B767",
+      "stands": ["130"],
+      "location": "east_apron"
+    },
+    {
+      "aircraft_category": "B747", 
+      "stands": ["129", "133", "134", "201", "N1-A", "N1-B"],
+      "location": "various_including_N1_taxiway"
+    }
+  ],
+  "operational_restrictions": [
+    {
+      "restriction": "F-code aircraft operations",
+      "details": "14L/32R runway use prohibited for F-code aircraft"
+    },
+    {
+      "restriction": "A380 operations on taxiway P",
+      "details": "No aircraft allowed on TWY N1 while F-code aircraft occupies TWY P"
+    },
+    {
+      "restriction": "F-code aircraft taxi speed",
+      "details": "17 kt speed limit on TWY P from P6 to F2, Follow-me car required"
+    },
+    {
+      "restriction": "Pushback restrictions 121F",
+      "details": "Nose-gear cannot cross intermediate holding position marking on TWY R behind stand 123"
+    },
+    {
+      "restriction": "Pushback restrictions 123F",
+      "details": "Nose-gear cannot cross intermediate holding position marking on TWY R behind stand 122"
+    },
+    {
+      "restriction": "General aviation coordination",
+      "details": "All GA aircraft operators must contact airport operator at least 1 day before flight"
+    },
+    {
+      "restriction": "Taxiway P speed requirement",
+      "details": "Minimum 10 kt speed required unless exceptional safety direction from ATC"
+    }
+  ]
+}

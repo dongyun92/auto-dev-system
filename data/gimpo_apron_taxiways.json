@@ -1,0 +1,137 @@
+{
+  "apron_taxiways": [
+    {
+      "designation": "P",
+      "width": 30,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "main_apron",
+      "special_rules": "Minimum 10kt speed required for traffic flow"
+    },
+    {
+      "designation": "P1",
+      "width": null,
+      "surface": "Concrete", 
+      "pcr": "PCR 693/F/B/X/T",
+      "type": "apron_connector"
+    },
+    {
+      "designation": "P2",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "apron_connector"
+    },
+    {
+      "designation": "P3",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T", 
+      "type": "apron_connector"
+    },
+    {
+      "designation": "P4",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "apron_connector",
+      "features": "Taxiway intersection markings at 5 locations"
+    },
+    {
+      "designation": "P5",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "apron_connector",
+      "features": "Taxiway intersection markings at 5 locations"
+    },
+    {
+      "designation": "P6",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "apron_connector",
+      "features": "Engine run-up area nearby"
+    },
+    {
+      "designation": "R",
+      "width": null,
+      "surface": "Asphalt",
+      "pcr": "PCR 693/F/B/X/T",
+      "type": "apron_taxilane"
+    },
+    {
+      "designation": "RD", 
+      "width": null,
+      "surface": "Asphalt",
+      "pcr": "PCR 693/F/B/X/T",
+      "type": "apron_taxilane"
+    },
+    {
+      "designation": "S",
+      "width": null,
+      "surface": "Asphalt",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "west_apron"
+    },
+    {
+      "designation": "T",
+      "width": null,
+      "surface": "Asphalt", 
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "west_apron"
+    }
+  ],
+  "north_taxiways": [
+    {
+      "designation": "N1",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "north_apron",
+      "features": "Deicing pads N1-A, N1-B"
+    },
+    {
+      "designation": "N2",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "north_apron"
+    },
+    {
+      "designation": "N3",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "north_apron"
+    },
+    {
+      "designation": "N4",
+      "width": null,
+      "surface": "Concrete", 
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "north_apron"
+    },
+    {
+      "designation": "N5",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "north_apron"
+    },
+    {
+      "designation": "NY",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T",
+      "type": "north_apron"
+    },
+    {
+      "designation": "NX",
+      "width": null,
+      "surface": "Concrete",
+      "pcr": "PCR 1,006/R/B/W/T", 
+      "type": "north_apron"
+    }
+  ]
+}

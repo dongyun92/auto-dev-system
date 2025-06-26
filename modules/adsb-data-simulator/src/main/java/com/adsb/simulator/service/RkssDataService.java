@@ -35,7 +35,6 @@ public class RkssDataService {
     private long accumulatedSimulationMillis = 0; // Track accumulated simulation time in milliseconds
     private LocalDateTime lastSpeedChangeTime; // Track when speed was last changed
     private Set<String> spawnedCallsigns = new HashSet<>(); // Track which aircraft have been spawned
-    private Map<String, RkssTrackData> previousPositions = new HashMap<>(); // For interpolation
     
     private static final String RKSS_DATA_PATH = "/Users/dykim/dev/auto-dev-system/modules/adsb-data-simulator/src/main/resources/data/RKSS_20250502_track_data_interpolated.json";
     
@@ -177,13 +176,12 @@ public class RkssDataService {
                     Math.max(50, (long)(100.0 / Math.min(playbackSpeed, 2.0))));
         }
         
-        // Apply interpolation for smooth movement and convert to Aircraft objects
+        // Convert to Aircraft objects (data is already at 0.1s intervals)
         List<Aircraft> aircraftList = new ArrayList<>();
         for (Map.Entry<String, RkssTrackData> entry : activeAircraft.entrySet()) {
             String callsign = entry.getKey();
             RkssTrackData currentData = entry.getValue();
             
-            // Convert directly without interpolation (data is already at 0.1s intervals)
             aircraftList.add(convertRkssToAircraft(currentData));
         }
         
@@ -290,106 +288,6 @@ public class RkssDataService {
     
     public double getPlaybackSpeed() {
         return playbackSpeed;
-    }
-    
-    private RkssTrackData interpolatePosition(String callsign, RkssTrackData currentData) {
-        RkssTrackData previousData = previousPositions.get(callsign);
-        
-        // If no previous position, return current data as-is
-        if (previousData == null) {
-            return currentData;
-        }
-        
-        // Calculate interpolation factor based on update frequency
-        // For smoother movement, interpolate between previous and current position
-        double interpolationFactor = 0.3; // Adjust for smoothness (0.0 = no change, 1.0 = immediate jump)
-        
-        // Create interpolated data
-        RkssTrackData interpolated = new RkssTrackData();
-        interpolated.setCallsign(currentData.getCallsign());
-        interpolated.setTimestamp(currentData.getTimestamp());
-        interpolated.setFlight(currentData.getFlight());
-        interpolated.setHexid(currentData.getHexid());
-        interpolated.setSource(currentData.getSource());
-        interpolated.setSquawk(currentData.getSquawk());
-        interpolated.setDistance_from_gimpo(currentData.getDistance_from_gimpo());
-        
-        // Interpolate position
-        if (previousData.getLat() != null && currentData.getLat() != null) {
-            double interpolatedLat = previousData.getLat() + 
-                (currentData.getLat() - previousData.getLat()) * interpolationFactor;
-            interpolated.setLat(interpolatedLat);
-        } else {
-            interpolated.setLat(currentData.getLat());
-        }
-        
-        if (previousData.getLon() != null && currentData.getLon() != null) {
-            double interpolatedLon = previousData.getLon() + 
-                (currentData.getLon() - previousData.getLon()) * interpolationFactor;
-            interpolated.setLon(interpolatedLon);
-        } else {
-            interpolated.setLon(currentData.getLon());
-        }
-        
-        // Interpolate altitude
-        if (previousData.getAlt() != null && currentData.getAlt() != null) {
-            int interpolatedAlt = (int) (previousData.getAlt() + 
-                (currentData.getAlt() - previousData.getAlt()) * interpolationFactor);
-            interpolated.setAlt(interpolatedAlt);
-        } else {
-            interpolated.setAlt(currentData.getAlt());
-        }
-        
-        // Interpolate speed
-        if (previousData.getGspeed() != null && currentData.getGspeed() != null) {
-            int interpolatedSpeed = (int) (previousData.getGspeed() + 
-                (currentData.getGspeed() - previousData.getGspeed()) * interpolationFactor);
-            interpolated.setGspeed(interpolatedSpeed);
-        } else {
-            interpolated.setGspeed(currentData.getGspeed());
-        }
-        
-        // Interpolate heading (special handling for circular values)
-        if (previousData.getTrack() != null && currentData.getTrack() != null) {
-            int interpolatedHeading = interpolateHeading(previousData.getTrack(), currentData.getTrack(), interpolationFactor);
-            interpolated.setTrack(interpolatedHeading);
-        } else {
-            interpolated.setTrack(currentData.getTrack());
-        }
-        
-        // Interpolate vertical speed
-        if (previousData.getVspeed() != null && currentData.getVspeed() != null) {
-            int interpolatedVSpeed = (int) (previousData.getVspeed() + 
-                (currentData.getVspeed() - previousData.getVspeed()) * interpolationFactor);
-            interpolated.setVspeed(interpolatedVSpeed);
-        } else {
-            interpolated.setVspeed(currentData.getVspeed());
-        }
-        
-        return interpolated;
-    }
-    
-    private int interpolateHeading(int previousHeading, int currentHeading, double factor) {
-        // Handle heading interpolation considering 360-degree wraparound
-        int diff = currentHeading - previousHeading;
-        
-        // Handle wraparound (e.g., 350° to 10°)
-        if (diff > 180) {
-            diff -= 360;
-        } else if (diff < -180) {
-            diff += 360;
-        }
-        
-        int interpolatedHeading = (int) (previousHeading + diff * factor);
-        
-        // Normalize to 0-359 range
-        if (interpolatedHeading < 0) {
-            interpolatedHeading += 360;
-        } else if (interpolatedHeading >= 360) {
-            interpolatedHeading -= 360;
-        }
-        
-        return interpolatedHeading;
     }
     
     // Inner class for RKSS data structure

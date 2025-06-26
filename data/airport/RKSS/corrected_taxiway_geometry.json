@@ -1,0 +1,296 @@
+{
+  "corrected_taxiways": {
+    "description": "김포공항 유도로 시스템 - 곡선 및 대각선 경로 반영",
+    "coordinate_system": "Local Cartesian (ARP 기준)",
+    "units": "meters",
+    "corrections": [
+      "급속탈출유도로 C1, E1의 실제 30도 각도 반영",
+      "유도로 연결부의 곡선 경로 추가",
+      "터미널 접근 유도로의 곡선 구간 모델링"
+    ]
+  },
+  "runways": [
+    {
+      "designation": "14R/32L",
+      "true_bearing": "135.00°/315.02°",
+      "dimensions": {"length": 3200, "width": 60},
+      "threshold_14R": {"x": 0, "y": 0},
+      "threshold_32L": {"x": 3200, "y": 0},
+      "surface": "Asphalt",
+      "strength": "PCN 74/F/B/X/T"
+    },
+    {
+      "designation": "14L/32R", 
+      "true_bearing": "135.01°/315.03°",
+      "dimensions": {"length": 3600, "width": 45},
+      "threshold_14L": {"x": 0, "y": 150},
+      "threshold_32R": {"x": 3600, "y": 150},
+      "surface": "Asphalt/Concrete",
+      "strength": "PCN 74/F/B/X/T, 85/R/B/W/T"
+    }
+  ],
+  "parallel_taxiways": [
+    {
+      "designation": "P",
+      "type": "main_parallel",
+      "width": 30,
+      "code_letter": "F",
+      "path": [
+        {"x": 150, "y": -120, "type": "start"},
+        {"x": 800, "y": -120, "type": "straight"},
+        {"x": 1200, "y": -120, "type": "straight"},
+        {"x": 1400, "y": -120, "type": "straight"},
+        {"x": 1700, "y": -120, "type": "straight"},
+        {"x": 1950, "y": -120, "type": "straight"},
+        {"x": 2400, "y": -120, "type": "straight"},
+        {"x": 2600, "y": -120, "type": "straight"},
+        {"x": 2800, "y": -120, "type": "end"}
+      ],
+      "speed_limit": "17kt (P6-F2 구간, Code F)"
+    },
+    {
+      "designation": "A",
+      "type": "terminal_parallel", 
+      "width": 35,
+      "code_letter": "E",
+      "path": [
+        {"x": 3450, "y": -200, "type": "start"},
+        {"x": 3450, "y": -100, "type": "straight"},
+        {"x": 3450, "y": 0, "type": "intersection", "connects": "32R"},
+        {"x": 3450, "y": 100, "type": "straight"},
+        {"x": 3450, "y": 150, "type": "intersection", "connects": "32R"},
+        {"x": 3450, "y": 250, "type": "end"}
+      ]
+    },
+    {
+      "designation": "G2",
+      "type": "north_parallel",
+      "width": 40,
+      "code_letter": "F", 
+      "path": [
+        {"x": 150, "y": 300, "type": "start", "connects": "North_Apron"},
+        {"x": 150, "y": 200, "type": "straight"},
+        {"x": 150, "y": 100, "type": "straight"},
+        {"x": 150, "y": 0, "type": "straight"},
+        {"x": 150, "y": -120, "type": "end", "connects": "P"}
+      ]
+    }
+  ],
+  "connecting_taxiways": [
+    {
+      "designation": "B1",
+      "type": "straight_connector",
+      "width": 30,
+      "code_letter": "F",
+      "path": [
+        {"x": 800, "y": -120, "type": "start", "connects": "P"},
+        {"x": 800, "y": -60, "type": "approach"},
+        {"x": 800, "y": -30, "type": "runway_edge"},
+        {"x": 800, "y": 0, "type": "intersection", "connects": "14R/32L"}
+      ]
+    },
+    {
+      "designation": "B2", 
+      "type": "straight_connector",
+      "width": 35,
+      "code_letter": "F",
+      "path": [
+        {"x": 1200, "y": -120, "type": "start", "connects": "P"},
+        {"x": 1200, "y": -60, "type": "approach"},
+        {"x": 1200, "y": -30, "type": "runway_edge"}, 
+        {"x": 1200, "y": 0, "type": "intersection", "connects": "14R/32L"}
+      ]
+    },
+    {
+      "designation": "C1",
+      "type": "rapid_exit_diagonal",
+      "width": 35,
+      "code_letter": "E",
+      "rapid_exit": true,
+      "angle": 30,
+      "distance_from_threshold": "1950m from 14R",
+      "path": [
+        {"x": 1950, "y": 0, "type": "start", "connects": "14R/32L"},
+        {"x": 1960, "y": -15, "type": "curve", "radius": 200, "angle": 30},
+        {"x": 1980, "y": -30, "type": "diagonal", "angle": 30},
+        {"x": 2010, "y": -50, "type": "diagonal", "angle": 30},
+        {"x": 2040, "y": -70, "type": "diagonal", "angle": 30},
+        {"x": 2070, "y": -90, "type": "curve", "radius": 150, "angle": 15},
+        {"x": 2090, "y": -105, "type": "approach"},
+        {"x": 2100, "y": -120, "type": "end", "connects": "P"}
+      ]
+    },
+    {
+      "designation": "E1",
+      "type": "rapid_exit_diagonal",
+      "width": 35,
+      "code_letter": "E", 
+      "rapid_exit": true,
+      "angle": -30,
+      "distance_from_threshold": "1985m from 32L",
+      "path": [
+        {"x": 1215, "y": 0, "type": "start", "connects": "14R/32L"},
+        {"x": 1205, "y": -15, "type": "curve", "radius": 200, "angle": -30},
+        {"x": 1185, "y": -30, "type": "diagonal", "angle": -30},
+        {"x": 1155, "y": -50, "type": "diagonal", "angle": -30},
+        {"x": 1125, "y": -70, "type": "diagonal", "angle": -30},
+        {"x": 1095, "y": -90, "type": "curve", "radius": 150, "angle": -15},
+        {"x": 1075, "y": -105, "type": "approach"},
+        {"x": 1065, "y": -120, "type": "end", "connects": "P"}
+      ]
+    },
+    {
+      "designation": "C2",
+      "type": "straight_connector",
+      "width": 35,
+      "code_letter": "E",
+      "path": [
+        {"x": 2400, "y": 150, "type": "start", "connects": "14L/32R"},
+        {"x": 2400, "y": 120, "type": "runway_edge"},
+        {"x": 2400, "y": 90, "type": "approach"},
+        {"x": 2400, "y": 30, "type": "intermediate"},
+        {"x": 2400, "y": -30, "type": "approach"},
+        {"x": 2400, "y": -60, "type": "approach"},
+        {"x": 2400, "y": -120, "type": "end", "connects": "P"}
+      ]
+    },
+    {
+      "designation": "C3",
+      "type": "straight_connector", 
+      "width": 35,
+      "code_letter": "E",
+      "path": [
+        {"x": 2400, "y": 0, "type": "start", "connects": "14R/32L"},
+        {"x": 2400, "y": -30, "type": "runway_edge"},
+        {"x": 2400, "y": -60, "type": "approach"},
+        {"x": 2400, "y": -120, "type": "end", "connects": "P"}
+      ]
+    },
+    {
+      "designation": "D1",
+      "type": "straight_connector",
+      "width": 30,
+      "code_letter": "F",
+      "path": [
+        {"x": 2600, "y": 0, "type": "start", "connects": "14R/32L"},
+        {"x": 2600, "y": -30, "type": "runway_edge"},
+        {"x": 2600, "y": -60, "type": "approach"},
+        {"x": 2600, "y": -120, "type": "end", "connects": "P"}
+      ]
+    },
+    {
+      "designation": "D2",
+      "type": "straight_connector",
+      "width": 35,
+      "code_letter": "F", 
+      "path": [
+        {"x": 2800, "y": 0, "type": "start", "connects": "14R/32L"},
+        {"x": 2800, "y": -30, "type": "runway_edge"},
+        {"x": 2800, "y": -60, "type": "approach"},
+        {"x": 2800, "y": -120, "type": "end", "connects": "P"}
+      ]
+    },
+    {
+      "designation": "D3",
+      "type": "straight_connector",
+      "width": 35,
+      "code_letter": "F",
+      "path": [
+        {"x": 2700, "y": 150, "type": "start", "connects": "14L/32R"},
+        {"x": 2700, "y": 120, "type": "runway_edge"},
+        {"x": 2700, "y": 90, "type": "approach"},
+        {"x": 2700, "y": 30, "type": "intermediate"},
+        {"x": 2700, "y": -30, "type": "approach"},
+        {"x": 2700, "y": -60, "type": "approach"},
+        {"x": 2700, "y": -120, "type": "end", "connects": "P"}
+      ]
+    },
+    {
+      "designation": "E2",
+      "type": "straight_connector",
+      "width": 35,
+      "code_letter": "E",
+      "path": [
+        {"x": 1100, "y": 150, "type": "start", "connects": "14L/32R"},
+        {"x": 1100, "y": 120, "type": "runway_edge"},
+        {"x": 1100, "y": 90, "type": "approach"},
+        {"x": 1100, "y": 30, "type": "intermediate"},
+        {"x": 1100, "y": -30, "type": "approach"},
+        {"x": 1100, "y": -60, "type": "approach"},
+        {"x": 1100, "y": -120, "type": "end", "connects": "P"}
+      ]
+    },
+    {
+      "designation": "G1",
+      "type": "straight_connector",
+      "width": 30,
+      "code_letter": "E",
+      "path": [
+        {"x": 300, "y": 0, "type": "start", "connects": "14R/32L"},
+        {"x": 300, "y": -30, "type": "runway_edge"},
+        {"x": 300, "y": -60, "type": "approach"},
+        {"x": 300, "y": -120, "type": "end", "connects": "P"}
+      ]
+    }
+  ],
+  "terminal_connections": [
+    {
+      "designation": "P1",
+      "type": "taxilane",
+      "width": 30,
+      "code_letter": "F",
+      "path": [
+        {"x": 150, "y": -120, "type": "start", "connects": "P_G2_junction"},
+        {"x": 150, "y": -200, "type": "straight"},
+        {"x": 150, "y": -280, "type": "curve", "radius": 100},
+        {"x": 200, "y": -320, "type": "curve", "radius": 100},
+        {"x": 300, "y": -350, "type": "straight"},
+        {"x": 500, "y": -350, "type": "end", "connects": "Terminal_Gates"}
+      ]
+    },
+    {
+      "designation": "Terminal_Access_Curved",
+      "type": "terminal_connector",
+      "width": 25,
+      "code_letter": "E",
+      "path": [
+        {"x": 1800, "y": -120, "type": "start", "connects": "P"},
+        {"x": 1800, "y": -180, "type": "straight"},
+        {"x": 1800, "y": -240, "type": "curve", "radius": 150},
+        {"x": 1750, "y": -300, "type": "curve", "radius": 150},
+        {"x": 1650, "y": -350, "type": "curve", "radius": 100},
+        {"x": 1500, "y": -380, "type": "straight"},
+        {"x": 1200, "y": -400, "type": "end", "connects": "Main_Terminal"}
+      ]
+    }
+  ],
+  "aprons": [
+    {
+      "designation": "Main_Terminal",
+      "type": "passenger_terminal",
+      "area": {"x": 900, "y": -500, "width": 1800, "height": 250},
+      "surface": "Asphalt/Concrete",
+      "strength": "PCN 74/F/B/X/T",
+      "code_letter": "E/F",
+      "gates": "다수"
+    },
+    {
+      "designation": "North_Apron", 
+      "type": "international_terminal",
+      "area": {"x": 50, "y": 300, "width": 300, "height": 200},
+      "surface": "Concrete",
+      "strength": "PCN 67/R/B/W/T",
+      "code_letter": "E",
+      "gates": "NR 201-233, 301-307"
+    },
+    {
+      "designation": "West_Apron",
+      "type": "general_aviation",
+      "area": {"x": 1200, "y": -650, "width": 600, "height": 150},
+      "surface": "Concrete",
+      "strength": "PCN 58/R/B/W/T", 
+      "code_letter": "B",
+      "gates": "502-514, 908, 909"
+    }
+  ]
+}

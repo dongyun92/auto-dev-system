@@ -1,0 +1,122 @@
+{
+  "runways": [
+    {
+      "designation": "14L/32R",
+      "length": 3600,
+      "width": 45,
+      "surface": "Asphalt",
+      "pcn": "PCN 74/F/B/X/T",
+      "bearing_magnetic": {
+        "14L": 143,
+        "32R": 323
+      },
+      "coordinates": {
+        "14L_threshold": {
+          "lat": 37.570833,
+          "lon": 126.778333,
+          "lat_dms": "37°34'15\"N",
+          "lon_dms": "126°46'42\"E"
+        },
+        "32R_threshold": {
+          "lat": 37.547778,
+          "lon": 126.807222,
+          "lat_dms": "37°32'52\"N",
+          "lon_dms": "126°48'26\"E"
+        }
+      },
+      "ils": {
+        "14L": {
+          "localizer": "ISEL 109.9",
+          "glidepath": "333.8",
+          "category": "CAT-I"
+        },
+        "32R": {
+          "localizer": "ISKP 110.7", 
+          "glidepath": "330.2",
+          "category": "CAT-I"
+        }
+      },
+      "lighting": {
+        "approach": "ALSF-II",
+        "runway": "Yes",
+        "papi": "3° both ends"
+      }
+    },
+    {
+      "designation": "14R/32L",
+      "length": 3200,
+      "width": 60,
+      "surface": "Asphalt",
+      "pcn": "PCN 74/F/B/X/T",
+      "bearing_magnetic": {
+        "14R": 143,
+        "32L": 323
+      },
+      "coordinates": {
+        "14R_threshold": {
+          "lat": 37.568333,
+          "lon": 126.775556,
+          "lat_dms": "37°34'06\"N",
+          "lon_dms": "126°46'32\"E"
+        },
+        "32L_threshold": {
+          "lat": 37.548056,
+          "lon": 126.801111,
+          "lat_dms": "37°32'53\"N",
+          "lon_dms": "126°48'04\"E"
+        }
+      },
+      "ils": {
+        "14R": {
+          "localizer": "IOFR 108.7",
+          "glidepath": "334.1",
+          "category": "CAT-IIIa"
+        },
+        "32L": {
+          "localizer": "IKMO 108.3",
+          "glidepath": "330.5",
+          "category": "CAT-I"
+        }
+      },
+      "lighting": {
+        "approach": "ALSF-I",
+        "runway": "Yes", 
+        "papi": "3° both ends"
+      }
+    }
+  ],
+  "runway_strips": [
+    {
+      "runway": "14L/32R",
+      "length": 3720,
+      "width": 300
+    },
+    {
+      "runway": "14R/32L", 
+      "length": 3320,
+      "width": 300
+    }
+  ],
+  "clearway": [
+    {
+      "runway": "14L",
+      "length": 300,
+      "width": 300
+    },
+    {
+      "runway": "14R",
+      "length": 300,
+      "width": 300
+    },
+    {
+      "runway": "32L",
+      "length": 300,
+      "width": 300
+    },
+    {
+      "runway": "32R",
+      "length": 300,
+      "width": 300
+    }
+  ]
+}

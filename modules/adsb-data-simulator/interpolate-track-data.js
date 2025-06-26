@@ -108,6 +108,8 @@ function interpolateTrackPoints(points, intervalMs = 100) {
         const speed2 = nextPoint.speed || 0;
         const heading1 = current.heading || 0;
         const heading2 = nextPoint.heading || 0;
+        const vspeed1 = current.vspeed || 0;
+        const vspeed2 = nextPoint.vspeed || 0;
         
         // Generate interpolated points
         for (let j = 1; j < numIntervals; j++) {
@@ -116,11 +118,12 @@ function interpolateTrackPoints(points, intervalMs = 100) {
             // Interpolate timestamp
             const interpTime = new Date(currentTime.getTime() + intervalMs * j);
             
-            // Linear interpolation for position, altitude, and speed
+            // Linear interpolation for position, altitude, speed, and vertical speed
             const interpLat = lat1 + (lat2 - lat1) * fraction;
             const interpLon = lon1 + (lon2 - lon1) * fraction;
             const interpAlt = alt1 + (alt2 - alt1) * fraction;
             const interpSpeed = speed1 + (speed2 - speed1) * fraction;
+            const interpVSpeed = vspeed1 + (vspeed2 - vspeed1) * fraction;
             
             // Angular interpolation for heading
             const interpHeading = interpolateAngle(heading1, heading2, fraction);
@@ -134,6 +137,7 @@ function interpolateTrackPoints(points, intervalMs = 100) {
                 altitude: Math.round(interpAlt * 10) / 10,
                 speed: Math.round(interpSpeed * 10) / 10,
                 heading: Math.round(interpHeading * 10) / 10,
+                vspeed: Math.round(interpVSpeed),
                 interpolated: true  // Mark as interpolated
             };
             
@@ -188,7 +192,8 @@ function interpolateTrackData(inputFile, outputFile, intervalMs = 100) {
                     longitude: point.longitude || point.lon,
                     altitude: point.altitude || point.alt,
                     speed: point.speed || point.gspeed,
-                    heading: point.heading || point.track
+                    heading: point.heading || point.track,
+                    vspeed: point.vspeed || 0
                 };
                 groupedByCallsign[point.callsign].push(normalizedPoint);
             });
@@ -208,6 +213,7 @@ function interpolateTrackData(inputFile, outputFile, intervalMs = 100) {
                     alt: track.altitude,
                     gspeed: track.speed,
                     track: track.heading,
+                    vspeed: track.vspeed,
                     // Remove normalized fields
                     latitude: undefined,
                     longitude: undefined,

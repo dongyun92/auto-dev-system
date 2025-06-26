@@ -1,0 +1,209 @@
+{
+  "airport_graph": {
+    "description": "김포공항 RWSL 시스템을 위한 그래프 구조",
+    "coordinate_system": "Local Cartesian (ARP 기준)",
+    "units": "meters"
+  },
+  "nodes": {
+    "RW14R_THR": {
+      "id": "RW14R_THR",
+      "type": "runway_threshold",
+      "name": "Runway 14R Threshold",
+      "coordinates": {
+        "local": {"x": 0, "y": 0},
+        "wgs84": {"lat": 37.5684, "lon": 126.7754}
+      },
+      "elevation_m": 10.4,
+      "runway": "14R/32L"
+    },
+    "RW32L_THR": {
+      "id": "RW32L_THR", 
+      "type": "runway_threshold",
+      "name": "Runway 32L Threshold",
+      "coordinates": {
+        "local": {"x": 3200, "y": 0},
+        "wgs84": {"lat": 37.5480, "lon": 126.8010}
+      },
+      "elevation_m": 12.6,
+      "runway": "14R/32L"
+    },
+    "RW14L_THR": {
+      "id": "RW14L_THR",
+      "type": "runway_threshold", 
+      "name": "Runway 14L Threshold",
+      "coordinates": {
+        "local": {"x": 0, "y": 150},
+        "wgs84": {"lat": 37.5707, "lon": 126.7783}
+      },
+      "elevation_m": 11.6,
+      "runway": "14L/32R"
+    },
+    "RW32R_THR": {
+      "id": "RW32R_THR",
+      "type": "runway_threshold",
+      "name": "Runway 32R Threshold", 
+      "coordinates": {
+        "local": {"x": 3600, "y": 150},
+        "wgs84": {"lat": 37.5477, "lon": 126.8071}
+      },
+      "elevation_m": 12.8,
+      "runway": "14L/32R"
+    },
+    "RW14R_B1": {
+      "id": "RW14R_B1",
+      "type": "runway_taxiway_intersection",
+      "name": "Runway 14R/32L - Taxiway B1 Intersection",
+      "coordinates": {
+        "local": {"x": 800, "y": 0},
+        "wgs84": {"lat": 37.5630, "lon": 126.7821}
+      },
+      "connects": ["14R/32L", "B1"],
+      "holding_position": true
+    },
+    "RW14R_B2": {
+      "id": "RW14R_B2",
+      "type": "runway_taxiway_intersection", 
+      "name": "Runway 14R/32L - Taxiway B2 Intersection",
+      "coordinates": {
+        "local": {"x": 1600, "y": 0},
+        "wgs84": {"lat": 37.5588, "lon": 126.7891}
+      },
+      "connects": ["14R/32L", "B2"],
+      "holding_position": true
+    },
+    "RW14R_C1": {
+      "id": "RW14R_C1",
+      "type": "runway_taxiway_intersection",
+      "name": "Runway 14R/32L - Taxiway C1 Intersection (Rapid Exit)",
+      "coordinates": {
+        "local": {"x": 1950, "y": 0},
+        "wgs84": {"lat": 37.5567, "lon": 126.7919}
+      },
+      "connects": ["14R/32L", "C1"],
+      "holding_position": true,
+      "rapid_exit": true
+    },
+    "TWY_P_B1": {
+      "id": "TWY_P_B1",
+      "type": "taxiway_intersection",
+      "name": "Taxiway P - B1 Intersection",
+      "coordinates": {
+        "local": {"x": 800, "y": -100},
+        "wgs84": {"lat": 37.5621, "lon": 126.7821}
+      },
+      "connects": ["P", "B1"],
+      "holding_position": false
+    },
+    "TWY_P_B2": {
+      "id": "TWY_P_B2", 
+      "type": "taxiway_intersection",
+      "name": "Taxiway P - B2 Intersection",
+      "coordinates": {
+        "local": {"x": 1600, "y": -100},
+        "wgs84": {"lat": 37.5579, "lon": 126.7891}
+      },
+      "connects": ["P", "B2"],
+      "holding_position": false
+    },
+    "APRON_1": {
+      "id": "APRON_1",
+      "type": "apron_entry",
+      "name": "Apron 1 Entry Point",
+      "coordinates": {
+        "local": {"x": 1200, "y": -300},
+        "wgs84": {"lat": 37.5552, "lon": 126.7856}
+      },
+      "apron_designation": "Domestic Terminal"
+    },
+    "HOLD_CAT_14R": {
+      "id": "HOLD_CAT_14R",
+      "type": "holding_position",
+      "name": "CAT II/III Holding Position RW14R",
+      "coordinates": {
+        "local": {"x": -200, "y": 0},
+        "wgs84": {"lat": 37.5701, "lon": 126.7733}
+      },
+      "category": "CAT_II_III",
+      "runway": "14R"
+    }
+  },
+  "edges": {
+    "RW14R_MAIN": {
+      "id": "RW14R_MAIN",
+      "type": "runway_segment",
+      "name": "Runway 14R/32L Main Segment",
+      "start_node": "RW14R_THR",
+      "end_node": "RW32L_THR", 
+      "length_m": 3200,
+      "width_m": 60,
+      "surface": "Asphalt",
+      "bearing": 135.00,
+      "lighting": {
+        "centerline": true,
+        "edge": "HIRL",
+        "threshold": true
+      }
+    },
+    "RW14L_MAIN": {
+      "id": "RW14L_MAIN",
+      "type": "runway_segment",
+      "name": "Runway 14L/32R Main Segment",
+      "start_node": "RW14L_THR",
+      "end_node": "RW32R_THR",
+      "length_m": 3600,
+      "width_m": 45,
+      "surface": "Asphalt/Concrete",
+      "bearing": 135.01,
+      "lighting": {
+        "centerline": false,
+        "edge": "HIRL", 
+        "threshold": true
+      }
+    },
+    "TWY_B1": {
+      "id": "TWY_B1",
+      "type": "connecting_taxiway",
+      "name": "Taxiway B1",
+      "start_node": "RW14R_B1",
+      "end_node": "TWY_P_B1",
+      "length_m": 100,
+      "width_m": 30,
+      "surface": "Asphalt/Concrete",
+      "bearing": 45.0
+    },
+    "TWY_B2": {
+      "id": "TWY_B2",
+      "type": "connecting_taxiway", 
+      "name": "Taxiway B2",
+      "start_node": "RW14R_B2",
+      "end_node": "TWY_P_B2",
+      "length_m": 100,
+      "width_m": 35,
+      "surface": "Asphalt/Concrete",
+      "bearing": 45.0
+    },
+    "TWY_C1": {
+      "id": "TWY_C1",
+      "type": "rapid_exit_taxiway",
+      "name": "Taxiway C1 (Rapid Exit)",
+      "start_node": "RW14R_C1", 
+      "end_node": "TWY_P_B2",
+      "length_m": 150,
+      "width_m": 35,
+      "surface": "Asphalt/Concrete",
+      "bearing": 30.0,
+      "rapid_exit_angle": 30
+    },
+    "TWY_P_PARALLEL": {
+      "id": "TWY_P_PARALLEL",
+      "type": "parallel_taxiway",
+      "name": "Taxiway P (Parallel)",
+      "start_node": "TWY_P_B1",
+      "end_node": "TWY_P_B2",
+      "length_m": 800,
+      "width_m": 30,
+      "surface": "Asphalt/Concrete",
+      "bearing": 135.0
+    }
+  }
+}

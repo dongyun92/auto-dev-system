@@ -26,12 +26,16 @@ export interface ConflictPair {
 }
 
 export class THLController {
-  // 설정 가능한 파라미터
+  // FAA 표준 파라미터
   private conflictWindow: number = 8; // seconds (T_conf)
   private separationBuffer: number = 2; // seconds
-  private positionTolerance: number = 100; // meters from threshold
+  private thlCoverageDistance: number = 457; // meters (FAA: 1,500 feet)
+  private positionTolerance: number = 300; // meters from threshold (ICAO standard)
   private headingTolerance: number = 10; // degrees
   private minDepartureSpeed: number = 5; // knots
+  private highSpeedThreshold: number = 30; // knots (FAA 표준)
+  private taxiSpeedThreshold: number = 34; // knots (FAA 표준)
+  private landingSpeedThreshold: number = 80; // knots (FAA 표준)
   private anticipatedSeparationEnabled: boolean = true;
   private rotationSpeed: number = 80; // knots
   private clearanceTime: number = 5; // seconds after rotation
@@ -147,7 +151,7 @@ export class THLController {
       // 지상에 있어야 함
       if (ac.altitude > 50) continue;
       
-      // 임계값 근처 확인
+      // 임계값 근처 확인 (300m 이내)
       const distance = calculateDistance(
         ac.latitude,
         ac.longitude,
@@ -250,6 +254,9 @@ export class THLController {
     if (aircraft.altitude > 1500) return false;
     if ((aircraft.verticalSpeed || 0) >= -100) return false;
     
+    // 속도 범위 확인 (FAA: 80kt 이상일 때 착륙 단계)
+    if (aircraft.speed < this.landingSpeedThreshold) return false;
+    
     // 활주로 정렬
     return aircraft.assignedRunway === runway;
   }
@@ -262,6 +269,22 @@ export class THLController {
     landing: TrackedAircraft,
     runway: string
   ): number {
+    // THL 커버리지 영역(1,500ft) 내에 있는지 확인
+    const thresholdPos = this.getThresholdPosition({ runway } as LightGroup);
+    if (!thresholdPos) return Infinity;
+    
+    const distanceFromThreshold = calculateDistance(
+      landing.latitude,
+      landing.longitude,
+      thresholdPos.lat,
+      thresholdPos.lng
+    );
+    
+    // FAA: THL은 대기 항공기 전방 1,500ft를 커버
+    if (distanceFromThreshold > this.thlCoverageDistance) {
+      return Infinity; // 커버리지 밖
+    }
+    
     // 착륙 항공기의 활주로 도달 시간
     const landingETA = this.estimateLandingTime(landing, runway);
     
@@ -411,8 +434,8 @@ export class THLController {
   }
   
   private estimateTakeoffTime(aircraft: TrackedAircraft): number {
-    // 단순화: 현재 속도 기반
-    if (aircraft.speed >= 30) {
+    // FAA 표준: 30kt 이상이면 이륙 진행 중
+    if (aircraft.speed >= this.highSpeedThreshold) {
       return 20; // 이미 가속 중
     }
     return 30; // 정지 상태에서 시작

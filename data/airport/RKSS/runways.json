@@ -1,0 +1,193 @@
+{
+  "runways": [
+    {
+      "designation": "14R/32L",
+      "dimensions": {
+        "length_m": 3200,
+        "width_m": 60
+      },
+      "surface": "Asphalt",
+      "strength": "PCN 74/F/B/X/T",
+      "runway_14R": {
+        "true_bearing": "135.00°",
+        "threshold": {
+          "coordinates": "37°34'06.19\"N 126°46'31.60\"E",
+          "elevation_m": 10.4,
+          "elevation_ft": 34.1,
+          "geoid_undulation_m": 22.9
+        },
+        "tdz": {
+          "elevation_m": 12.6,
+          "elevation_ft": 41.3
+        },
+        "declared_distances": {
+          "TORA": 3200,
+          "TODA": 3500,
+          "ASDA": 3200,
+          "LDA": 3200
+        },
+        "ils": {
+          "category": "CAT II/III",
+          "localizer": {
+            "ident": "IOFR",
+            "frequency": "108.70 MHz"
+          },
+          "glidepath": {
+            "frequency": "330.5 MHz",
+            "angle": "3°"
+          },
+          "dme": {
+            "ident": "IOFR",
+            "frequency": "985.0 MHz",
+            "channel": "24X"
+          }
+        }
+      },
+      "runway_32L": {
+        "true_bearing": "315.02°",
+        "threshold": {
+          "coordinates": "37°32'52.83\"N 126°48'03.71\"E",
+          "elevation_m": 12.6,
+          "elevation_ft": 41.3,
+          "geoid_undulation_m": 22.9
+        },
+        "tdz": {
+          "elevation_m": 12.9,
+          "elevation_ft": 42.3
+        },
+        "declared_distances": {
+          "TORA": 3200,
+          "TODA": 3500,
+          "ASDA": 3200,
+          "LDA": 3200
+        },
+        "ils": {
+          "category": "CAT I",
+          "localizer": {
+            "ident": "IKMO",
+            "frequency": "108.30 MHz"
+          },
+          "glidepath": {
+            "frequency": "334.1 MHz",
+            "angle": "3°"
+          },
+          "dme": {
+            "ident": "IKMO",
+            "frequency": "981 MHz",
+            "channel": "20X"
+          }
+        }
+      }
+    },
+    {
+      "designation": "14L/32R",
+      "dimensions": {
+        "length_m": 3600,
+        "width_m": 45
+      },
+      "surface": "Asphalt/Concrete",
+      "strength": "PCN 74/F/B/X/T (Asphalt), PCN 85/R/B/W/T (Concrete ends)",
+      "runway_14L": {
+        "true_bearing": "135.01°",
+        "threshold": {
+          "coordinates": "37°34'14.55\"N 126°46'41.80\"E",
+          "elevation_m": 11.6,
+          "elevation_ft": 38.0,
+          "geoid_undulation_m": 22.9
+        },
+        "tdz": {
+          "elevation_m": 15.1,
+          "elevation_ft": 49.5
+        },
+        "declared_distances": {
+          "TORA": 3600,
+          "TODA": 3900,
+          "ASDA": 3600,
+          "LDA": 3600
+        },
+        "ils": {
+          "category": "CAT I",
+          "localizer": {
+            "ident": "ISEL",
+            "frequency": "109.90 MHz"
+          },
+          "glidepath": {
+            "frequency": "333.8 MHz",
+            "angle": "3°"
+          },
+          "dme": {
+            "ident": "ISEL",
+            "frequency": "997 MHz",
+            "channel": "36X"
+          }
+        }
+      },
+      "runway_32R": {
+        "true_bearing": "315.03°",
+        "threshold": {
+          "coordinates": "37°32'51.89\"N 126°48'25.58\"E",
+          "elevation_m": 12.8,
+          "elevation_ft": 41.9,
+          "geoid_undulation_m": 23.0
+        },
+        "tdz": {
+          "elevation_m": 13.8,
+          "elevation_ft": 45.2
+        },
+        "declared_distances": {
+          "TORA": 3600,
+          "TODA": 3900,
+          "ASDA": 3600,
+          "LDA": 3600
+        },
+        "ils": {
+          "category": "CAT I",
+          "localizer": {
+            "ident": "ISKP",
+            "frequency": "110.70 MHz"
+          },
+          "glidepath": {
+            "frequency": "330.2 MHz",
+            "angle": "3°"
+          },
+          "dme": {
+            "ident": "ISKP",
+            "frequency": "1005 MHz",
+            "channel": "44X"
+          }
+        }
+      }
+    }
+  ],
+  "clearway": {
+    "14L": "300m x 300m",
+    "32R": "300m x 300m",
+    "14R": "300m x 300m",
+    "32L": "300m x 300m"
+  },
+  "stopway": null,
+  "resa": {
+    "14L": "260m x 150m",
+    "32R": "255m x 150m",
+    "14R": "259m x 150m",
+    "32L": "250m x 150m"
+  },
+  "runway_lighting": {
+    "14L/32R": {
+      "approach": "ALSF-II 900m",
+      "threshold": "Green",
+      "edge": "HIRL White/Yellow",
+      "centerline": "Available on 14R/32L only",
+      "touchdown_zone": "900m on 14R only",
+      "papi": "Left side, 3° angle"
+    },
+    "14R/32L": {
+      "approach": "ALSF-II 900m (14R), ALSF-I 750m (32L)",
+      "threshold": "Green",
+      "edge": "HIRL White/Yellow",
+      "centerline": "White/Red 15m spacing",
+      "touchdown_zone": "900m",
+      "papi": "Left side, 3° angle"
+    }
+  }
+}

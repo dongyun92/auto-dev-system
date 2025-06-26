@@ -1,0 +1,50 @@
+{
+  "icao": "RKSS",
+  "iata": "GMP",
+  "name": "Gimpo International Airport",
+  "name_korean": "김포국제공항",
+  "location": {
+    "city": "Seoul",
+    "country": "Republic of Korea",
+    "distance_from_city": {
+      "direction": "275°",
+      "distance_km": 16,
+      "reference": "Seoul City Hall"
+    }
+  },
+  "arp": {
+    "coordinates": {
+      "latitude": "37°33'25\"N",
+      "longitude": "126°47'51\"E",
+      "decimal": {
+        "lat": 37.5569,
+        "lon": 126.7975
+      }
+    },
+    "elevation_m": 18,
+    "elevation_ft": 59,
+    "reference_temperature_c": 30.8,
+    "geoid_undulation_m": 23,
+    "magnetic_variation": "8°W (2015)"
+  },
+  "airspace": {
+    "fir": "Incheon FIR",
+    "control_zone": {
+      "name": "Gimpo CTR",
+      "lateral_limits": "5 NM radius from ARP",
+      "vertical_limits": "SFC to 3,000 ft AGL",
+      "classification": "B"
+    },
+    "transition_altitude_ft": 14000
+  },
+  "operational_hours": {
+    "aerodrome": "2100-1400 UTC",
+    "ats": "H24",
+    "met": "H24",
+    "customs": "HO",
+    "fuel": "HO"
+  },
+  "fire_category": "CAT 10",
+  "timezone": "Asia/Seoul (UTC+9)",
+  "website": "http://www.airport.co.kr/mbs/gimpo/"
+}

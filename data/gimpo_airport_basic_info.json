@@ -1,0 +1,33 @@
+{
+  "airport": {
+    "icao": "RKSS",
+    "iata": "GMP",
+    "name": "Seoul/Gimpo International Airport",
+    "name_kr": "김포국제공항",
+    "arp": {
+      "lat": 37.557222,
+      "lon": 126.797500,
+      "lat_dms": "37°33'25\"N",
+      "lon_dms": "126°47'51\"E"
+    },
+    "elevation": 18,
+    "magnetic_variation": {
+      "value": -9.0,
+      "year": 2020,
+      "annual_change": -0.1
+    },
+    "operating_hours": {
+      "utc": "21:00-14:00",
+      "local": "06:00-23:00",
+      "restrictions": "Night flights prohibited 23:00-06:00 local"
+    },
+    "coordinates_system": "WGS-84",
+    "units": "meters"
+  },
+  "capacity": {
+    "annual_aircraft_movements": 226000,
+    "hourly_aircraft_movements": 41,
+    "aircraft_stands": 73,
+    "apron_area_sqm": 1199267
+  }
+}

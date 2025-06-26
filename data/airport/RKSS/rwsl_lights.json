@@ -1,0 +1,156 @@
+{
+  "rwsl_lights": {
+    "description": "김포공항 RWSL(Runway Status Lights) 등화 설치 위치",
+    "standards": "ICAO Doc 9830, FAA AC 150/5345-51",
+    "coordinate_system": "Local Cartesian (ARP 기준)",
+    "units": "meters"
+  },
+  "REL": {
+    "description": "Runway Entrance Lights - 활주로 진입등",
+    "installation_criteria": {
+      "distance_from_runway": "60m from runway centerline towards approach",
+      "spacing": "3m intervals",
+      "width": "1.5m each side of taxiway centerline",
+      "total_length": "60m"
+    },
+    "lights": [
+      {
+        "group_id": "REL_B1_14R",
+        "location": "Taxiway B1 approach to Runway 14R/32L",
+        "associated_node": "RW14R_B1",
+        "runway": "14R/32L",
+        "approach_direction": "from_south",
+        "lights": [
+          {"id": "REL_B1_14R_001", "position": {"x": 740, "y": -1.5}, "offset_from_intersection": -60},
+          {"id": "REL_B1_14R_002", "position": {"x": 740, "y": 1.5}, "offset_from_intersection": -60},
+          {"id": "REL_B1_14R_003", "position": {"x": 743, "y": -1.5}, "offset_from_intersection": -57},
+          {"id": "REL_B1_14R_004", "position": {"x": 743, "y": 1.5}, "offset_from_intersection": -57},
+          {"id": "REL_B1_14R_005", "position": {"x": 746, "y": -1.5}, "offset_from_intersection": -54},
+          {"id": "REL_B1_14R_006", "position": {"x": 746, "y": 1.5}, "offset_from_intersection": -54},
+          {"id": "REL_B1_14R_007", "position": {"x": 749, "y": -1.5}, "offset_from_intersection": -51},
+          {"id": "REL_B1_14R_008", "position": {"x": 749, "y": 1.5}, "offset_from_intersection": -51},
+          {"id": "REL_B1_14R_009", "position": {"x": 752, "y": -1.5}, "offset_from_intersection": -48},
+          {"id": "REL_B1_14R_010", "position": {"x": 752, "y": 1.5}, "offset_from_intersection": -48},
+          {"id": "REL_B1_14R_011", "position": {"x": 755, "y": -1.5}, "offset_from_intersection": -45},
+          {"id": "REL_B1_14R_012", "position": {"x": 755, "y": 1.5}, "offset_from_intersection": -45},
+          {"id": "REL_B1_14R_013", "position": {"x": 758, "y": -1.5}, "offset_from_intersection": -42},
+          {"id": "REL_B1_14R_014", "position": {"x": 758, "y": 1.5}, "offset_from_intersection": -42},
+          {"id": "REL_B1_14R_015", "position": {"x": 761, "y": -1.5}, "offset_from_intersection": -39},
+          {"id": "REL_B1_14R_016", "position": {"x": 761, "y": 1.5}, "offset_from_intersection": -39},
+          {"id": "REL_B1_14R_017", "position": {"x": 764, "y": -1.5}, "offset_from_intersection": -36},
+          {"id": "REL_B1_14R_018", "position": {"x": 764, "y": 1.5}, "offset_from_intersection": -36},
+          {"id": "REL_B1_14R_019", "position": {"x": 767, "y": -1.5}, "offset_from_intersection": -33},
+          {"id": "REL_B1_14R_020", "position": {"x": 767, "y": 1.5}, "offset_from_intersection": -33},
+          {"id": "REL_B1_14R_021", "position": {"x": 770, "y": -1.5}, "offset_from_intersection": -30},
+          {"id": "REL_B1_14R_022", "position": {"x": 770, "y": 1.5}, "offset_from_intersection": -30}
+        ]
+      },
+      {
+        "group_id": "REL_B2_14R",
+        "location": "Taxiway B2 approach to Runway 14R/32L",
+        "associated_node": "RW14R_B2",
+        "runway": "14R/32L",
+        "approach_direction": "from_south",
+        "lights": [
+          {"id": "REL_B2_14R_001", "position": {"x": 1540, "y": -1.5}, "offset_from_intersection": -60},
+          {"id": "REL_B2_14R_002", "position": {"x": 1540, "y": 1.5}, "offset_from_intersection": -60},
+          {"id": "REL_B2_14R_003", "position": {"x": 1543, "y": -1.5}, "offset_from_intersection": -57},
+          {"id": "REL_B2_14R_004", "position": {"x": 1543, "y": 1.5}, "offset_from_intersection": -57},
+          {"id": "REL_B2_14R_005", "position": {"x": 1546, "y": -1.5}, "offset_from_intersection": -54},
+          {"id": "REL_B2_14R_006", "position": {"x": 1546, "y": 1.5}, "offset_from_intersection": -54},
+          {"id": "REL_B2_14R_007", "position": {"x": 1549, "y": -1.5}, "offset_from_intersection": -51},
+          {"id": "REL_B2_14R_008", "position": {"x": 1549, "y": 1.5}, "offset_from_intersection": -51},
+          {"id": "REL_B2_14R_009", "position": {"x": 1552, "y": -1.5}, "offset_from_intersection": -48},
+          {"id": "REL_B2_14R_010", "position": {"x": 1552, "y": 1.5}, "offset_from_intersection": -48},
+          {"id": "REL_B2_14R_011", "position": {"x": 1555, "y": -1.5}, "offset_from_intersection": -45},
+          {"id": "REL_B2_14R_012", "position": {"x": 1555, "y": 1.5}, "offset_from_intersection": -45},
+          {"id": "REL_B2_14R_013", "position": {"x": 1558, "y": -1.5}, "offset_from_intersection": -42},
+          {"id": "REL_B2_14R_014", "position": {"x": 1558, "y": 1.5}, "offset_from_intersection": -42},
+          {"id": "REL_B2_14R_015", "position": {"x": 1561, "y": -1.5}, "offset_from_intersection": -39},
+          {"id": "REL_B2_14R_016", "position": {"x": 1561, "y": 1.5}, "offset_from_intersection": -39},
+          {"id": "REL_B2_14R_017", "position": {"x": 1564, "y": -1.5}, "offset_from_intersection": -36},
+          {"id": "REL_B2_14R_018", "position": {"x": 1564, "y": 1.5}, "offset_from_intersection": -36},
+          {"id": "REL_B2_14R_019", "position": {"x": 1567, "y": -1.5}, "offset_from_intersection": -33},
+          {"id": "REL_B2_14R_020", "position": {"x": 1567, "y": 1.5}, "offset_from_intersection": -33},
+          {"id": "REL_B2_14R_021", "position": {"x": 1570, "y": -1.5}, "offset_from_intersection": -30},
+          {"id": "REL_B2_14R_022", "position": {"x": 1570, "y": 1.5}, "offset_from_intersection": -30}
+        ]
+      }
+    ]
+  },
+  "THL": {
+    "description": "Takeoff Hold Lights - 이륙 대기등",
+    "installation_criteria": {
+      "distance_from_centerline": "11.5m each side",
+      "spacing": "38m intervals (FAA), 30m (ICAO)",
+      "starting_distance": "115m from threshold",
+      "coverage_length": "450m"
+    },
+    "lights": [
+      {
+        "group_id": "THL_14R",
+        "runway": "14R",
+        "threshold": "RW14R_THR", 
+        "direction": "takeoff",
+        "lights": [
+          {"id": "THL_14R_001", "position": {"x": 115, "y": -11.5}, "distance_from_threshold": 115},
+          {"id": "THL_14R_002", "position": {"x": 115, "y": 11.5}, "distance_from_threshold": 115},
+          {"id": "THL_14R_003", "position": {"x": 153, "y": -11.5}, "distance_from_threshold": 153},
+          {"id": "THL_14R_004", "position": {"x": 153, "y": 11.5}, "distance_from_threshold": 153},
+          {"id": "THL_14R_005", "position": {"x": 191, "y": -11.5}, "distance_from_threshold": 191},
+          {"id": "THL_14R_006", "position": {"x": 191, "y": 11.5}, "distance_from_threshold": 191},
+          {"id": "THL_14R_007", "position": {"x": 229, "y": -11.5}, "distance_from_threshold": 229},
+          {"id": "THL_14R_008", "position": {"x": 229, "y": 11.5}, "distance_from_threshold": 229},
+          {"id": "THL_14R_009", "position": {"x": 267, "y": -11.5}, "distance_from_threshold": 267},
+          {"id": "THL_14R_010", "position": {"x": 267, "y": 11.5}, "distance_from_threshold": 267},
+          {"id": "THL_14R_011", "position": {"x": 305, "y": -11.5}, "distance_from_threshold": 305},
+          {"id": "THL_14R_012", "position": {"x": 305, "y": 11.5}, "distance_from_threshold": 305},
+          {"id": "THL_14R_013", "position": {"x": 343, "y": -11.5}, "distance_from_threshold": 343},
+          {"id": "THL_14R_014", "position": {"x": 343, "y": 11.5}, "distance_from_threshold": 343},
+          {"id": "THL_14R_015", "position": {"x": 381, "y": -11.5}, "distance_from_threshold": 381},
+          {"id": "THL_14R_016", "position": {"x": 381, "y": 11.5}, "distance_from_threshold": 381},
+          {"id": "THL_14R_017", "position": {"x": 419, "y": -11.5}, "distance_from_threshold": 419},
+          {"id": "THL_14R_018", "position": {"x": 419, "y": 11.5}, "distance_from_threshold": 419},
+          {"id": "THL_14R_019", "position": {"x": 457, "y": -11.5}, "distance_from_threshold": 457},
+          {"id": "THL_14R_020", "position": {"x": 457, "y": 11.5}, "distance_from_threshold": 457}
+        ]
+      },
+      {
+        "group_id": "THL_32L",
+        "runway": "32L",
+        "threshold": "RW32L_THR",
+        "direction": "takeoff", 
+        "lights": [
+          {"id": "THL_32L_001", "position": {"x": 3085, "y": -11.5}, "distance_from_threshold": 115},
+          {"id": "THL_32L_002", "position": {"x": 3085, "y": 11.5}, "distance_from_threshold": 115},
+          {"id": "THL_32L_003", "position": {"x": 3047, "y": -11.5}, "distance_from_threshold": 153},
+          {"id": "THL_32L_004", "position": {"x": 3047, "y": 11.5}, "distance_from_threshold": 153},
+          {"id": "THL_32L_005", "position": {"x": 3009, "y": -11.5}, "distance_from_threshold": 191},
+          {"id": "THL_32L_006", "position": {"x": 3009, "y": 11.5}, "distance_from_threshold": 191},
+          {"id": "THL_32L_007", "position": {"x": 2971, "y": -11.5}, "distance_from_threshold": 229},
+          {"id": "THL_32L_008", "position": {"x": 2971, "y": 11.5}, "distance_from_threshold": 229},
+          {"id": "THL_32L_009", "position": {"x": 2933, "y": -11.5}, "distance_from_threshold": 267},
+          {"id": "THL_32L_010", "position": {"x": 2933, "y": 11.5}, "distance_from_threshold": 267},
+          {"id": "THL_32L_011", "position": {"x": 2895, "y": -11.5}, "distance_from_threshold": 305},
+          {"id": "THL_32L_012", "position": {"x": 2895, "y": 11.5}, "distance_from_threshold": 305},
+          {"id": "THL_32L_013", "position": {"x": 2857, "y": -11.5}, "distance_from_threshold": 343},
+          {"id": "THL_32L_014", "position": {"x": 2857, "y": 11.5}, "distance_from_threshold": 343},
+          {"id": "THL_32L_015", "position": {"x": 2819, "y": -11.5}, "distance_from_threshold": 381},
+          {"id": "THL_32L_016", "position": {"x": 2819, "y": 11.5}, "distance_from_threshold": 381},
+          {"id": "THL_32L_017", "position": {"x": 2781, "y": -11.5}, "distance_from_threshold": 419},
+          {"id": "THL_32L_018", "position": {"x": 2781, "y": 11.5}, "distance_from_threshold": 419},
+          {"id": "THL_32L_019", "position": {"x": 2743, "y": -11.5}, "distance_from_threshold": 457},
+          {"id": "THL_32L_020", "position": {"x": 2743, "y": 11.5}, "distance_from_threshold": 457}
+        ]
+      }
+    ]
+  },
+  "RIL": {
+    "description": "Runway Intersection Lights - 활주로 교차등",
+    "installation_criteria": {
+      "application": "활주로간 교차점에 설치",
+      "note": "김포공항은 평행활주로로 교차점 없음 - 미적용"
+    },
+    "lights": []
+  }
+}

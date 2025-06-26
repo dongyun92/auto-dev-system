@@ -1,0 +1,78 @@
+{
+  "svg_styling": {
+    "colors": {
+      "runway": "#4A5568",
+      "taxiway": "#718096", 
+      "apron": "#E2E8F0",
+      "grass": "#68D391",
+      "building": "#2D3748",
+      "terminal": "#4299E1",
+      "hangar": "#805AD5",
+      "cargo": "#F56565",
+      "water": "#3182CE",
+      "parking": "#A0AEC0",
+      "road": "#2B6CB0",
+      "fence": "#1A202C",
+      "text": "#000000",
+      "text_background": "#FFFFFF"
+    },
+    "stroke_widths": {
+      "runway_centerline": 2,
+      "taxiway_centerline": 1,
+      "runway_edge": 1,
+      "taxiway_edge": 0.5,
+      "building_outline": 1,
+      "fence": 0.5
+    },
+    "font_sizes": {
+      "runway_numbers": 24,
+      "taxiway_labels": 12,
+      "stand_numbers": 10,
+      "facility_labels": 14,
+      "title": 32
+    }
+  },
+  "layer_order": [
+    "background",
+    "grass_areas", 
+    "water_features",
+    "parking_areas",
+    "roads",
+    "aprons",
+    "taxiways",
+    "runways",
+    "buildings",
+    "aircraft_stands",
+    "markings",
+    "text_labels",
+    "hot_spots",
+    "compass_rose",
+    "legend"
+  ],
+  "coordinate_conversion": {
+    "projection": "UTM Zone 52N",
+    "datum": "WGS84",
+    "scale_factor": 1000,
+    "origin": {
+      "lat": 37.557222,
+      "lon": 126.797500
+    },
+    "svg_dimensions": {
+      "width": 2000,
+      "height": 1500,
+      "units": "pixels"
+    }
+  },
+  "visibility_settings": {
+    "runway_numbers": true,
+    "taxiway_labels": true,
+    "stand_numbers": true,
+    "facility_names": true,
+    "hot_spots": true,
+    "grid_lines": false,
+    "elevation_contours": false,
+    "compass_rose": true,
+    "scale_bar": true,
+    "legend": true
+  }
+}

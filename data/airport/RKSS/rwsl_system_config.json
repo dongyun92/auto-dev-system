@@ -1,0 +1,199 @@
+{
+  "rwsl_system_config": {
+    "airport": {
+      "icao": "RKSS",
+      "iata": "GMP", 
+      "name": "Gimpo International Airport",
+      "version": "1.0.0",
+      "deployment_date": "2025-06-26",
+      "authority": "Korea Airports Corporation"
+    },
+    "system_overview": {
+      "description": "김포국제공항 활주로 상태등(RWSL) 시스템",
+      "purpose": "활주로 침범 방지 및 지상 충돌 위험 감소",
+      "coverage": ["Runway 14R/32L", "Runway 14L/32R", "주요 유도로"],
+      "operational_mode": "automatic_with_manual_override"
+    }
+  },
+  "data_sources": {
+    "primary": {
+      "radar_system": {
+        "type": "Airport Surface Detection Equipment (ASDE)",
+        "update_rate": "1 Hz",
+        "coverage": "5 NM radius",
+        "accuracy": "±3 meters"
+      },
+      "ads_b": {
+        "type": "Automatic Dependent Surveillance-Broadcast",
+        "update_rate": "1 Hz",
+        "coverage": "ground_operations",
+        "accuracy": "±1 meter"
+      }
+    },
+    "secondary": {
+      "multilateration": {
+        "type": "Wide Area Multilateration (WAM)",
+        "backup_mode": true,
+        "accuracy": "±5 meters"
+      },
+      "manual_input": {
+        "type": "ATC controller input",
+        "emergency_override": true
+      }
+    }
+  },
+  "file_structure": {
+    "static_data": {
+      "airport_info.json": "공항 기본 정보",
+      "runways.json": "활주로 상세 정보",
+      "taxiways_summary.json": "유도로 요약 정보",
+      "coordinates.json": "좌표 데이터",
+      "graph_structure.json": "그래프 노드/엣지 구조",
+      "rwsl_lights.json": "RWSL 등화 설치 위치",
+      "coordinate_transformation.json": "좌표 변환 설정",
+      "operational_procedures.json": "운영 절차 및 규칙"
+    },
+    "dynamic_data": {
+      "aircraft_positions": "실시간 항공기 위치",
+      "system_status": "시스템 상태 정보", 
+      "light_states": "등화 현재 상태",
+      "alerts_log": "경고 및 이벤트 로그"
+    }
+  },
+  "system_architecture": {
+    "data_processing": {
+      "coordinate_transformer": {
+        "input": "WGS84 coordinates",
+        "output": "Local Cartesian coordinates",
+        "class": "CoordinateTransformer"
+      },
+      "graph_manager": {
+        "function": "공항 구조 관리",
+        "class": "AirportGraph"
+      },
+      "conflict_detector": {
+        "algorithm": "Vector-based prediction",
+        "horizon": "30 seconds",
+        "class": "ConflictDetector"
+      },
+      "light_controller": {
+        "function": "등화 상태 제어",
+        "response_time": "<1 second",
+        "class": "RWSLController"
+      }
+    },
+    "main_modules": {
+      "RWSLSystem": "메인 시스템 클래스",
+      "SpatialHash": "공간 해싱 최적화",
+      "EventQueue": "시간 기반 이벤트 처리",
+      "LightPositioning": "등화 위치 관리"
+    }
+  },
+  "algorithm_parameters": {
+    "spatial_optimization": {
+      "grid_cell_size": "50 meters",
+      "hash_table_size": "dynamic",
+      "neighbor_search_radius": "100 meters"
+    },
+    "temporal_prediction": {
+      "prediction_horizon": "30 seconds",
+      "update_frequency": "1 Hz",
+      "minimum_track_duration": "5 seconds"
+    },
+    "safety_buffers": {
+      "runway_protection": "75m each side",
+      "approach_protection": "3000m from threshold",
+      "clearance_delay": "5 seconds after clear"
+    }
+  },
+  "performance_requirements": {
+    "response_time": {
+      "detection_to_activation": "<1 second",
+      "deactivation_delay": "5 seconds after clear",
+      "system_restart": "<30 seconds"
+    },
+    "reliability": {
+      "availability": ">99.5%",
+      "false_alarm_rate": "<2%",
+      "missed_detection_rate": "<0.1%"
+    },
+    "accuracy": {
+      "position_accuracy": "±3 meters",
+      "timing_accuracy": "±0.1 seconds",
+      "prediction_accuracy": ">95% within 30 seconds"
+    }
+  },
+  "integration_interfaces": {
+    "atc_system": {
+      "protocol": "ASTERIX Cat 010/020",
+      "update_rate": "1 Hz",
+      "data_items": ["position", "velocity", "callsign", "aircraft_type"]
+    },
+    "lighting_control": {
+      "protocol": "Serial/Ethernet",
+      "command_format": "custom_protocol",
+      "response_verification": "required"
+    },
+    "maintenance_system": {
+      "alerts": "automatic",
+      "reporting": "daily/weekly/monthly",
+      "remote_monitoring": "enabled"
+    }
+  },
+  "safety_certifications": {
+    "standards_compliance": [
+      "ICAO Annex 14 Volume I",
+      "ICAO Doc 9830 Advanced Surface Movement Guidance and Control Systems",
+      "FAA AC 150/5345-51 Runway Status Light Systems",
+      "RTCA DO-272 Safety and Performance Standard for RWSL"
+    ],
+    "testing_requirements": {
+      "functional_testing": "daily",
+      "performance_verification": "weekly", 
+      "safety_assessment": "monthly",
+      "system_validation": "annually"
+    }
+  },
+  "implementation_phases": {
+    "phase_1": {
+      "description": "Core system deployment",
+      "scope": ["Runway 14R/32L", "Main taxiways"],
+      "timeline": "3 months",
+      "deliverables": ["REL installation", "Basic THL", "Core algorithms"]
+    },
+    "phase_2": {
+      "description": "Extended coverage",
+      "scope": ["Runway 14L/32R", "All connecting taxiways"],
+      "timeline": "2 months",
+      "deliverables": ["Complete light installation", "Advanced algorithms"]
+    },
+    "phase_3": {
+      "description": "System optimization",
+      "scope": ["Performance tuning", "False alarm reduction"],
+      "timeline": "1 month",
+      "deliverables": ["Optimized parameters", "Training completion"]
+    }
+  },
+  "maintenance_schedule": {
+    "daily": [
+      "System status check",
+      "Light functionality test",
+      "Communication verification"
+    ],
+    "weekly": [
+      "Performance statistics review",
+      "Algorithm accuracy assessment",
+      "Backup system test"
+    ],
+    "monthly": [
+      "Complete system validation",
+      "Safety assessment",
+      "Software update evaluation"
+    ],
+    "annually": [
+      "Comprehensive safety audit",
+      "System recertification",
+      "Technology upgrade assessment"
+    ]
+  }
+}

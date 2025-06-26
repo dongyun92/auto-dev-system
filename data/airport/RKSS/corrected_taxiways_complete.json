@@ -1,0 +1,272 @@
+{
+  "taxiways": {
+    "parallel_taxiways": [
+      {
+        "designation": "A",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 85/R/B/W/T",
+        "lighting": {"edge": true, "centerline": true},
+        "code_letter_capability": "E",
+        "position": "East parallel to both runways"
+      },
+      {
+        "designation": "P", 
+        "width_m": 30,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 70/F/B/X/T",
+        "lighting": {"edge": true, "centerline": true},
+        "code_letter_capability": "F",
+        "position": "Main parallel taxiway between runways",
+        "notes": "Main parallel taxiway, 17kt speed limit for Code F aircraft between P6 and F2"
+      },
+      {
+        "designation": "G2",
+        "width_m": 40,
+        "surface": "Asphalt/Concrete", 
+        "strength": "PCN 85/R/B/W/T",
+        "lighting": {"edge": true, "centerline": true},
+        "code_letter_capability": "F",
+        "position": "West parallel to north runway (32R)"
+      }
+    ],
+    "connecting_taxiways": [
+      {
+        "designation": "G1",
+        "width_m": 30,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T", 
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter_capability": "F",
+        "lighting": {"edge": true, "centerline": true},
+        "position": "West end connection"
+      },
+      {
+        "designation": "F1",
+        "width_m": 23,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter_capability": "E",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "F2",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14L/32R", "TWY P"],
+        "code_letter_capability": "E",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "E1",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter_capability": "E",
+        "lighting": {"edge": true, "centerline": true},
+        "rapid_exit": true,
+        "distance_from_threshold": "1985m from RW 32L"
+      },
+      {
+        "designation": "E2",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14L/32R", "TWY P"],
+        "code_letter_capability": "E",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "D1",
+        "width_m": 30,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter_capability": "F",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "D2",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter_capability": "F",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "D3",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14L/32R", "TWY P"],
+        "code_letter_capability": "F",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "C1",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter_capability": "E",
+        "lighting": {"edge": true, "centerline": true},
+        "rapid_exit": true,
+        "distance_from_threshold": "1950m from RW 14R"
+      },
+      {
+        "designation": "C2",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14L/32R", "TWY P"],
+        "code_letter_capability": "E",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "C3",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter_capability": "E",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "B1",
+        "width_m": 30,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter_capability": "F",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "B2",
+        "width_m": 35,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["RW 14R/32L", "TWY P"],
+        "code_letter_capability": "F",
+        "lighting": {"edge": true, "centerline": true}
+      },
+      {
+        "designation": "W1",
+        "width_m": 30,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["General Aviation Area", "Runway"],
+        "code_letter_capability": "E",
+        "lighting": {"edge": true, "centerline": false},
+        "usage": "General Aviation takeoff/landing",
+        "notes": "Contact Gimpo Tower (118.1 MHz) prior to entering for takeoff"
+      },
+      {
+        "designation": "W2",
+        "width_m": 30,
+        "surface": "Asphalt/Concrete",
+        "strength": "PCN 74/F/B/W/T",
+        "connects": ["General Aviation Area", "Runway"],
+        "code_letter_capability": "E", 
+        "lighting": {"edge": true, "centerline": false},
+        "usage": "General Aviation takeoff/landing",
+        "notes": "Contact Gimpo Tower (118.1 MHz) prior to entering for takeoff"
+      }
+    ],
+    "special_taxiways": [
+      {
+        "designation": "R",
+        "type": "Taxilane",
+        "width_m": 25,
+        "connects": ["Terminal gates", "TWY P"],
+        "intermediate_holding_positions": true,
+        "notes": "Terminal access taxilane with intermediate holding positions"
+      },
+      {
+        "designation": "N1",
+        "type": "Taxilane",
+        "width_m": 25,
+        "restricted": true,
+        "notes": "Aircraft shall not enter while F aircraft occupying P TWY"
+      },
+      {
+        "designation": "H3",
+        "type": "Helicopter pad",
+        "surface": "Concrete",
+        "usage": "Helicopter operations",
+        "notes": "Contact Gimpo Tower prior to entering for takeoff"
+      },
+      {
+        "designation": "H4",
+        "type": "Helicopter pad", 
+        "surface": "Concrete",
+        "usage": "Helicopter operations",
+        "notes": "Contact Gimpo Tower prior to entering for takeoff"
+      },
+      {
+        "designation": "S",
+        "type": "Taxilane",
+        "usage": "Helicopter ground taxi",
+        "notes": "Contact Gimpo Ground after entering for taxiing"
+      }
+    ]
+  },
+  "hot_spots": [
+    {
+      "designation": "HS 1",
+      "type": "Runway incursion risk",
+      "location": "Runway approach area"
+    },
+    {
+      "designation": "HS 2", 
+      "type": "Complex intersection",
+      "location": "C3, D2, P, R intersection",
+      "risk": "High traffic convergence point"
+    },
+    {
+      "designation": "HS 3",
+      "type": "Runway incursion risk", 
+      "location": "Runway approach area"
+    },
+    {
+      "designation": "HS 4",
+      "type": "Runway incursion risk",
+      "location": "Runway approach area"
+    },
+    {
+      "designation": "HS 5",
+      "type": "Runway incursion risk",
+      "location": "Runway approach area"
+    },
+    {
+      "designation": "HS 6",
+      "type": "Congestion area",
+      "location": "High traffic area"
+    },
+    {
+      "designation": "HS 7",
+      "type": "Historical incursion area",
+      "location": "Area with previous runway incursion incidents"
+    }
+  ],
+  "code_f_restrictions": {
+    "prohibited_runways": ["14L/32R"],
+    "speed_restrictions": {
+      "P_taxiway": "17kt between P6 and F2",
+      "general": "Standard taxi speeds for other areas"
+    },
+    "stands": {
+      "permitted": ["121F", "123F"],
+      "pushback_restrictions": {
+        "121F": "Nose-gear cannot cross intermediate holding position on TWY R behind stand 123",
+        "123F": "Nose-gear cannot cross intermediate holding position on TWY R behind stand 122"
+      }
+    },
+    "a380_restrictions": {
+      "runway_restriction": "14L/32R takeoff/landing restricted while A380 on P TWY"
+    }
+  }
+}

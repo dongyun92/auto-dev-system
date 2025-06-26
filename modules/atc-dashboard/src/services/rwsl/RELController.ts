@@ -16,11 +16,13 @@ export interface RELActivation {
 }
 
 export class RELController {
-  private activationRange: number = 3700; // meters (2NM)
-  private cascadeLeadTime: number = 3; // seconds
-  private highSpeedThreshold: number = 30; // knots
-  private approachDistanceThreshold: number = 1852; // meters (1NM)
-  private approachAltitudeThreshold: number = 300; // feet AGL
+  // FAA 표준 값
+  private highSpeedThreshold: number = 30; // knots - 고속 이동 임계값
+  private taxiSpeedThreshold: number = 34; // knots - 택시 상태 임계값  
+  private landingSpeedThreshold: number = 80; // knots - 착륙 후 감속 임계값
+  private approachDistanceThreshold: number = 1609; // meters (1 mile) - 착륙 접근 감지
+  private cascadeLeadTime: number = 2.5; // seconds - 예상 분리 시간 (2-3초 평균)
+  private approachAltitudeThreshold: number = 500; // feet AGL
   
   /**
    * REL 활성화 상태 계산
@@ -56,49 +58,65 @@ export class RELController {
       confidence: 1.0
     };
     
-    // 1. 고속 활주로 트래픽 확인
-    const runwayHighSpeed = this.checkHighSpeedRunwayTraffic(
+    // 1. 이륙 항공기 확인 (30 knots 이상)
+    const departingAircraft = this.checkDepartingAircraft(
       group.runway,
       runwayTraffic
     );
     
-    if (runwayHighSpeed) {
+    if (departingAircraft) {
       activation = {
         lightGroupId: group.id,
         active: true,
-        reason: `High speed traffic on runway ${group.runway}`,
+        reason: `Departing aircraft ${departingAircraft.aircraft.callsign} at ${departingAircraft.aircraft.speed}kt`,
         confidence: 0.95
       };
       
-      // 캐스케이드 소등 계산
+      // 캐스케이드 소등 계산 (2-3초 전)
       const cascadeOff = this.calculateCascadeOff(
         group,
-        runwayHighSpeed.aircraft,
-        runwayHighSpeed.distance
+        departingAircraft.aircraft,
+        departingAircraft.distance
       );
       
       if (cascadeOff) {
         activation.cascadeOffTime = cascadeOff;
         if (Date.now() >= cascadeOff) {
           activation.active = false;
-          activation.reason = 'Cascade off - aircraft passed';
+          activation.reason = 'Cascade off - aircraft passing';
         }
+      }
+      
+      // 속도가 34kt 이하로 떨어지면 소등
+      if (departingAircraft.aircraft.speed <= this.taxiSpeedThreshold) {
+        activation.active = false;
+        activation.reason = 'Aircraft below taxi speed';
       }
     }
     
-    // 2. 접근 항공기 확인 (착륙)
-    const approaching = this.checkApproachingAircraft(
+    // 2. 착륙 항공기 확인 (1 mile 이내)
+    const landingAircraft = this.checkLandingAircraft(
       group,
       aircraft
     );
     
-    if (approaching && !activation.active) {
+    if (landingAircraft && !activation.active) {
       activation = {
         lightGroupId: group.id,
         active: true,
-        reason: `Aircraft ${approaching.callsign} approaching runway`,
+        reason: `Landing aircraft ${landingAircraft.aircraft.callsign} at ${Math.round(landingAircraft.distance)}m`,
         confidence: 0.9
       };
+      
+      // 착륙 후 80kt 이하로 감속하면 소등 준비
+      if (landingAircraft.aircraft.altitude <= 50 && 
+          landingAircraft.aircraft.speed <= this.landingSpeedThreshold) {
+        // 34kt까지 감속하면 완전 소등
+        if (landingAircraft.aircraft.speed <= this.taxiSpeedThreshold) {
+          activation.active = false;
+          activation.reason = 'Landing aircraft in taxi state';
+        }
+      }
     }
     
     // 3. 교차점 점유 확인
@@ -120,19 +138,20 @@ export class RELController {
   }
   
   /**
-   * 고속 활주로 트래픽 확인
+   * 이륙 항공기 확인 (FAA: 30 knots 이상)
    */
-  private checkHighSpeedRunwayTraffic(
+  private checkDepartingAircraft(
     runway: string,
     runwayTraffic: Map<string, TrackedAircraft[]>
   ): { aircraft: TrackedAircraft; distance: number } | null {
     const traffic = runwayTraffic.get(runway) || [];
     
     for (const aircraft of traffic) {
-      if (aircraft.speed >= this.highSpeedThreshold) {
-        // REL 그룹까지의 거리는 실제 구현에서 계산
-        // 여기서는 단순화
-        return { aircraft, distance: 1000 };
+      // FAA 표준: 30 knots 이상일 때 REL 활성화
+      if (aircraft.speed >= this.highSpeedThreshold && aircraft.altitude <= 200) {
+        // REL 그룹까지의 거리 계산 (실제 구현에서는 정확한 위치 사용)
+        const distance = this.calculateDistanceToREL(aircraft);
+        return { aircraft, distance };
       }
     }
     
@@ -140,19 +159,21 @@ export class RELController {
   }
   
   /**
-   * 접근 항공기 확인
+   * 착륙 항공기 확인 (FAA: 1 mile 이내)
    */
-  private checkApproachingAircraft(
+  private checkLandingAircraft(
     group: LightGroup,
     aircraft: TrackedAircraft[]
-  ): TrackedAircraft | null {
+  ): { aircraft: TrackedAircraft; distance: number } | null {
     // 활주로 임계값 위치 (실제로는 group의 runway 정보에서 가져옴)
-    const thresholdPosition = { lat: 37.5706, lng: 126.7784 }; // 예시
+    const thresholdPosition = this.getRunwayThreshold(group.runway);
+    if (!thresholdPosition) return null;
     
     for (const ac of aircraft) {
-      // 접근 중인 항공기만
+      // 착륙 접근 중인 항공기
       if (ac.altitude > this.approachAltitudeThreshold) continue;
-      if ((ac.verticalSpeed || 0) >= 0) continue; // 하강 중이어야 함
+      if ((ac.verticalSpeed || 0) >= -100) continue; // 하강률 100fpm 이상
+      if (!ac.assignedRunway?.includes(group.runway)) continue;
       
       const distance = calculateDistance(
         ac.latitude,
@@ -161,8 +182,9 @@ export class RELController {
         thresholdPosition.lng
       );
       
+      // FAA 표준: 1 mile (1609m) 이내에서 활성화
       if (distance <= this.approachDistanceThreshold) {
-        return ac;
+        return { aircraft: ac, distance };
       }
     }
     
@@ -203,7 +225,7 @@ export class RELController {
   }
   
   /**
-   * 캐스케이드 소등 시간 계산
+   * 캐스케이드 소등 시간 계산 (FAA: 2-3초 전)
    */
   private calculateCascadeOff(
     group: LightGroup,
@@ -215,9 +237,11 @@ export class RELController {
     // 항공기가 REL을 통과할 예상 시간
     const timeToReach = currentDistance / (aircraft.speed * 0.514); // seconds
     
+    // FAA 표준: 교차점 도달 2-3초 전에 소등
     if (timeToReach <= this.cascadeLeadTime) {
-      // 소등 시작
-      return Date.now() + (timeToReach * 1000);
+      // 소등 시작 시간 = 현재 시간 + (도달 시간 - 리드 타임)
+      const cascadeTime = Math.max(0, timeToReach - this.cascadeLeadTime);
+      return Date.now() + (cascadeTime * 1000);
     }
     
     return null;
@@ -273,5 +297,30 @@ export class RELController {
     }
     
     return Math.round(intensity);
+  }
+  
+  /**
+   * 항공기에서 REL까지의 거리 계산
+   */
+  private calculateDistanceToREL(aircraft: TrackedAircraft): number {
+    // 실제 구현에서는 정확한 REL 위치 사용
+    // 여기서는 단순화된 거리 반환
+    return 1000; // meters
+  }
+  
+  /**
+   * 활주로 임계값 위치 가져오기
+   */
+  private getRunwayThreshold(runway: string): { lat: number; lng: number } | null {
+    const thresholds: Record<string, { lat: number; lng: number }> = {
+      '14L': { lat: 37.5705, lng: 126.7784 },
+      '14R': { lat: 37.5683, lng: 126.7755 },
+      '32L': { lat: 37.5481, lng: 126.8009 },
+      '32R': { lat: 37.5478, lng: 126.8070 }
+    };
+    
+    // 활주로 이름에서 방향 추출
+    const runwayDir = runway.match(/\d+[LR]/)?.[0];
+    return runwayDir ? thresholds[runwayDir] : null;
   }
 }

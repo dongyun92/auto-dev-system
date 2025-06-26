@@ -1,0 +1,99 @@
+{
+  "coordinate_system": {
+    "reference": "WGS84",
+    "origin": {
+      "name": "ARP (Aerodrome Reference Point)",
+      "coordinates": {
+        "latitude": "37°33'25\"N",
+        "longitude": "126°47'51\"E",
+        "decimal": {
+          "lat": 37.5569,
+          "lon": 126.7975
+        }
+      }
+    },
+    "magnetic_variation": "8°W (2015)",
+    "annual_change": "0.067° increasing"
+  },
+  "runway_coordinates": {
+    "14R": {
+      "threshold": {
+        "dms": "37°34'06.19\"N 126°46'31.60\"E",
+        "decimal": {
+          "lat": 37.5684,
+          "lon": 126.7754
+        }
+      },
+      "end": {
+        "dms": "37°32'52.83\"N 126°48'03.71\"E",
+        "decimal": {
+          "lat": 37.5480,
+          "lon": 126.8010
+        }
+      }
+    },
+    "32L": {
+      "threshold": {
+        "dms": "37°32'52.83\"N 126°48'03.71\"E",
+        "decimal": {
+          "lat": 37.5480,
+          "lon": 126.8010
+        }
+      },
+      "end": {
+        "dms": "37°34'06.19\"N 126°46'31.60\"E",
+        "decimal": {
+          "lat": 37.5684,
+          "lon": 126.7754
+        }
+      }
+    },
+    "14L": {
+      "threshold": {
+        "dms": "37°34'14.55\"N 126°46'41.80\"E",
+        "decimal": {
+          "lat": 37.5707,
+          "lon": 126.7783
+        }
+      },
+      "end": {
+        "dms": "37°32'51.89\"N 126°48'25.58\"E",
+        "decimal": {
+          "lat": 37.5477,
+          "lon": 126.8071
+        }
+      }
+    },
+    "32R": {      "threshold": {
+        "dms": "37°32'51.89\"N 126°48'25.58\"E",
+        "decimal": {
+          "lat": 37.5477,
+          "lon": 126.8071
+        }
+      },
+      "end": {
+        "dms": "37°34'14.55\"N 126°46'41.80\"E",
+        "decimal": {
+          "lat": 37.5707,
+          "lon": 126.7783
+        }
+      }
+    }
+  },
+  "navigation_aids": {
+    "VOR_DME": {
+      "ident": "KIP",
+      "name": "Gimpo",
+      "frequency": "113.60 MHz",
+      "channel": "83X",
+      "coordinates": {
+        "dms": "37°33'27.1\"N 126°47'31.3\"E",
+        "decimal": {
+          "lat": 37.5575,
+          "lon": 126.7920
+        }
+      },
+      "elevation_m": 30
+    }
+  }
+}

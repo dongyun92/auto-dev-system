@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>김포공항 RWSL 시스템 시뮬레이션 데모</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: #0a0a0a;
+            color: white;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .control-panel {
+            width: 400px;
+            background: #1a1a1a;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid #333;
+        }
+        
+        .simulation-container {
+            flex: 1;
+            position: relative;
+            background: #0a0a0a;
+        }
+        
+        .panel-section {
+            background: #222;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #444;
+        }
+        
+        .status-active {
+            border-color: #00aa00;
+            background: #001a00;
+        }
+        
+        .status-warning {
+            border-color: #ffaa00;
+            background: #1a1100;
+        }
+        
+        .status-critical {
+            border-color: #ff4444;
+            background: #1a0000;
+        }
+        
+        .btn {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            width: calc(50% - 10px);
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background: #555;
+        }
+        
+        .btn.primary {
+            background: #0066cc;
+            border-color: #0088ff;
+        }
+        
+        .btn.danger {
+            background: #cc3333;
+            border-color: #ff4444;
+        }
+        
+        .btn.success {
+            background: #33aa33;
+            border-color: #44cc44;
+        }
+        
+        .select {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px;
+            border-radius: 4px;
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px;
+            background: #2a2a2a;
+            border-radius: 4px;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #00ff00;
+        }
+        
+        .event-log {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        
+        .event-item {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-radius: 2px;
+        }
+        
+        .event-conflict {
+            background: #330000;
+            color: #ff6666;
+        }
+        
+        .event-spawn {
+            background: #003300;
+            color: #66ff66;
+        }
+        
+        .event-system {
+            background: #000033;
+            color: #6666ff;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .aircraft {
+            cursor: pointer;
+        }
+        
+        .aircraft-icon {
+            fill: #ffff00;
+            stroke: #000;
+            stroke-width: 1;
+        }
+        
+        .aircraft-label {
+            font-size: 8px;
+            fill: white;
+            text-anchor: middle;
+        }
+        
+        .aircraft-trail {
+            stroke: #ffff00;
+            stroke-width: 1;
+            fill: none;
+            opacity: 0.3;
+        }
+        
+        .runway {
+            fill: #444;
+            stroke: #666;
+            stroke-width: 2;
+        }
+        
+        .taxiway {
+            stroke: #333;
+            stroke-width: 8;
+            fill: none;
+        }
+        
+        .hot-spot {
+            fill: #ff4444;
+            stroke: #ffff00;
+            stroke-width: 2;
+            animation: pulse 2s infinite;
+        }
+        
+        .hot-spot.active {
+            fill: #ff0000;
+            animation: flash 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        @keyframes flash {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        
+        .rel-light {
+            fill: #ff0000;
+            opacity: 0.3;
+        }
+        
+        .rel-light.active {
+            opacity: 1;
+            animation: flash 0.5s infinite;
+        }
+        
+        .thl-light {
+            fill: #ff9900;
+            opacity: 0.3;
+        }
+        
+        .thl-light.active {
+            opacity: 1;
+            animation: flash 0.5s infinite;
+        }
+        
+        h3 {
+            margin: 0 0 15px 0;
+            color: #00ff00;
+            font-size: 16px;
+        }
+        
+        h4 {
+            margin: 10px 0 8px 0;
+            color: #ffaa00;
+            font-size: 14px;
+        }
+        
+        .scenario-info {
+            background: #001a1a;
+            border: 1px solid #006666;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="control-panel">
+            <h3>RWSL 시스템 제어</h3>
+            
+            <!-- 시뮬레이션 제어 -->
+            <div class="panel-section">
+                <h4>시뮬레이션 제어</h4>
+                <select id="scenario-select" class="select">
+                    <option value="normal_operations">정상 운항</option>
+                    <option value="peak_hour">첨두시간</option>
+                    <option value="emergency_scenario">비상상황</option>
+                    <option value="low_visibility">저시정</option>
+                </select>
+                
+                <button class="btn primary" onclick="startSimulation()">시작</button>
+                <button class="btn danger" onclick="stopSimulation()">중지</button>
+                <button class="btn" onclick="resetSimulation()">리셋</button>
+                <button class="btn" onclick="generateReport()">리포트</button>
+                
+                <div class="scenario-info" id="scenario-info">
+                    시나리오를 선택하고 시작 버튼을 클릭하세요.
+                </div>
+            </div>
+            
+            <!-- 시스템 상태 -->
+            <div class="panel-section" id="system-status">
+                <h4>시스템 상태</h4>
+                <div class="metric">
+                    <span>시뮬레이션 시간:</span>
+                    <span class="metric-value" id="sim-time">0.0초</span>
+                </div>
+                <div class="metric">
+                    <span>활성 항공기:</span>
+                    <span class="metric-value" id="aircraft-count">0</span>
+                </div>
+                <div class="metric">
+                    <span>충돌 감지:</span>
+                    <span class="metric-value" id="conflict-count">0</span>
+                </div>
+                <div class="metric">
+                    <span>활성 REL:</span>
+                    <span class="metric-value" id="rel-active">0</span>
+                </div>
+                <div class="metric">
+                    <span>활성 THL:</span>
+                    <span class="metric-value" id="thl-active">0</span>
+                </div>
+            </div>
+            
+            <!-- RWSL 제어 -->
+            <div class="panel-section">
+                <h4>RWSL 수동 제어</h4>
+                <button class="btn" onclick="testRELLights()">REL 테스트</button>
+                <button class="btn" onclick="testTHLLights()">THL 테스트</button>
+                <button class="btn" onclick="testStopBars()">Stop Bar 테스트</button>
+                <button class="btn danger" onclick="emergencyActivation()">비상 활성화</button>
+            </div>
+            
+            <!-- 이벤트 로그 -->
+            <div class="panel-section">
+                <h4>이벤트 로그</h4>
+                <div class="event-log" id="event-log">
+                    시스템 대기 중...
+                </div>
+            </div>
+        </div>
+        
+        <div class="simulation-container">
+            <svg id="airport-map" viewBox="-400 -600 4200 1200">
+                <!-- 배경 -->
+                <rect width="100%" height="100%" fill="#0a0a0a"/>
+                
+                <!-- 활주로 -->
+                <rect x="0" y="-30" width="3200" height="60" class="runway" 
+                      id="runway-14R-32L"/>
+                <rect x="0" y="127.5" width="3600" height="45" class="runway" 
+                      id="runway-14L-32R"/>
+                
+                <!-- 유도로 P -->
+                <line x1="150" y1="-120" x2="2850" y2="-120" class="taxiway" 
+                      id="taxiway-P"/>
+                
+                <!-- 기타 유도로들 -->
+                <line x1="800" y1="0" x2="800" y2="-120" class="taxiway"/>
+                <line x1="1200" y1="0" x2="1200" y2="-120" class="taxiway"/>
+                <line x1="2400" y1="0" x2="2400" y2="-120" class="taxiway"/>
+                <line x1="2800" y1="0" x2="2800" y2="-120" class="taxiway"/>
+                
+                <!-- Hot Spots -->
+                <circle cx="800" cy="-60" r="15" class="hot-spot" id="hs3"/>
+                <circle cx="2400" cy="-60" r="15" class="hot-spot" id="hs2"/>
+                <circle cx="2800" cy="-60" r="15" class="hot-spot" id="hs7"/>
+                
+                <!-- RWSL 등화들 (동적 생성) -->
+                <g id="rel-lights"></g>
+                <g id="thl-lights"></g>
+                
+                <!-- 항공기들 (동적 생성) -->
+                <g id="aircraft-group"></g>
+            </svg>
+        </div>
+    </div>
+
+    <!-- JavaScript 모듈 로드 -->
+    <script src="gimpo_rwsl_system.js"></script>
+    <script src="gimpo_aircraft_simulator.js"></script>
+    
+    <script>
+        // 전역 변수
+        let rwslSystem;
+        let simulator;
+        let updateInterval;
+        
+        // 시스템 초기화
+        function initializeSystem() {
+            rwslSystem = new GimpoAirportRWSL();
+            simulator = new GimpoAircraftSimulator(rwslSystem);
+            
+            createRWSLLights();
+            updateScenarioInfo();
+            
+            logEvent("SYSTEM_INIT", "RWSL 시스템 초기화 완료");
+        }
+        
+        // RWSL 등화 생성
+        function createRWSLLights() {
+            const relGroup = document.getElementById('rel-lights');
+            const thlGroup = document.getElementById('thl-lights');
+            
+            // REL 등화 생성
+            rwslSystem.rwslLights.REL.forEach(light => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', light.position.x);
+                circle.setAttribute('cy', light.position.y);
+                circle.setAttribute('r', 2);
+                circle.setAttribute('class', 'rel-light');
+                circle.setAttribute('id', light.id);
+                relGroup.appendChild(circle);
+            });
+            
+            // THL 등화 생성
+            rwslSystem.rwslLights.THL.forEach(light => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', light.position.x);
+                circle.setAttribute('cy', light.position.y);
+                circle.setAttribute('r', 1.5);
+                circle.setAttribute('class', 'thl-light');
+                circle.setAttribute('id', light.id);
+                thlGroup.appendChild(circle);
+            });
+        }
+        
+        // 시뮬레이션 시작
+        function startSimulation() {
+            const scenario = document.getElementById('scenario-select').value;
+            const result = simulator.startSimulation(scenario);
+            
+            logEvent("SIM_START", `시나리오: ${result.scenario.name}`);
+            
+            // UI 업데이트 시작
+            if (updateInterval) clearInterval(updateInterval);
+            updateInterval = setInterval(updateUI, 100);
+            
+            updateScenarioInfo();
+        }
+        
+        // 시뮬레이션 중지
+        function stopSimulation() {
+            simulator.stopSimulation();
+            if (updateInterval) {
+                clearInterval(updateInterval);
+                updateInterval = null;
+            }
+            logEvent("SIM_STOP", "시뮬레이션 중지");
+        }
+        
+        // 시뮬레이션 리셋
+        function resetSimulation() {
+            stopSimulation();
+            clearAircraft();
+            clearLights();
+            logEvent("SIM_RESET", "시뮬레이션 리셋");
+        }
+        
+        // UI 업데이트
+        function updateUI() {
+            const status = simulator.getSimulationStatus();
+            
+            // 메트릭 업데이트
+            document.getElementById('sim-time').textContent = status.simulationTime.toFixed(1) + '초';
+            document.getElementById('aircraft-count').textContent = status.aircraftCount;
+            document.getElementById('conflict-count').textContent = status.activeConflicts;
+            document.getElementById('rel-active').textContent = status.rwslStatus.activeREL;
+            document.getElementById('thl-active').textContent = status.rwslStatus.activeTHL;
+            
+            // 시스템 상태 패널 색상 업데이트
+            const statusPanel = document.getElementById('system-status');
+            if (status.activeConflicts > 0) {
+                statusPanel.className = 'panel-section status-critical';
+            } else if (status.aircraftCount > 10) {
+                statusPanel.className = 'panel-section status-warning';
+            } else {
+                statusPanel.className = 'panel-section status-active';
+            }
+            
+            // 항공기 위치 업데이트
+            updateAircraftDisplay(status.aircraftList);
+            
+            // RWSL 등화 상태 업데이트
+            updateRWSLDisplay();
+            
+            // Hot Spots 상태 업데이트
+            updateHotSpotsDisplay(status.activeConflicts > 0);
+            
+            // 이벤트 로그 업데이트
+            updateEventLog(status.recentEvents);
+        }
+        
+        // 항공기 표시 업데이트
+        function updateAircraftDisplay(aircraftList) {
+            const group = document.getElementById('aircraft-group');
+            
+            // 기존 항공기 제거
+            group.innerHTML = '';
+            
+            aircraftList.forEach(aircraft => {
+                // 항공기 아이콘
+                const icon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                const size = 8;
+                const points = `${aircraft.position.x},${aircraft.position.y-size} ${aircraft.position.x-size/2},${aircraft.position.y+size/2} ${aircraft.position.x+size/2},${aircraft.position.y+size/2}`;
+                icon.setAttribute('points', points);
+                icon.setAttribute('class', 'aircraft aircraft-icon');
+                icon.setAttribute('id', aircraft.id);
+                
+                // 색상을 상태에 따라 변경
+                if (aircraft.status === 'TAKEOFF') {
+                    icon.style.fill = '#00ff00';
+                } else if (aircraft.status === 'LANDING') {
+                    icon.style.fill = '#ff6600';
+                } else if (aircraft.status === 'HOLD') {
+                    icon.style.fill = '#ff0000';
+                } else {
+                    icon.style.fill = '#ffff00';
+                }
+                
+                group.appendChild(icon);
+                
+                // 콜사인 라벨
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', aircraft.position.x);
+                label.setAttribute('y', aircraft.position.y - 15);
+                label.setAttribute('class', 'aircraft-label');
+                label.textContent = aircraft.callsign;
+                group.appendChild(label);
+            });
+        }
+        
+        // RWSL 등화 표시 업데이트
+        function updateRWSLDisplay() {
+            // REL 등화 업데이트
+            rwslSystem.rwslLights.REL.forEach(light => {
+                const element = document.getElementById(light.id);
+                if (element) {
+                    element.classList.remove('active');
+                    if (light.status === 'ON' || light.status === 'FLASH') {
+                        element.classList.add('active');
+                    }
+                }
+            });
+            
+            // THL 등화 업데이트
+            rwslSystem.rwslLights.THL.forEach(light => {
+                const element = document.getElementById(light.id);
+                if (element) {
+                    element.classList.remove('active');
+                    if (light.status === 'ON' || light.status === 'FLASH') {
+                        element.classList.add('active');
+                    }
+                }
+            });
+        }
+        
+        // Hot Spots 표시 업데이트
+        function updateHotSpotsDisplay(hasConflicts) {
+            const hotSpots = ['hs2', 'hs3', 'hs7'];
+            hotSpots.forEach(hsId => {
+                const element = document.getElementById(hsId);
+                if (element) {
+                    element.classList.remove('active');
+                    if (hasConflicts && Math.random() < 0.3) {
+                        element.classList.add('active');
+                    }
+                }
+            });
+        }
+        
+        // 시나리오 정보 업데이트
+        function updateScenarioInfo() {
+            const scenario = document.getElementById('scenario-select').value;
+            const scenarios = {
+                "normal_operations": "일반적인 공항 운영 상황 (항공기 5대, 충돌 확률 10%)",
+                "peak_hour": "혼잡시간대 운항 상황 (항공기 15대, 충돌 확률 30%)",
+                "emergency_scenario": "활주로 침입 위험 상황 (항공기 8대, 충돌 확률 80%)",
+                "low_visibility": "CAT II/III 운항 상황 (항공기 6대, 충돌 확률 40%)"
+            };
+            
+            document.getElementById('scenario-info').textContent = scenarios[scenario];
+        }
+        
+        // 이벤트 로그 업데이트
+        function updateEventLog(events) {
+            const logElement = document.getElementById('event-log');
+            
+            events.forEach(event => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event-item';
+                
+                if (event.type.includes('CONFLICT')) {
+                    eventDiv.classList.add('event-conflict');
+                } else if (event.type.includes('SPAWN')) {
+                    eventDiv.classList.add('event-spawn');
+                } else {
+                    eventDiv.classList.add('event-system');
+                }
+                
+                eventDiv.textContent = `[${event.timestamp.toFixed(1)}] ${event.type}: ${event.description}`;
+                logElement.appendChild(eventDiv);
+            });
+            
+            // 스크롤을 맨 아래로
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            // 최대 50개 이벤트 유지
+            while (logElement.children.length > 50) {
+                logElement.removeChild(logElement.firstChild);
+            }
+        }
+        
+        // 수동 테스트 함수들
+        function testRELLights() {
+            rwslSystem.rwslLights.REL.forEach(light => {
+                light.status = light.status === 'OFF' ? 'ON' : 'OFF';
+            });
+            logEvent("MANUAL_TEST", "REL 등화 테스트");
+        }
+        
+        function testTHLLights() {
+            rwslSystem.rwslLights.THL.forEach(light => {
+                light.status = light.status === 'OFF' ? 'ON' : 'OFF';
+            });
+            logEvent("MANUAL_TEST", "THL 등화 테스트");
+        }
+        
+        function testStopBars() {
+            rwslSystem.rwslLights.stopBars.forEach(bar => {
+                bar.status = bar.status === 'OFF' ? 'ON' : 'OFF';
+            });
+            logEvent("MANUAL_TEST", "Stop Bar 테스트");
+        }
+        
+        function emergencyActivation() {
+            rwslSystem.rwslLights.REL.forEach(light => light.status = 'FLASH');
+            rwslSystem.rwslLights.THL.forEach(light => light.status = 'FLASH');
+            rwslSystem.rwslLights.stopBars.forEach(bar => bar.status = 'ON');
+            logEvent("EMERGENCY", "비상 활성화 - 모든 등화 점등");
+        }
+        
+        // 리포트 생성
+        function generateReport() {
+            const report = simulator.generateReport();
+            alert(`시뮬레이션 리포트:
+시나리오: ${report.scenario}
+총 시간: ${report.totalTime}초
+총 이벤트: ${report.totalEvents}개
+충돌 감지: ${report.conflictCount}개
+충돌률: ${report.conflictRate}%
+RWSL 활성화: ${report.rwslActivations}회`);
+        }
+        
+        // 유틸리티 함수들
+        function clearAircraft() {
+            document.getElementById('aircraft-group').innerHTML = '';
+        }
+        
+        function clearLights() {
+            rwslSystem.rwslLights.REL.forEach(light => light.status = 'OFF');
+            rwslSystem.rwslLights.THL.forEach(light => light.status = 'OFF');
+            rwslSystem.rwslLights.stopBars.forEach(bar => bar.status = 'OFF');
+        }
+        
+        function logEvent(type, description) {
+            const logElement = document.getElementById('event-log');
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'event-item event-system';
+            eventDiv.textContent = `[${new Date().toLocaleTimeString()}] ${type}: ${description}`;
+            logElement.appendChild(eventDiv);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        // 이벤트 리스너
+        document.getElementById('scenario-select').addEventListener('change', updateScenarioInfo);
+        
+        // 시스템 초기화
+        window.addEventListener('load', initializeSystem);
+    </script>
+</body>
+</html>

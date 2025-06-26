@@ -1,0 +1,203 @@
+{
+  "rwsl_lights_corrected": {
+    "description": "김포공항 RWSL(Runway Status Lights) 등화 설치 위치 - 수정된 버전",
+    "standards": "ICAO Doc 9830, FAA AC 150/5345-51",
+    "coordinate_system": "Local Cartesian (ARP 기준)",
+    "units": "meters",
+    "correction_notes": [
+      "REL 등화를 유도로 상에 활주로와 수직으로 배치",
+      "급속탈출유도로 C1, E1의 실제 각도 반영",
+      "Stop Bar 위치를 활주로 진입 직전으로 조정"
+    ]
+  },
+  "REL": {
+    "description": "Runway Entrance Lights - 활주로 진입등 (수정됨)",
+    "installation_principle": "유도로에서 활주로 진입 직전에 유도로와 수직으로 설치",
+    "spacing": "1.5m 간격으로 유도로 폭 전체에 걸쳐 설치",
+    "lights": [
+      {
+        "group_id": "REL_B1_14R",
+        "location": "Taxiway B1 to Runway 14R/32L entrance",
+        "associated_node": "RW14R_B1",
+        "runway": "14R/32L",
+        "orientation": "perpendicular_to_taxiway",
+        "lights": [
+          {"id": "REL_B1_14R_L01", "position": {"x": 800, "y": -45}, "side": "left"},
+          {"id": "REL_B1_14R_L02", "position": {"x": 800, "y": -43.5}, "side": "left"},
+          {"id": "REL_B1_14R_L03", "position": {"x": 800, "y": -42}, "side": "left"},
+          {"id": "REL_B1_14R_L04", "position": {"x": 800, "y": -40.5}, "side": "left"},
+          {"id": "REL_B1_14R_L05", "position": {"x": 800, "y": -39}, "side": "left"},
+          {"id": "REL_B1_14R_L06", "position": {"x": 800, "y": -37.5}, "side": "left"},
+          {"id": "REL_B1_14R_L07", "position": {"x": 800, "y": -36}, "side": "left"},
+          {"id": "REL_B1_14R_L08", "position": {"x": 800, "y": -34.5}, "side": "left"},
+          {"id": "REL_B1_14R_C01", "position": {"x": 800, "y": -1.5}, "side": "center"},
+          {"id": "REL_B1_14R_C02", "position": {"x": 800, "y": 0}, "side": "center"},
+          {"id": "REL_B1_14R_C03", "position": {"x": 800, "y": 1.5}, "side": "center"},
+          {"id": "REL_B1_14R_R01", "position": {"x": 800, "y": 34.5}, "side": "right"},
+          {"id": "REL_B1_14R_R02", "position": {"x": 800, "y": 36}, "side": "right"},
+          {"id": "REL_B1_14R_R03", "position": {"x": 800, "y": 37.5}, "side": "right"},
+          {"id": "REL_B1_14R_R04", "position": {"x": 800, "y": 39}, "side": "right"},
+          {"id": "REL_B1_14R_R05", "position": {"x": 800, "y": 40.5}, "side": "right"},
+          {"id": "REL_B1_14R_R06", "position": {"x": 800, "y": 42}, "side": "right"},
+          {"id": "REL_B1_14R_R07", "position": {"x": 800, "y": 43.5}, "side": "right"},
+          {"id": "REL_B1_14R_R08", "position": {"x": 800, "y": 45}, "side": "right"}
+        ]
+      },
+      {
+        "group_id": "REL_B2_14R",
+        "location": "Taxiway B2 to Runway 14R/32L entrance",
+        "associated_node": "RW14R_B2",
+        "runway": "14R/32L",
+        "orientation": "perpendicular_to_taxiway",
+        "lights": [
+          {"id": "REL_B2_14R_L01", "position": {"x": 1200, "y": -45}, "side": "left"},
+          {"id": "REL_B2_14R_L02", "position": {"x": 1200, "y": -43.5}, "side": "left"},
+          {"id": "REL_B2_14R_L03", "position": {"x": 1200, "y": -42}, "side": "left"},
+          {"id": "REL_B2_14R_L04", "position": {"x": 1200, "y": -40.5}, "side": "left"},
+          {"id": "REL_B2_14R_L05", "position": {"x": 1200, "y": -39}, "side": "left"},
+          {"id": "REL_B2_14R_L06", "position": {"x": 1200, "y": -37.5}, "side": "left"},
+          {"id": "REL_B2_14R_L07", "position": {"x": 1200, "y": -36}, "side": "left"},
+          {"id": "REL_B2_14R_L08", "position": {"x": 1200, "y": -34.5}, "side": "left"},
+          {"id": "REL_B2_14R_C01", "position": {"x": 1200, "y": -1.5}, "side": "center"},
+          {"id": "REL_B2_14R_C02", "position": {"x": 1200, "y": 0}, "side": "center"},
+          {"id": "REL_B2_14R_C03", "position": {"x": 1200, "y": 1.5}, "side": "center"},
+          {"id": "REL_B2_14R_R01", "position": {"x": 1200, "y": 34.5}, "side": "right"},
+          {"id": "REL_B2_14R_R02", "position": {"x": 1200, "y": 36}, "side": "right"},
+          {"id": "REL_B2_14R_R03", "position": {"x": 1200, "y": 37.5}, "side": "right"},
+          {"id": "REL_B2_14R_R04", "position": {"x": 1200, "y": 39}, "side": "right"},
+          {"id": "REL_B2_14R_R05", "position": {"x": 1200, "y": 40.5}, "side": "right"},
+          {"id": "REL_B2_14R_R06", "position": {"x": 1200, "y": 42}, "side": "right"},
+          {"id": "REL_B2_14R_R07", "position": {"x": 1200, "y": 43.5}, "side": "right"},
+          {"id": "REL_B2_14R_R08", "position": {"x": 1200, "y": 45}, "side": "right"}
+        ]
+      },
+      {
+        "group_id": "REL_C1_14R",
+        "location": "Rapid Exit Taxiway C1 to Runway 14R (대각선 진입)",
+        "associated_node": "RW14R_C1",
+        "runway": "14R/32L",
+        "orientation": "perpendicular_to_diagonal_taxiway",
+        "angle": 30,
+        "lights": [
+          {"id": "REL_C1_14R_01", "position": {"x": 1935, "y": -35}, "angle": 30},
+          {"id": "REL_C1_14R_02", "position": {"x": 1937, "y": -34}, "angle": 30},
+          {"id": "REL_C1_14R_03", "position": {"x": 1939, "y": -33}, "angle": 30},
+          {"id": "REL_C1_14R_04", "position": {"x": 1941, "y": -32}, "angle": 30},
+          {"id": "REL_C1_14R_05", "position": {"x": 1943, "y": -31}, "angle": 30},
+          {"id": "REL_C1_14R_06", "position": {"x": 1945, "y": -30}, "angle": 30},
+          {"id": "REL_C1_14R_07", "position": {"x": 1947, "y": -29}, "angle": 30},
+          {"id": "REL_C1_14R_08", "position": {"x": 1949, "y": -28}, "angle": 30},
+          {"id": "REL_C1_14R_09", "position": {"x": 1951, "y": -27}, "angle": 30},
+          {"id": "REL_C1_14R_10", "position": {"x": 1953, "y": -26}, "angle": 30},
+          {"id": "REL_C1_14R_11", "position": {"x": 1955, "y": -25}, "angle": 30},
+          {"id": "REL_C1_14R_12", "position": {"x": 1957, "y": -24}, "angle": 30}
+        ]
+      },
+      {
+        "group_id": "REL_E1_32L",
+        "location": "Rapid Exit Taxiway E1 to Runway 32L (대각선 진입)",
+        "associated_node": "RW32L_E1",
+        "runway": "14R/32L",
+        "orientation": "perpendicular_to_diagonal_taxiway",
+        "angle": -30,
+        "lights": [
+          {"id": "REL_E1_32L_01", "position": {"x": 1200, "y": -35}, "angle": -30},
+          {"id": "REL_E1_32L_02", "position": {"x": 1202, "y": -34}, "angle": -30},
+          {"id": "REL_E1_32L_03", "position": {"x": 1204, "y": -33}, "angle": -30},
+          {"id": "REL_E1_32L_04", "position": {"x": 1206, "y": -32}, "angle": -30},
+          {"id": "REL_E1_32L_05", "position": {"x": 1208, "y": -31}, "angle": -30},
+          {"id": "REL_E1_32L_06", "position": {"x": 1210, "y": -30}, "angle": -30},
+          {"id": "REL_E1_32L_07", "position": {"x": 1212, "y": -29}, "angle": -30},
+          {"id": "REL_E1_32L_08", "position": {"x": 1214, "y": -28}, "angle": -30},
+          {"id": "REL_E1_32L_09", "position": {"x": 1216, "y": -27}, "angle": -30},
+          {"id": "REL_E1_32L_10", "position": {"x": 1218, "y": -26}, "angle": -30},
+          {"id": "REL_E1_32L_11", "position": {"x": 1220, "y": -25}, "angle": -30},
+          {"id": "REL_E1_32L_12", "position": {"x": 1222, "y": -24}, "angle": -30}
+        ]
+      }
+    ]
+  },
+  "THL": {
+    "description": "Takeoff Hold Lights - 이륙 대기등 (동일함)",
+    "installation_criteria": {
+      "distance_from_centerline": "11.5m each side",
+      "spacing": "38m intervals",
+      "starting_distance": "115m from threshold",
+      "coverage_length": "450m"
+    },
+    "lights": [
+      {
+        "group_id": "THL_14R",
+        "runway": "14R",
+        "threshold": "RW14R_THR",
+        "direction": "takeoff",
+        "lights": [
+          {"id": "THL_14R_001", "position": {"x": 115, "y": -11.5}, "distance_from_threshold": 115},
+          {"id": "THL_14R_002", "position": {"x": 115, "y": 11.5}, "distance_from_threshold": 115},
+          {"id": "THL_14R_003", "position": {"x": 153, "y": -11.5}, "distance_from_threshold": 153},
+          {"id": "THL_14R_004", "position": {"x": 153, "y": 11.5}, "distance_from_threshold": 153},
+          {"id": "THL_14R_005", "position": {"x": 191, "y": -11.5}, "distance_from_threshold": 191},
+          {"id": "THL_14R_006", "position": {"x": 191, "y": 11.5}, "distance_from_threshold": 191},
+          {"id": "THL_14R_007", "position": {"x": 229, "y": -11.5}, "distance_from_threshold": 229},
+          {"id": "THL_14R_008", "position": {"x": 229, "y": 11.5}, "distance_from_threshold": 229},
+          {"id": "THL_14R_009", "position": {"x": 267, "y": -11.5}, "distance_from_threshold": 267},
+          {"id": "THL_14R_010", "position": {"x": 267, "y": 11.5}, "distance_from_threshold": 267}
+        ]
+      },
+      {
+        "group_id": "THL_32L", 
+        "runway": "32L",
+        "threshold": "RW32L_THR",
+        "direction": "takeoff",
+        "lights": [
+          {"id": "THL_32L_001", "position": {"x": 3085, "y": -11.5}, "distance_from_threshold": 115},
+          {"id": "THL_32L_002", "position": {"x": 3085, "y": 11.5}, "distance_from_threshold": 115},
+          {"id": "THL_32L_003", "position": {"x": 3047, "y": -11.5}, "distance_from_threshold": 153},
+          {"id": "THL_32L_004", "position": {"x": 3047, "y": 11.5}, "distance_from_threshold": 153},
+          {"id": "THL_32L_005", "position": {"x": 3009, "y": -11.5}, "distance_from_threshold": 191},
+          {"id": "THL_32L_006", "position": {"x": 3009, "y": 11.5}, "distance_from_threshold": 191},
+          {"id": "THL_32L_007", "position": {"x": 2971, "y": -11.5}, "distance_from_threshold": 229},
+          {"id": "THL_32L_008", "position": {"x": 2971, "y": 11.5}, "distance_from_threshold": 229},
+          {"id": "THL_32L_009", "position": {"x": 2933, "y": -11.5}, "distance_from_threshold": 267},
+          {"id": "THL_32L_010", "position": {"x": 2933, "y": 11.5}, "distance_from_threshold": 267}
+        ]
+      },
+      {
+        "group_id": "THL_14L",
+        "runway": "14L",
+        "threshold": "RW14L_THR", 
+        "direction": "takeoff",
+        "lights": [
+          {"id": "THL_14L_001", "position": {"x": 115, "y": 138.5}, "distance_from_threshold": 115},
+          {"id": "THL_14L_002", "position": {"x": 115, "y": 161.5}, "distance_from_threshold": 115},
+          {"id": "THL_14L_003", "position": {"x": 153, "y": 138.5}, "distance_from_threshold": 153},
+          {"id": "THL_14L_004", "position": {"x": 153, "y": 161.5}, "distance_from_threshold": 153},
+          {"id": "THL_14L_005", "position": {"x": 191, "y": 138.5}, "distance_from_threshold": 191},
+          {"id": "THL_14L_006", "position": {"x": 191, "y": 161.5}, "distance_from_threshold": 191},
+          {"id": "THL_14L_007", "position": {"x": 229, "y": 138.5}, "distance_from_threshold": 229},
+          {"id": "THL_14L_008", "position": {"x": 229, "y": 161.5}, "distance_from_threshold": 229},
+          {"id": "THL_14L_009", "position": {"x": 267, "y": 138.5}, "distance_from_threshold": 267},
+          {"id": "THL_14L_010", "position": {"x": 267, "y": 161.5}, "distance_from_threshold": 267}
+        ]
+      },
+      {
+        "group_id": "THL_32R",
+        "runway": "32R", 
+        "threshold": "RW32R_THR",
+        "direction": "takeoff",
+        "lights": [
+          {"id": "THL_32R_001", "position": {"x": 3485, "y": 138.5}, "distance_from_threshold": 115},
+          {"id": "THL_32R_002", "position": {"x": 3485, "y": 161.5}, "distance_from_threshold": 115},
+          {"id": "THL_32R_003", "position": {"x": 3447, "y": 138.5}, "distance_from_threshold": 153},
+          {"id": "THL_32R_004", "position": {"x": 3447, "y": 161.5}, "distance_from_threshold": 153},
+          {"id": "THL_32R_005", "position": {"x": 3409, "y": 138.5}, "distance_from_threshold": 191},
+          {"id": "THL_32R_006", "position": {"x": 3409, "y": 161.5}, "distance_from_threshold": 191},
+          {"id": "THL_32R_007", "position": {"x": 3371, "y": 138.5}, "distance_from_threshold": 229},
+          {"id": "THL_32R_008", "position": {"x": 3371, "y": 161.5}, "distance_from_threshold": 229},
+          {"id": "THL_32R_009", "position": {"x": 3333, "y": 138.5}, "distance_from_threshold": 267},
+          {"id": "THL_32R_010", "position": {"x": 3333, "y": 161.5}, "distance_from_threshold": 267}
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,236 @@
+{
+  "svg_map_configuration": {
+    "metadata": {
+      "updated": "2025-06-26",
+      "version": "2.0",
+      "coordinate_source": "AIP_RKSS_official_diagrams",
+      "accuracy": "±10m_estimated"
+    },
+    "canvas": {
+      "width": 2400,
+      "height": 1800,
+      "viewBox": "0 0 2400 1800",
+      "background": "#f8f9fa"
+    },
+    "coordinate_transform": {
+      "reference_point": {
+        "lat": 37.558889,
+        "lon": 126.791667,
+        "description": "ARP (Airport Reference Point)"
+      },
+      "scale": {
+        "meters_per_pixel": 2.5,
+        "total_coverage": "6000m × 4500m"
+      },
+      "projection": "WGS84_to_SVG_linear"
+    },
+    "layers": [
+      {
+        "id": "background",
+        "order": 1,
+        "elements": ["airport_boundary", "grass_areas"]
+      },
+      {
+        "id": "runways",
+        "order": 2,
+        "elements": ["runway_surfaces", "runway_markings", "thresholds"]
+      },
+      {
+        "id": "taxiways_main",
+        "order": 3,
+        "elements": ["parallel_taxiways", "perpendicular_taxiways", "connector_taxiways"]
+      },
+      {
+        "id": "taxiways_apron",
+        "order": 4,
+        "elements": ["apron_taxiways", "taxilanes"]
+      },
+      {
+        "id": "stands",
+        "order": 5,
+        "elements": ["aircraft_stands", "stand_boundaries"]
+      },
+      {
+        "id": "buildings",
+        "order": 6,
+        "elements": ["terminals", "control_tower", "hangars", "facilities"]
+      },
+      {
+        "id": "safety",
+        "order": 7,
+        "elements": ["hot_spots", "restricted_areas", "deicing_pads"]
+      },
+      {
+        "id": "navigation",
+        "order": 8,
+        "elements": ["ils_antennas", "lighting", "navigation_aids"]
+      },
+      {
+        "id": "labels_major",
+        "order": 9,
+        "elements": ["runway_numbers", "taxiway_designations", "terminal_labels"]
+      },
+      {
+        "id": "labels_minor",
+        "order": 10,
+        "elements": ["stand_numbers", "facility_names"]
+      }
+    ],
+    "styling": {
+      "runways": {
+        "fill": "#2c3e50",
+        "stroke": "#34495e",
+        "stroke_width": 2,
+        "markings": {
+          "centerline": "#ffffff",
+          "threshold": "#ffffff",
+          "numbers": {
+            "font_family": "Arial Black",
+            "font_size": 48,
+            "fill": "#ffffff"
+          }
+        }
+      },
+      "taxiways": {
+        "parallel": {
+          "fill": "#7f8c8d",
+          "stroke": "#95a5a6",
+          "stroke_width": 1,
+          "centerline": "#f1c40f",
+          "centerline_width": 2,
+          "labels": {
+            "font_family": "Arial Bold",
+            "font_size": 24,
+            "fill": "#2c3e50"
+          }
+        },
+        "perpendicular": {
+          "fill": "#7f8c8d",
+          "stroke": "#95a5a6",
+          "stroke_width": 1,
+          "rapid_exit": {
+            "fill": "#95a5a6",
+            "highlight": "#3498db"
+          }
+        },
+        "connectors": {
+          "fill": "#95a5a6",
+          "stroke": "#bdc3c7",
+          "stroke_width": 1
+        }
+      },
+      "stands": {
+        "domestic": {
+          "fill": "#ecf0f1",
+          "stroke": "#34495e",
+          "stroke_width": 1,
+          "labels": {
+            "font_family": "Arial",
+            "font_size": 14,
+            "fill": "#2c3e50"
+          }
+        },
+        "international": {
+          "fill": "#e8f4fd",
+          "stroke": "#3498db",
+          "stroke_width": 1,
+          "labels": {
+            "font_family": "Arial",
+            "font_size": 14,
+            "fill": "#2980b9"
+          }
+        },
+        "f_class": {
+          "fill": "#fdeaa7",
+          "stroke": "#f39c12",
+          "stroke_width": 2,
+          "labels": {
+            "font_family": "Arial Bold",
+            "font_size": 16,
+            "fill": "#e67e22"
+          }
+        }
+      },
+      "buildings": {
+        "terminals": {
+          "fill": "#e74c3c",
+          "stroke": "#c0392b",
+          "stroke_width": 2,
+          "labels": {
+            "font_family": "Arial Bold",
+            "font_size": 20,
+            "fill": "#ffffff"
+          }
+        },
+        "control_tower": {
+          "fill": "#9b59b6",
+          "stroke": "#8e44ad",
+          "stroke_width": 2
+        },
+        "hangars": {
+          "fill": "#95a5a6",
+          "stroke": "#7f8c8d",
+          "stroke_width": 1
+        }
+      },
+      "safety": {
+        "hot_spots": {
+          "fill": "#e74c3c",
+          "stroke": "#c0392b",
+          "stroke_width": 3,
+          "opacity": 0.7,
+          "labels": {
+            "font_family": "Arial Bold",
+            "font_size": 18,
+            "fill": "#ffffff"
+          }
+        },
+        "restricted_areas": {
+          "fill": "#f39c12",
+          "stroke": "#e67e22",
+          "stroke_width": 2,
+          "opacity": 0.5
+        }
+      }
+    },
+    "interactive_features": {
+      "hover_effects": {
+        "stands": {
+          "highlight_color": "#3498db",
+          "tooltip": true
+        },
+        "taxiways": {
+          "highlight_color": "#f1c40f",
+          "tooltip": true
+        },
+        "hot_spots": {
+          "highlight_color": "#e74c3c",
+          "tooltip": true
+        }
+      },
+      "click_events": {
+        "stands": "show_stand_details",
+        "taxiways": "show_taxiway_info",
+        "runways": "show_runway_info"
+      }
+    },
+    "new_features": {
+      "taxiway_routing": {
+        "enabled": true,
+        "show_centerlines": true,
+        "highlight_connections": true,
+        "rapid_exit_indicators": true
+      },
+      "coordinate_display": {
+        "enabled": true,
+        "format": "lat_lon_decimal",
+        "precision": 6
+      },
+      "distance_measurement": {
+        "enabled": true,
+        "units": "meters",
+        "accuracy": "±5m"
+      }
+    }
+  }
+}

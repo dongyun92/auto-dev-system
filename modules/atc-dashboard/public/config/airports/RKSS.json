@@ -1,0 +1,121 @@
+{
+  "id": "RKSS",
+  "name": "김포국제공항",
+  "referencePoint": {
+    "lat": 37.5592,
+    "lng": 126.7912
+  },
+  "projection": "LOCAL_TANGENT",
+  "magneticVariation": -8.0,
+  "elevation": 18,
+  "timeZone": "Asia/Seoul",
+  "runways": [
+    {
+      "id": "14L/32R",
+      "name": "14L/32R",
+      "width": 60,
+      "directions": {
+        "14L": {
+          "id": "14L",
+          "threshold": { "lat": 37.5705, "lng": 126.7784 },
+          "stopway": 150
+        },
+        "32R": {
+          "id": "32R",
+          "threshold": { "lat": 37.5478, "lng": 126.8070 },
+          "stopway": 150
+        }
+      }
+    },
+    {
+      "id": "14R/32L",
+      "name": "14R/32L",
+      "width": 45,
+      "directions": {
+        "14R": {
+          "id": "14R",
+          "threshold": { "lat": 37.5683, "lng": 126.7755 },
+          "stopway": 150
+        },
+        "32L": {
+          "id": "32L",
+          "threshold": { "lat": 37.5481, "lng": 126.8009 },
+          "stopway": 150
+        }
+      }
+    }
+  ],
+  "rwsl": {
+    "rel": {
+      "enabled": true,
+      "detectionRange": {
+        "inner": 50,
+        "outer": 200
+      },
+      "sectorAngle": 90,
+      "activationDelay": 2000
+    },
+    "thl": {
+      "enabled": true,
+      "detectionArea": {
+        "length": 100,
+        "width": 60
+      },
+      "activationDelay": 1500
+    },
+    "lights": {
+      "rel": {
+        "14L": [
+          {"id": "REL-14L-1", "offset": {"x": 0, "y": 50}},
+          {"id": "REL-14L-2", "offset": {"x": 0, "y": 100}},
+          {"id": "REL-14L-3", "offset": {"x": 0, "y": 150}},
+          {"id": "REL-14L-4", "offset": {"x": 0, "y": 200}}
+        ],
+        "32R": [
+          {"id": "REL-32R-1", "offset": {"x": 0, "y": -50}},
+          {"id": "REL-32R-2", "offset": {"x": 0, "y": -100}},
+          {"id": "REL-32R-3", "offset": {"x": 0, "y": -150}},
+          {"id": "REL-32R-4", "offset": {"x": 0, "y": -200}}
+        ],
+        "14R": [
+          {"id": "REL-14R-1", "offset": {"x": 0, "y": 50}},
+          {"id": "REL-14R-2", "offset": {"x": 0, "y": 100}},
+          {"id": "REL-14R-3", "offset": {"x": 0, "y": 150}},
+          {"id": "REL-14R-4", "offset": {"x": 0, "y": 200}}
+        ],
+        "32L": [
+          {"id": "REL-32L-1", "offset": {"x": 0, "y": -50}},
+          {"id": "REL-32L-2", "offset": {"x": 0, "y": -100}},
+          {"id": "REL-32L-3", "offset": {"x": 0, "y": -150}},
+          {"id": "REL-32L-4", "offset": {"x": 0, "y": -200}}
+        ]
+      },
+      "thl": {
+        "14L": [
+          {"id": "THL-14L-1", "offset": {"x": -30, "y": 50}},
+          {"id": "THL-14L-2", "offset": {"x": -15, "y": 50}},
+          {"id": "THL-14L-3", "offset": {"x": 15, "y": 50}},
+          {"id": "THL-14L-4", "offset": {"x": 30, "y": 50}}
+        ],
+        "32R": [
+          {"id": "THL-32R-1", "offset": {"x": -30, "y": -50}},
+          {"id": "THL-32R-2", "offset": {"x": -15, "y": -50}},
+          {"id": "THL-32R-3", "offset": {"x": 15, "y": -50}},
+          {"id": "THL-32R-4", "offset": {"x": 30, "y": -50}}
+        ],
+        "14R": [
+          {"id": "THL-14R-1", "offset": {"x": -30, "y": 50}},
+          {"id": "THL-14R-2", "offset": {"x": -15, "y": 50}},
+          {"id": "THL-14R-3", "offset": {"x": 15, "y": 50}},
+          {"id": "THL-14R-4", "offset": {"x": 30, "y": 50}}
+        ],
+        "32L": [
+          {"id": "THL-32L-1", "offset": {"x": -30, "y": -50}},
+          {"id": "THL-32L-2", "offset": {"x": -15, "y": -50}},
+          {"id": "THL-32L-3", "offset": {"x": 15, "y": -50}},
+          {"id": "THL-32L-4", "offset": {"x": 30, "y": -50}}
+        ]
+      }
+    }
+  }
+}

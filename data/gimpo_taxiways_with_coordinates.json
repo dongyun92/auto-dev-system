@@ -1,0 +1,352 @@
+{
+  "taxiways_with_coordinates": {
+    "metadata": {
+      "source": "AIP RKSS AD Chart 2-1",
+      "date_updated": "2025-06-26",
+      "coordinate_system": "WGS-84",
+      "estimation_method": "AIP_diagram_scaling",
+      "scale_reference": "3000m diagram width",
+      "accuracy": "±10m estimated"
+    },
+    "parallel_taxiways": [
+      {
+        "designation": "A",
+        "width": 35,
+        "surface": "Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "parallel_main",
+        "coordinates": {
+          "start_point": {
+            "lat": 37.571000,
+            "lon": 126.776500,
+            "description": "14L/A intersection"
+          },
+          "end_point": {
+            "lat": 37.547500,
+            "lon": 126.805000,
+            "description": "32R/A intersection"
+          },
+          "centerline_points": [
+            {"lat": 37.571000, "lon": 126.776500},
+            {"lat": 37.565000, "lon": 126.785000},
+            {"lat": 37.559000, "lon": 126.793500},
+            {"lat": 37.553000, "lon": 126.802000},
+            {"lat": 37.547500, "lon": 126.805000}
+          ]
+        },
+        "connects": ["14L", "32R", "B1", "B2", "aprons"]
+      }
+    ],
+    "perpendicular_taxiways": [
+      {
+        "designation": "B1",
+        "width": 35,
+        "surface": "Asphalt",
+        "pcr": "PCR 693/F/B/X/T",
+        "type": "rapid_exit",
+        "coordinates": {
+          "14R_connection": {
+            "lat": 37.567500,
+            "lon": 126.773000,
+            "runway": "14R/32L"
+          },
+          "14L_connection": {
+            "lat": 37.569000,
+            "lon": 126.775000,
+            "runway": "14L/32R"
+          },
+          "taxiway_A_connection": {
+            "lat": 37.570000,
+            "lon": 126.776000
+          }
+        },
+        "angle": "45_degrees",
+        "direction": "high_speed_exit"
+      },
+      {
+        "designation": "B2",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular",
+        "coordinates": {
+          "32R_connection": {
+            "lat": 37.549000,
+            "lon": 126.803000,
+            "runway": "14L/32R"
+          },
+          "32L_connection": {
+            "lat": 37.550000,
+            "lon": 126.801000,
+            "runway": "14R/32L"
+          },
+          "taxiway_A_connection": {
+            "lat": 37.549500,
+            "lon": 126.804000
+          }
+        }
+      },
+      {
+        "designation": "C1",
+        "width": 35,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 693/F/B/X/T",
+        "type": "rapid_exit",
+        "coordinates": {
+          "14R_connection": {
+            "lat": 37.565000,
+            "lon": 126.785000,
+            "runway": "14R/32L"
+          },
+          "14L_connection": {
+            "lat": 37.566500,
+            "lon": 126.787000,
+            "runway": "14L/32R"
+          }
+        },
+        "angle": "45_degrees"
+      },
+      {
+        "designation": "C2",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular",
+        "coordinates": {
+          "14R_connection": {
+            "lat": 37.564000,
+            "lon": 126.787000,
+            "runway": "14R/32L"
+          },
+          "14L_connection": {
+            "lat": 37.565500,
+            "lon": 126.789000,
+            "runway": "14L/32R"
+          }
+        }
+      },
+      {
+        "designation": "C3",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular",
+        "coordinates": {
+          "32R_connection": {
+            "lat": 37.551000,
+            "lon": 126.795000,
+            "runway": "14L/32R"
+          },
+          "32L_connection": {
+            "lat": 37.552000,
+            "lon": 126.793000,
+            "runway": "14R/32L"
+          }
+        }
+      },
+      {
+        "designation": "D1",
+        "width": 40,
+        "surface": "Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "rapid_exit",
+        "coordinates": {
+          "14R_connection": {
+            "lat": 37.562000,
+            "lon": 126.790000,
+            "runway": "14R/32L"
+          },
+          "14L_connection": {
+            "lat": 37.564000,
+            "lon": 126.792000,
+            "runway": "14L/32R"
+          }
+        },
+        "angle": "45_degrees"
+      },
+      {
+        "designation": "D2",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular",
+        "coordinates": {
+          "14R_connection": {
+            "lat": 37.561000,
+            "lon": 126.792000,
+            "runway": "14R/32L"
+          },
+          "14L_connection": {
+            "lat": 37.562500,
+            "lon": 126.794000,
+            "runway": "14L/32R"
+          }
+        }
+      },
+      {
+        "designation": "D3",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular",
+        "coordinates": {
+          "32R_connection": {
+            "lat": 37.553000,
+            "lon": 126.787000,
+            "runway": "14L/32R"
+          },
+          "32L_connection": {
+            "lat": 37.554000,
+            "lon": 126.785000,
+            "runway": "14R/32L"
+          }
+        }
+      },
+      {
+        "designation": "E1",
+        "width": 35,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 693/F/B/X/T",
+        "type": "rapid_exit",
+        "coordinates": {
+          "14R_connection": {
+            "lat": 37.559000,
+            "lon": 126.795000,
+            "runway": "14R/32L"
+          },
+          "14L_connection": {
+            "lat": 37.561000,
+            "lon": 126.797000,
+            "runway": "14L/32R"
+          }
+        },
+        "angle": "45_degrees"
+      },
+      {
+        "designation": "E2",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular",
+        "coordinates": {
+          "32R_connection": {
+            "lat": 37.555000,
+            "lon": 126.779000,
+            "runway": "14L/32R"
+          },
+          "32L_connection": {
+            "lat": 37.556000,
+            "lon": 126.777000,
+            "runway": "14R/32L"
+          }
+        }
+      },
+      {
+        "designation": "F1",
+        "width": 30,
+        "surface": "Concrete",
+        "pcr": "PCR 693/F/B/X/T",
+        "type": "perpendicular",
+        "coordinates": {
+          "14R_connection": {
+            "lat": 37.557000,
+            "lon": 126.798000,
+            "runway": "14R/32L"
+          },
+          "14L_connection": {
+            "lat": 37.558500,
+            "lon": 126.800000,
+            "runway": "14L/32R"
+          }
+        }
+      },
+      {
+        "designation": "F2",
+        "width": 30,
+        "surface": "Asphalt & Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular",
+        "coordinates": {
+          "32R_connection": {
+            "lat": 37.557000,
+            "lon": 126.781000,
+            "runway": "14L/32R"
+          },
+          "32L_connection": {
+            "lat": 37.558000,
+            "lon": 126.779000,
+            "runway": "14R/32L"
+          }
+        }
+      },
+      {
+        "designation": "G1",
+        "width": 40,
+        "surface": "Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "perpendicular",
+        "coordinates": {
+          "14R_connection": {
+            "lat": 37.554000,
+            "lon": 126.800500,
+            "runway": "14R/32L"
+          },
+          "14L_connection": {
+            "lat": 37.556000,
+            "lon": 126.802500,
+            "runway": "14L/32R"
+          }
+        }
+      },
+      {
+        "designation": "G2",
+        "width": 23,
+        "surface": "Concrete",
+        "pcr": "PCR 1,006/R/B/W/T",
+        "type": "holding_bay",
+        "coordinates": {
+          "center_point": {
+            "lat": 37.555000,
+            "lon": 126.773000
+          },
+          "entry_point": {
+            "lat": 37.555500,
+            "lon": 126.773500,
+            "connects_to": "14R_threshold_area"
+          }
+        },
+        "special_features": "Engine run-up area"
+      }
+    ],
+    "connector_taxiways": [
+      {
+        "designation": "W1",
+        "surface": "Asphalt",
+        "pcr": "PCR 67/R/B/W/T",
+        "type": "runway_connector",
+        "coordinates": {
+          "center_point": {
+            "lat": 37.558000,
+            "lon": 126.788000
+          },
+          "connects": ["14R/32L", "14L/32R"]
+        },
+        "function": "Cross-runway connector"
+      },
+      {
+        "designation": "W2",
+        "surface": "Asphalt",
+        "pcr": "PCR 67/R/B/W/T",
+        "type": "runway_connector",
+        "coordinates": {
+          "center_point": {
+            "lat": 37.559000,
+            "lon": 126.790000
+          },
+          "connects": ["14R/32L", "14L/32R"]
+        },
+        "function": "Cross-runway connector"
+      }
+    ]
+  }
+}

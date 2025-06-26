@@ -1,0 +1,149 @@
+{
+  "coordinate_transformation": {
+    "description": "김포공항 RWSL 시스템 좌표 변환 설정",
+    "purpose": "WGS84 좌표를 평면 직교좌표계로 변환하여 거리 및 충돌 계산 최적화"
+  },
+  "reference_systems": {
+    "global": {
+      "datum": "WGS84",
+      "ellipsoid": "WGS84",
+      "projection": "Geographic (lat/lon)"
+    },
+    "local": {
+      "type": "Local Cartesian Coordinate System",
+      "origin": "Aerodrome Reference Point (ARP)",
+      "units": "meters",
+      "axis_orientation": {
+        "x_axis": "East (positive towards 090°)",
+        "y_axis": "North (positive towards 000°)",
+        "z_axis": "Up (positive towards zenith)"
+      }
+    }
+  },
+  "transformation_parameters": {
+    "origin_point": {
+      "name": "Gimpo Airport ARP",
+      "wgs84_coordinates": {
+        "latitude_dms": "37°33'25\"N",
+        "longitude_dms": "126°47'51\"E", 
+        "latitude_decimal": 37.5569,
+        "longitude_decimal": 126.7975,
+        "elevation_m": 18.0
+      },
+      "local_coordinates": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    "conversion_factors": {
+      "latitude_to_meters": {
+        "formula": "degrees * 110540",
+        "description": "1도 위도 = 약 110.54km",
+        "accuracy": "±1m within 50km radius"
+      },
+      "longitude_to_meters": {
+        "formula": "degrees * cos(lat_radians) * 111320",
+        "at_gimpo_lat": "degrees * 0.7934 * 111320",
+        "effective_factor": 88334.5,
+        "description": "김포공항 위도(37.56°)에서의 경도 변환계수"
+      }
+    },
+    "magnetic_declination": {
+      "value_degrees": -8.0,
+      "direction": "West",
+      "epoch": 2015,
+      "annual_change": "+0.067°",
+      "current_estimate_2025": -7.33
+    }
+  },
+  "transformation_functions": {
+    "wgs84_to_local": {
+      "description": "WGS84 좌표를 로컬 평면좌표로 변환",
+      "algorithm": "Simplified Transverse Mercator approximation",
+      "implementation": {
+        "dx_meters": "(lon - origin_lon) * 88334.5",
+        "dy_meters": "(lat - origin_lat) * 110540",
+        "dz_meters": "elevation - origin_elevation"
+      },
+      "valid_range": {
+        "radius_km": 50,
+        "accuracy_degradation": "±1m per 10km from origin"
+      }
+    },
+    "local_to_wgs84": {
+      "description": "로컬 평면좌표를 WGS84로 역변환",
+      "implementation": {
+        "lat": "origin_lat + (y_meters / 110540)",
+        "lon": "origin_lon + (x_meters / 88334.5)",
+        "elevation": "origin_elevation + z_meters"
+      }
+    },
+    "bearing_calculation": {
+      "true_bearing": {
+        "formula": "atan2(dx, dy) * 180/π",
+        "range": "0° to 360°",
+        "reference": "True North"
+      },
+      "magnetic_bearing": {
+        "formula": "true_bearing + magnetic_declination", 
+        "adjustment": "true_bearing + (-7.33°) for 2025"
+      }
+    },
+    "distance_calculation": {
+      "euclidean_2d": "sqrt(dx² + dy²)",
+      "euclidean_3d": "sqrt(dx² + dy² + dz²)",
+      "runway_distance": "projection onto runway centerline"
+    }
+  },
+  "validation_points": {
+    "runway_14R_threshold": {
+      "wgs84": {"lat": 37.5684, "lon": 126.7754, "elev": 10.4},
+      "local": {"x": -171.4, "y": 1275.5, "z": -7.6},
+      "description": "Runway 14R threshold validation point"
+    },
+    "runway_32L_threshold": {
+      "wgs84": {"lat": 37.5480, "lon": 126.8010, "elev": 12.6},
+      "local": {"x": 280.6, "y": -863.6, "z": -5.4},
+      "description": "Runway 32L threshold validation point"
+    },
+    "vor_kip": {
+      "wgs84": {"lat": 37.5575, "lon": 126.7920, "elev": 30.0},
+      "local": {"x": -48.7, "y": 66.4, "z": 12.0},
+      "description": "KIP VOR/DME facility"
+    }
+  },
+  "accuracy_specifications": {
+    "position_accuracy": {
+      "requirement": "±3 meters",
+      "achievable": "±1 meter within 10km radius",
+      "degradation": "±0.1m per km from origin"
+    },
+    "bearing_accuracy": {
+      "requirement": "±0.5 degrees",
+      "achievable": "±0.1 degrees"
+    },
+    "update_frequency": {
+      "radar_data": "1 Hz",
+      "transformation": "real-time",
+      "coordinate_refresh": "continuous"
+    }
+  },
+  "implementation_notes": {
+    "performance": [
+      "로컬 좌표계 사용으로 계산 속도 향상",
+      "삼각함수 연산 최소화",
+      "벡터 기반 충돌 예측 가능"
+    ],
+    "limitations": [
+      "50km 반경 내에서만 정확도 보장",
+      "지구 곡률 무시로 인한 오차 있음",
+      "대형 공항에서는 UTM 좌표계 권장"
+    ],
+    "future_enhancements": [
+      "정밀 UTM 변환 옵션 추가",
+      "지구 곡률 보정 알고리즘",
+      "다중 기준점 지원"
+    ]
+  }
+}
