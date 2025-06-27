@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "RWSL_ALGORITHM.md",
+                "file": "RWSL_PERFORMANCE_QUICK_FIXES.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "RWSL_ALGORITHM"
+              "title": "RWSL_PERFORMANCE_QUICK_FIXES"
             }
           }
         ],
@@ -109,7 +109,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "RWSL_ALGORITHM.md",
+                "file": "RWSL_PERFORMANCE_QUICK_FIXES.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -119,7 +119,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for RWSL_ALGORITHM"
+              "title": "Backlinks for RWSL_PERFORMANCE_QUICK_FIXES"
             }
           },
           {
@@ -128,12 +128,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "RWSL_ALGORITHM.md",
+                "file": "RWSL_PERFORMANCE_QUICK_FIXES.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from RWSL_ALGORITHM"
+              "title": "Outgoing links from RWSL_PERFORMANCE_QUICK_FIXES"
             }
           },
           {
@@ -157,13 +157,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "RWSL_ALGORITHM.md",
+                "file": "RWSL_PERFORMANCE_QUICK_FIXES.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of RWSL_ALGORITHM"
+              "title": "Outline of RWSL_PERFORMANCE_QUICK_FIXES"
             }
           }
         ]
@@ -185,20 +185,23 @@
   },
   "active": "b8965937d91f94ec",
   "lastOpenFiles": [
+    "RWSL_REL_DIRECTION_UPDATE.md",
+    "RWSL_TAKEOFF_POSITIONS.md",
+    "RWSL_RULES_TABLE.md",
+    "Untitled.md",
+    "RWSL_UNIVERSAL_DESIGN.md",
+    "RWSL_ALGORITHM.md",
+    "RWSL_PLANAR_COORDINATE_DESIGN.md",
     "RWSL_DETECTION_LOGIC_UPDATE.md",
     "RWSL_REALTIME_OPTIMIZATION.md",
     "RWSL_PERFORMANCE_FIXES_APPLIED.md",
     "RWSL_PERFORMANCE_QUICK_FIXES.md",
     "RWSL_PERFORMANCE_OPTIMIZATION.md",
-    "RWSL_REL_DIRECTION_UPDATE.md",
-    "RWSL_TAKEOFF_POSITIONS.md",
     "error-handling.md",
-    "RWSL_RULES_TABLE.md",
     "RWSL_INTEGRATION_PLAN.md",
     "RWSL_FLOWCHARTS.md",
     "RWSL_DESIGN_SUMMARY.md",
     "RWSL_DEPENDENCIES_AND_RULES.md",
-    "RWSL_ALGORITHM.md",
     "README.md",
     "safety-systems.md",
     "user-guide.md",

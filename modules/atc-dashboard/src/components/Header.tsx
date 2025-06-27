@@ -36,6 +36,15 @@ const Header: React.FC = () => {
             </Link>
           </nav>
         </div>
+        {/* WebSocket 연결 상태 표시 */}
+        <div className="flex items-center space-x-2">
+          <div className={`w-2 h-2 rounded-full ${
+            isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+          }`}></div>
+          <span className="text-sm text-gray-400">
+            {isConnected ? 'WebSocket 연결됨' : 'WebSocket 연결 끊김'}
+          </span>
+        </div>
       </div>
     </header>
   );

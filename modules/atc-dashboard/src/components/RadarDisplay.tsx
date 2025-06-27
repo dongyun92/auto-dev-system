@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { TrackedAircraft, Runway } from '../types';
-import { RWSLEngine, LightState } from '../services/RWSLEngine';
+import { RWSLAdapter } from '../services/rwsl/RWSLAdapter';
+import { RWSLState, LightStateInfo } from '../types/rwsl';
+import { CoordinateSystem } from '../core/coordinates';
 import { RKSS_AIRPORT_DATA, getRELPositions, getTHLPositions } from '../data/airportData';
 import { calculateDistance } from '../utils/rwslHelpers';
 import rwslLightPositions from '../data/rwslLightPositions.json';
@@ -13,8 +15,8 @@ interface RadarDisplayProps {
 }
 
 interface RWSLDisplay {
-  rel: LightState[];
-  thl: LightState[];
+  rel: LightStateInfo[];
+  thl: LightStateInfo[];
   activeRELCount: number;
   activeTHLCount: number;
 }
@@ -45,7 +47,9 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   const ZOOM_STEP = 0.1;
   
   // RWSL 시스템 상태
-  const [rwslEngine] = useState(() => new RWSLEngine());
+  const [coordinateSystem] = useState(() => new CoordinateSystem(37.5587, 126.7905));
+  const [rwslAdapter] = useState(() => new RWSLAdapter(coordinateSystem));
+  const [rwslState, setRwslState] = useState<RWSLState | null>(null);
   const [rwslDisplay, setRwslDisplay] = useState<RWSLDisplay>({
     rel: [],
     thl: [],
@@ -188,49 +192,71 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       }
     });
     
-    console.log(`RWSL 등화 초기화 완료: 총 ${staticRwslLines.length}개 등화`);
+    // console.log(`RWSL 등화 초기화 완료: 총 ${staticRwslLines.length}개 등화`);
     setRwslLines(staticRwslLines);
   }, []);
 
-  // RWSL 자동화 useEffect
+  // RWSL 시스템 초기화 및 시작
   useEffect(() => {
-    if (aircraft.length > 0 && rwslLines.length > 0) {
-      const rwslState = rwslEngine.update(aircraft);
-      const relLights = Array.from(rwslState.rel.values());
-      const thlLights = Array.from(rwslState.thl.values());
+    // RWSL 어댑터 이벤트 등록
+    rwslAdapter.onStateChange((state) => {
+      setRwslState(state);
+      
+      const relLights = Array.from(state.rel.values());
+      const thlLights = Array.from(state.thl.values());
       
       setRwslDisplay({
         rel: relLights,
         thl: thlLights,
-        activeRELCount: rwslEngine.getActiveRELCount(),
-        activeTHLCount: rwslEngine.getActiveTHLCount()
+        activeRELCount: relLights.filter(l => l.active).length,
+        activeTHLCount: thlLights.filter(l => l.active).length
       });
       
       // 기존 rwslLines의 active 상태만 업데이트
-      const updatedRwslLines = rwslLines.map(line => {
-        // REL 상태 업데이트
-        if (line.type === 'REL') {
-          const activeLight = relLights.find(light => 
-            line.id.includes(light.id) || light.id.includes(line.id.replace('REL_', ''))
-          );
-          return { ...line, active: activeLight?.active || false };
-        }
+      if (rwslLines.length > 0) {
+        const updatedRwslLines = rwslLines.map(line => {
+          // REL 상태 업데이트
+          if (line.type === 'REL') {
+            const activeLight = relLights.find(light => 
+              line.id.includes(light.id) || light.id.includes(line.id.replace('REL_', ''))
+            );
+            return { ...line, active: activeLight?.active || false };
+          }
+          
+          // THL 상태 업데이트
+          if (line.type === 'THL') {
+            const threshold = line.id.replace('THL_', '');
+            const activeLight = thlLights.find(light => 
+              light.id.includes(threshold)
+            );
+            return { ...line, active: activeLight?.active || false };
+          }
+          
+          return line;
+        });
         
-        // THL 상태 업데이트
-        if (line.type === 'THL') {
-          const threshold = line.id.replace('THL_', '');
-          const activeLight = thlLights.find(light => 
-            light.id.includes(threshold)
-          );
-          return { ...line, active: activeLight?.active || false };
-        }
-        
-        return line;
-      });
-      
-      setRwslLines(updatedRwslLines);
+        setRwslLines(updatedRwslLines);
+      }
+    });
+    
+    rwslAdapter.onErrorOccurred((error) => {
+      console.error('RWSL 시스템 오류:', error);
+    });
+    
+    // RWSL 시스템 시작
+    rwslAdapter.start();
+    
+    return () => {
+      rwslAdapter.stop();
+    };
+  }, [rwslAdapter]);
+  
+  // 항공기 데이터 업데이트
+  useEffect(() => {
+    if (aircraft.length > 0) {
+      rwslAdapter.updateAircraftData(aircraft);
     }
-  }, [aircraft, rwslEngine, rwslLines.length]);
+  }, [aircraft, rwslAdapter]);
 
   // OSM 타일 계산 함수
   const latLngToTile = useCallback((lat: number, lng: number, zoom: number) => {
@@ -514,18 +540,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     renderOSMTiles();
   }, [renderOSMTiles]);
 
-  // 벡터맵 로드
-  useEffect(() => {
-    if (!mapImage || mapImage.src) return;
-    
-    // 실제 벡터맵 이미지 로드
-    const img = new Image();
-    img.src = '/rkss-map.svg'; // public 디렉토리의 파일
-    img.onload = () => setMapImage(img);
-    img.onerror = () => {
-      console.warn('벡터맵 로드 실패:', img.src);
-    };
-  }, [mapImage]);
+  // 벡터맵 로드 - 제거 (버튼 클릭으로만 로드)
 
   // 좌표 변환 함수들
   const getMercatorScale = (lat: number, zoom: number) => {
@@ -1056,6 +1071,8 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
             { lat: holdingPoint.lat, lng: holdingPoint.lng }
         };
         
+        // REL 생성 로그를 알림으로 표시
+        alert(`새 REL 생성:\n${JSON.stringify(newRel, null, 2)}`);
         console.log('새 REL 생성:', JSON.stringify(newRel, null, 2));
         alert(`새 REL이 생성되었습니다.\n콘솔에서 JSON 데이터를 확인하세요.`);
         
@@ -1218,7 +1235,14 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   }, [handleZoomIn, handleZoomOut, handleZoomReset]);
 
   return (
-    <div className="relative w-full h-full bg-black">
+    <div className="relative w-full h-full bg-black flex items-center justify-center">
+      {/* Canvas Container - 16:9 비율 유지 */}
+      <div className="relative" style={{
+        width: '100%',
+        height: '100%',
+        maxWidth: 'calc(100vh * 16 / 9)',
+        maxHeight: 'calc(100vw * 9 / 16)',
+      }}>
       {/* 상단 제어 패널 */}
       <div className="absolute top-2 left-2 bg-black/80 p-2 rounded text-white z-10">
         <div className="text-xs space-y-1">
@@ -1330,6 +1354,15 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
               R
             </button>
           </div>
+        </div>
+      </div>
+      
+      {/* RKSS 서버 상태 표시 */}
+      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-black/80 px-4 py-2 rounded text-white z-10">
+        <div className="flex items-center gap-2 text-xs">
+          <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+          <span className="font-bold">RKSS 서버</span>
+          <span className="text-gray-400">김포공항 실시간 데이터</span>
         </div>
       </div>
       
@@ -1463,11 +1496,18 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
               onClick={() => {
                 if (mapImage) {
                   setMapImage(null);
+                  console.log('RKSS 벡터맵 OFF');
                 } else {
                   const img = new Image();
                   img.src = '/rkss-map.svg';
-                  img.onload = () => setMapImage(img);
-                  img.onerror = () => console.warn('벡터맵 로드 실패');
+                  img.onload = () => {
+                    setMapImage(img);
+                    console.log('RKSS 벡터맵 로드 성공');
+                  };
+                  img.onerror = (e) => {
+                    console.error('RKSS 벡터맵 로드 실패:', e);
+                    alert('RKSS 벡터맵 로드 실패: /rkss-map.svg 파일을 찾을 수 없습니다.');
+                  };
                 }
               }}
               className={`w-full px-2 py-1 rounded text-xs transition-colors ${
@@ -1477,7 +1517,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
               }`}
               title="RKSS 공항 벡터맵 on/off"
             >
-              {mapImage ? '📐 RKSS ON' : '📐 RKSS OFF'}
+              {mapImage ? '📐 RKSS 벡터맵 ON' : '📐 RKSS 벡터맵 OFF'}
             </button>
           </div>
           {(showOSMMap || showSatellite) && (
@@ -1638,7 +1678,12 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         ref={canvasRef}
         width={CANVAS_SIZE.width}
         height={CANVAS_SIZE.height}
-        className="cursor-move w-full h-full"
+        className="cursor-move"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain'
+        }}
         onClick={handleCanvasClick}
         onMouseMove={handleMouseMove}
         onWheel={handleWheel}
@@ -1658,6 +1703,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         <div className="text-purple-400">
           맵: {showOSMMap ? 'OSM' : ''}{showOSMMap && mapImage ? '+' : ''}{mapImage ? '벡터' : showOSMMap ? '' : '없음'}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ public class PlaybackSchedulerService {
     private final SimpMessagingTemplate messagingTemplate;
     private final AircraftService aircraftService;
     private boolean playbackActive = false;
+    private boolean playbackPaused = false;
     private int consecutiveErrors = 0;
     private static final int MAX_CONSECUTIVE_ERRORS = 5;
     
@@ -38,13 +39,30 @@ public class PlaybackSchedulerService {
     public void stopPlayback() {
         log.info("Stopping RKSS data playback");
         playbackActive = false;
+        playbackPaused = false;
         aircraftRepository.deleteAll();
+    }
+    
+    public void pausePlayback() {
+        if (playbackActive) {
+            log.info("Pausing RKSS data playback");
+            playbackPaused = true;
+            rkssDataService.pausePlayback(); // Pause the data service as well
+        }
+    }
+    
+    public void resumePlayback() {
+        if (playbackActive && playbackPaused) {
+            log.info("Resuming RKSS data playback");
+            playbackPaused = false;
+            rkssDataService.resumePlayback(); // Resume the data service as well
+        }
     }
     
     @Scheduled(fixedRate = 100) // Update every 0.1 seconds to match interpolated data interval
     @Transactional
     public void updatePlaybackData() {
-        if (!playbackActive) {
+        if (!playbackActive || playbackPaused) {
             return;
         }
         
@@ -123,5 +141,19 @@ public class PlaybackSchedulerService {
     
     public boolean isPlaybackActive() {
         return playbackActive;
+    }
+    
+    public boolean isPlaybackPaused() {
+        return playbackPaused;
+    }
+    
+    public String getPlaybackStatus() {
+        if (!playbackActive) {
+            return "STOPPED";
+        } else if (playbackPaused) {
+            return "PAUSED";
+        } else {
+            return "PLAYING";
+        }
     }
 }

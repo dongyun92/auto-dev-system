@@ -1,6 +1,7 @@
 export interface PlaneCoordinate {
   x: number;  // 동쪽 방향 (미터)
   y: number;  // 북쪽 방향 (미터)
+  z?: number; // 고도 (미터) - 선택적
 }
 
 export interface GeographicCoordinate {

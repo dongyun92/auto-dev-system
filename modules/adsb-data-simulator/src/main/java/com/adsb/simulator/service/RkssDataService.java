@@ -35,6 +35,9 @@ public class RkssDataService {
     private long accumulatedSimulationMillis = 0; // Track accumulated simulation time in milliseconds
     private LocalDateTime lastSpeedChangeTime; // Track when speed was last changed
     private Set<String> spawnedCallsigns = new HashSet<>(); // Track which aircraft have been spawned
+    private boolean isPaused = false;
+    private long pauseStartTime = 0;
+    private long totalPausedDuration = 0;
     
     private static final String RKSS_DATA_PATH = "/Users/dykim/dev/auto-dev-system/modules/adsb-data-simulator/src/main/resources/data/RKSS_20250502_track_data_interpolated.json";
     
@@ -60,12 +63,20 @@ public class RkssDataService {
         currentDataIndex = 0;
         accumulatedSimulationMillis = 0;
         spawnedCallsigns.clear(); // Reset spawned aircraft tracking
+        isPaused = false;
+        pauseStartTime = 0;
+        totalPausedDuration = 0;
         log.info("Started RKSS data playback simulation");
     }
     
     public List<Aircraft> getNextPlaybackFrame() {
         if (rkssData == null || rkssData.isEmpty()) {
             return new ArrayList<>();
+        }
+        
+        // If paused, return the last frame without advancing time
+        if (isPaused) {
+            return new ArrayList<>(); // Return empty to freeze the display
         }
         
         // Calculate elapsed milliseconds since last speed change
@@ -193,10 +204,27 @@ public class RkssDataService {
             loadRkssData();
         }
         
-        // For initial load, return empty list to prevent spawning all aircraft at once
-        // Aircraft will appear naturally as playback progresses
-        log.info("RKSS data loaded with {} records, but returning empty list for time-based spawning", rkssData.size());
-        return new ArrayList<>();
+        if (rkssData == null || rkssData.isEmpty()) {
+            log.warn("No RKSS data available");
+            return new ArrayList<>();
+        }
+        
+        // Get unique aircraft from the first timestamp
+        Set<String> uniqueCallsigns = new HashSet<>();
+        List<Aircraft> aircraft = new ArrayList<>();
+        
+        for (RkssTrackData data : rkssData) {
+            if (data.getCallsign() != null && !data.getCallsign().trim().isEmpty() 
+                && uniqueCallsigns.add(data.getCallsign())) {
+                aircraft.add(convertRkssToAircraft(data));
+                if (aircraft.size() >= maxAircraft) {
+                    break;
+                }
+            }
+        }
+        
+        log.info("Loaded {} RKSS aircraft from data", aircraft.size());
+        return aircraft;
     }
     
     private Aircraft convertRkssToAircraft(RkssTrackData rkssData) {
@@ -288,6 +316,34 @@ public class RkssDataService {
     
     public double getPlaybackSpeed() {
         return playbackSpeed;
+    }
+    
+    public void pausePlayback() {
+        if (!isPaused) {
+            isPaused = true;
+            pauseStartTime = System.currentTimeMillis();
+            
+            // Save the accumulated time up to the pause point
+            LocalDateTime now = LocalDateTime.now();
+            long realElapsedSinceLastChange = java.time.Duration.between(lastSpeedChangeTime, now).toMillis();
+            accumulatedSimulationMillis += (long)(realElapsedSinceLastChange * playbackSpeed);
+            lastSpeedChangeTime = now;
+            
+            log.info("Paused RKSS playback at simulation time: {}ms", accumulatedSimulationMillis);
+        }
+    }
+    
+    public void resumePlayback() {
+        if (isPaused) {
+            long pauseDuration = System.currentTimeMillis() - pauseStartTime;
+            totalPausedDuration += pauseDuration;
+            isPaused = false;
+            
+            // Reset the last speed change time to now so we don't count the paused time
+            lastSpeedChangeTime = LocalDateTime.now();
+            
+            log.info("Resumed RKSS playback after {}ms pause (total paused: {}ms)", pauseDuration, totalPausedDuration);
+        }
     }
     
     // Inner class for RKSS data structure

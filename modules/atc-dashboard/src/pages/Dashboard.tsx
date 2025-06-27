@@ -81,36 +81,51 @@ const Dashboard: React.FC = () => {
   const handleLoadRkssData = async () => {
     try {
       console.log('Loading RKSS data...');
+      setError(null);
       const rkssAircraft = await apiService.loadRkssData();
       console.log(`Loaded ${rkssAircraft.length} RKSS aircraft`);
       setAircraft(rkssAircraft);
+      // Return success for the SystemStatus component
+      return Promise.resolve();
     } catch (err) {
       console.error('Failed to load RKSS data:', err);
-      setError(`RKSS 데이터 로딩 실패: ${err instanceof Error ? err.message : String(err)}`);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`RKSS 데이터 로딩 실패: ${errorMessage}`);
+      // Re-throw for SystemStatus component to handle
+      throw err;
     }
   };
 
   const handleStartPlayback = async () => {
     try {
       console.log('Starting RKSS playback...');
+      setError(null);
       await apiService.startPlayback();
       console.log('RKSS playback started');
       // Refresh aircraft data after starting playback
       setTimeout(() => {
         loadAircraft();
       }, 2000);
+      return Promise.resolve();
     } catch (err) {
       console.error('Failed to start playback:', err);
-      setError(`플레이백 시작 실패: ${err instanceof Error ? err.message : String(err)}`);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`플레이백 시작 실패: ${errorMessage}`);
+      throw err;
     }
   };
 
   const handleStopPlayback = async () => {
     try {
+      setError(null);
       await apiService.stopPlayback();
       console.log('RKSS playback stopped');
+      return Promise.resolve();
     } catch (err) {
       console.error('Failed to stop playback:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`플레이백 중지 실패: ${errorMessage}`);
+      throw err;
     }
   };
 
@@ -122,6 +137,34 @@ const Dashboard: React.FC = () => {
     } catch (err) {
       console.error('Failed to change playback speed:', err);
       setError(`배속 변경 실패: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const handlePausePlayback = async () => {
+    try {
+      setError(null);
+      await apiService.pausePlayback();
+      console.log('RKSS playback paused');
+      return Promise.resolve();
+    } catch (err) {
+      console.error('Failed to pause playback:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`일시중지 실패: ${errorMessage}`);
+      throw err;
+    }
+  };
+
+  const handleResumePlayback = async () => {
+    try {
+      setError(null);
+      await apiService.resumePlayback();
+      console.log('RKSS playback resumed');
+      return Promise.resolve();
+    } catch (err) {
+      console.error('Failed to resume playback:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`재개 실패: ${errorMessage}`);
+      throw err;
     }
   };
 
@@ -186,6 +229,8 @@ const Dashboard: React.FC = () => {
           onLoadRkssData={handleLoadRkssData}
           onStartPlayback={handleStartPlayback}
           onStopPlayback={handleStopPlayback}
+          onPausePlayback={handlePausePlayback}
+          onResumePlayback={handleResumePlayback}
           playbackSpeed={playbackSpeed}
           onSpeedChange={handleSpeedChange}
         />

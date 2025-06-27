@@ -111,10 +111,34 @@ public class AircraftController {
         }
     }
     
+    @PostMapping("/playback/pause")
+    public ResponseEntity<String> pausePlayback() {
+        log.info("Pausing RKSS data playback simulation");
+        try {
+            playbackSchedulerService.pausePlayback();
+            return ResponseEntity.ok("RKSS playback paused");
+        } catch (Exception e) {
+            log.error("Failed to pause playback", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to pause playback");
+        }
+    }
+    
+    @PostMapping("/playback/resume")
+    public ResponseEntity<String> resumePlayback() {
+        log.info("Resuming RKSS data playback simulation");
+        try {
+            playbackSchedulerService.resumePlayback();
+            return ResponseEntity.ok("RKSS playback resumed");
+        } catch (Exception e) {
+            log.error("Failed to resume playback", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to resume playback");
+        }
+    }
+    
     @GetMapping("/playback/status")
     public ResponseEntity<String> getPlaybackStatus() {
-        boolean isActive = playbackSchedulerService.isPlaybackActive();
-        return ResponseEntity.ok(isActive ? "ACTIVE" : "STOPPED");
+        String status = playbackSchedulerService.getPlaybackStatus();
+        return ResponseEntity.ok(status);
     }
     
     @PostMapping("/playback/speed")

@@ -11,11 +11,19 @@ class ApiService {
   }
 
   private async fetchWithError(url: string, options?: RequestInit): Promise<Response> {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status}: ${errorText || response.statusText}`);
+      }
+      return response;
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        throw new Error('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인하세요.');
+      }
+      throw error;
     }
-    return response;
   }
 
   async getAllAircraft(): Promise<TrackedAircraft[]> {
@@ -200,6 +208,20 @@ class ApiService {
   async getPlaybackSpeed(): Promise<number> {
     const response = await this.fetchWithError(`${this.baseUrl}/api/adsb/playback/speed`);
     return response.json();
+  }
+
+  async pausePlayback(): Promise<string> {
+    const response = await this.fetchWithError(`${this.baseUrl}/api/adsb/playback/pause`, {
+      method: 'POST',
+    });
+    return response.text();
+  }
+
+  async resumePlayback(): Promise<string> {
+    const response = await this.fetchWithError(`${this.baseUrl}/api/adsb/playback/resume`, {
+      method: 'POST',
+    });
+    return response.text();
   }
 }
 

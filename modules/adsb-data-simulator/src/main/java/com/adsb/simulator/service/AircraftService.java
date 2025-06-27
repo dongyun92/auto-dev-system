@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -82,18 +83,33 @@ public class AircraftService {
     public List<AircraftDto> simulateAircraft(SimulationRequestDto request) {
         log.info("Starting aircraft simulation with {} aircraft", request.getAircraftCount());
         
-        Double centerLat = request.getCenterLatitude() != null ? request.getCenterLatitude() : gimpoLatitude;
-        Double centerLng = request.getCenterLongitude() != null ? request.getCenterLongitude() : gimpoLongitude;
-        Integer radius = request.getRadiusKm() != null ? request.getRadiusKm() : gimpoRadius;
-        
-        // Use real RKSS data instead of random generation
-        List<Aircraft> simulatedAircraft = rkssDataService.getCurrentAircraftFromRkssData(request.getAircraftCount());
-        
-        List<Aircraft> savedAircraft = aircraftRepository.saveAll(simulatedAircraft);
-        
-        return savedAircraft.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        try {
+            Double centerLat = request.getCenterLatitude() != null ? request.getCenterLatitude() : gimpoLatitude;
+            Double centerLng = request.getCenterLongitude() != null ? request.getCenterLongitude() : gimpoLongitude;
+            Integer radius = request.getRadiusKm() != null ? request.getRadiusKm() : gimpoRadius;
+            
+            // Use real RKSS data instead of random generation
+            List<Aircraft> simulatedAircraft = rkssDataService.getCurrentAircraftFromRkssData(request.getAircraftCount());
+            
+            if (simulatedAircraft.isEmpty()) {
+                log.warn("No aircraft data available from RKSS");
+                return new ArrayList<>();
+            }
+            
+            // Clear existing aircraft before loading new ones to avoid duplicate callsign issues
+            aircraftRepository.deleteAllInBatch();
+            log.info("Cleared existing aircraft data");
+            
+            List<Aircraft> savedAircraft = aircraftRepository.saveAll(simulatedAircraft);
+            log.info("Successfully saved {} aircraft", savedAircraft.size());
+            
+            return savedAircraft.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Failed to simulate aircraft", e);
+            throw new RuntimeException("Failed to load RKSS data: " + e.getMessage(), e);
+        }
     }
     
     private List<Aircraft> generateSimulatedAircraft(int count, double centerLat, double centerLng, int radiusKm) {

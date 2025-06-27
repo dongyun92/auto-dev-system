@@ -33,11 +33,18 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    const wsUrl = process.env.REACT_APP_WS_URL || 'http://localhost:8080/ws/adsb/realtime';
+    
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws/adsb/realtime'),
+      webSocketFactory: () => new SockJS(wsUrl),
       debug: (str) => {
-        console.log('STOMP: ' + str);
+        if (process.env.REACT_APP_ENABLE_DEBUG === 'true') {
+          console.log('STOMP: ' + str);
+        }
       },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
       onConnect: () => {
         console.log('Connected to STOMP WebSocket');
         setIsConnected(true);
@@ -47,10 +54,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
           try {
             const aircraftData = JSON.parse(message.body);
             setAircraft(aircraftData);
-            console.log('Received aircraft data:', aircraftData);
+            // Commented out to reduce console noise
+            // if (process.env.REACT_APP_ENABLE_DEBUG === 'true') {
+            //   console.log(`Received ${aircraftData.length} aircraft`);
+            // }
           } catch (error) {
             console.error('Error parsing aircraft data:', error);
           }
+        }, {
+          ack: 'auto'
         });
       },
       onDisconnect: () => {
@@ -64,14 +76,28 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }
       onWebSocketError: (error) => {
         console.error('WebSocket error:', error);
         setIsConnected(false);
+      },
+      onWebSocketClose: (event) => {
+        console.log('WebSocket closed:', event);
+        setIsConnected(false);
+        // The client will automatically reconnect due to reconnectDelay setting
       }
     });
 
-    stompClient.activate();
-    setClient(stompClient);
+    // Activate the client
+    try {
+      stompClient.activate();
+      setClient(stompClient);
+      console.log('WebSocket client activated, attempting connection to:', wsUrl);
+    } catch (error) {
+      console.error('Failed to activate WebSocket client:', error);
+      setIsConnected(false);
+    }
 
     return () => {
-      stompClient.deactivate();
+      if (stompClient.active) {
+        stompClient.deactivate();
+      }
     };
   }, []);
 

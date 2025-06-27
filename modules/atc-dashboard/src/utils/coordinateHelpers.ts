@@ -1,4 +1,5 @@
-import { CoordinateSystem, PlaneCoordinate, GeographicCoordinate } from '../core/coordinates';
+import { CoordinateSystem } from '../core/coordinates';
+import { PlaneCoordinate, GeographicCoordinate } from '../types/coordinates';
 import { TrackedAircraft } from '../types';
 
 // 마이그레이션된 헬퍼 함수들 - 평면좌표계 사용
