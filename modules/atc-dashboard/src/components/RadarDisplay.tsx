@@ -556,6 +556,27 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
 
   // 벡터맵 로드 - 제거 (버튼 클릭으로만 로드)
 
+  // 점이 다각형 내부에 있는지 확인
+  const isPointInPolygon = (point: {x: number, y: number}, vertices: Array<{x: number, y: number}>): boolean => {
+    let inside = false;
+    const x = point.x;
+    const y = point.y;
+    
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const xi = vertices[i].x;
+      const yi = vertices[i].y;
+      const xj = vertices[j].x;
+      const yj = vertices[j].y;
+      
+      const intersect = ((yi > y) !== (yj > y)) 
+        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      
+      if (intersect) inside = !inside;
+    }
+    
+    return inside;
+  };
+
   // 좌표 변환 함수들
   const getMercatorScale = (lat: number, zoom: number) => {
     return Math.pow(2, zoom) / (Math.cos(lat * Math.PI / 180) * 2 * Math.PI);
@@ -706,36 +727,94 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       ctx.restore();
     });
 
-    // 활주로 경계 표시 (디버그용)
+    // 활주로 경계 표시 (디버그용) - 렌더링 좌표계로 변환
     if (showRunwayBounds) {
       ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)'; // 노란색 반투명
       ctx.lineWidth = Math.max(2, 2 / scale);
       ctx.setLineDash([10, 5]);
       
-      // 14L_32R (북쪽 활주로)
-      const northBounds = {
-        xMin: -1700, xMax: 1700, yMin: 0, yMax: 110
-      };
-      ctx.strokeRect(northBounds.xMin, northBounds.yMin, 
-                     northBounds.xMax - northBounds.xMin, 
-                     northBounds.yMax - northBounds.yMin);
+      // 14L_32R - 실제 활주로 중심선 데이터 사용
+      const runway14L32R = localRunways[0];
+      const start14L = coordinateSystem.toPlane(runway14L32R.centerline.start.lat, runway14L32R.centerline.start.lng);
+      const end32R = coordinateSystem.toPlane(runway14L32R.centerline.end.lat, runway14L32R.centerline.end.lng);
       
-      // 14R_32L (남쪽 활주로)
-      const southBounds = {
-        xMin: -1700, xMax: 1700, yMin: -110, yMax: 0
-      };
-      ctx.strokeRect(southBounds.xMin, southBounds.yMin, 
-                     southBounds.xMax - southBounds.xMin, 
-                     southBounds.yMax - southBounds.yMin);
+      // 활주로 방향 벡터와 수직 벡터 계산
+      const dx = end32R.x - start14L.x;
+      const dy = end32R.y - start14L.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const dirX = dx / length;
+      const dirY = dy / length;
+      
+      // 수직 벡터 (90도 회전)
+      const perpX = -dirY;
+      const perpY = dirX;
+      
+      // 활주로 폭 60m (±30m)
+      const halfWidth = 30;
+      
+      // 활주로 네 모서리 계산
+      const northCorners = [
+        coordinateSystem.toWGS84(start14L.x + perpX * halfWidth, start14L.y + perpY * halfWidth),
+        coordinateSystem.toWGS84(start14L.x - perpX * halfWidth, start14L.y - perpY * halfWidth),
+        coordinateSystem.toWGS84(end32R.x - perpX * halfWidth, end32R.y - perpY * halfWidth),
+        coordinateSystem.toWGS84(end32R.x + perpX * halfWidth, end32R.y + perpY * halfWidth)
+      ];
+      
+      // 픽셀로 변환하여 그리기
+      ctx.beginPath();
+      northCorners.forEach((corner, i) => {
+        const pixel = latLngToPixel(corner.lat, corner.lng, 14, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+        if (i === 0) ctx.moveTo(pixel.x, pixel.y);
+        else ctx.lineTo(pixel.x, pixel.y);
+      });
+      ctx.closePath();
+      ctx.stroke();
+      
+      // 14R_32L - 실제 활주로 중심선 데이터 사용
+      const runway14R32L = localRunways[1];
+      const start14R = coordinateSystem.toPlane(runway14R32L.centerline.start.lat, runway14R32L.centerline.start.lng);
+      const end32L = coordinateSystem.toPlane(runway14R32L.centerline.end.lat, runway14R32L.centerline.end.lng);
+      
+      // 활주로 방향 벡터와 수직 벡터 계산 (14L/32R과 동일한 방법)
+      const dx2 = end32L.x - start14R.x;
+      const dy2 = end32L.y - start14R.y;
+      const length2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+      const dirX2 = dx2 / length2;
+      const dirY2 = dy2 / length2;
+      
+      // 수직 벡터
+      const perpX2 = -dirY2;
+      const perpY2 = dirX2;
+      
+      // 활주로 네 모서리 계산
+      const southCorners = [
+        coordinateSystem.toWGS84(start14R.x + perpX2 * halfWidth, start14R.y + perpY2 * halfWidth),
+        coordinateSystem.toWGS84(start14R.x - perpX2 * halfWidth, start14R.y - perpY2 * halfWidth),
+        coordinateSystem.toWGS84(end32L.x - perpX2 * halfWidth, end32L.y - perpY2 * halfWidth),
+        coordinateSystem.toWGS84(end32L.x + perpX2 * halfWidth, end32L.y + perpY2 * halfWidth)
+      ];
+      
+      ctx.beginPath();
+      southCorners.forEach((corner, i) => {
+        const pixel = latLngToPixel(corner.lat, corner.lng, 14, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+        if (i === 0) ctx.moveTo(pixel.x, pixel.y);
+        else ctx.lineTo(pixel.x, pixel.y);
+      });
+      ctx.closePath();
+      ctx.stroke();
       
       ctx.setLineDash([]);
       
-      // 경계 라벨
+      // 경계 라벨 - 왼쪽 위 모서리에 표시
       ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
       ctx.font = `${Math.max(12, 12 / scale)}px Arial`;
       ctx.textAlign = 'left';
-      ctx.fillText('14L/32R 경계', northBounds.xMin + 10, northBounds.yMin + 20);
-      ctx.fillText('14R/32L 경계', southBounds.xMin + 10, southBounds.yMin + 20);
+      
+      const northLabelPixel = latLngToPixel(northCorners[3].lat, northCorners[3].lng, 14, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+      ctx.fillText('14L/32R 경계', northLabelPixel.x + 10, northLabelPixel.y + 20);
+      
+      const southLabelPixel = latLngToPixel(southCorners[0].lat, southCorners[0].lng, 14, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+      ctx.fillText('14R/32L 경계', southLabelPixel.x + 10, southLabelPixel.y - 10);
     }
 
     // RWSL 조명 그리기 (줌에 영향 받되 최소 크기 보장)
@@ -901,7 +980,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         // 색상 설정 (공중/지상 구분)
         const aircraftColor = ac.altitude > 50 ? '#f59e0b' : '#9ca3af';
         
-        // 활주로 점유 상태 확인
+        // 활주로 점유 상태 확인 (내부 로직과 동일하게)
         let onRunway = '';
         const localPos = coordinateSystem.toPlane(ac.latitude, ac.longitude);
         if (localPos.x >= -1700 && localPos.x <= 1700) {
