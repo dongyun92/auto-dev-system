@@ -1,0 +1,220 @@
+.rwsl-status-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 350px;
+  max-height: 80vh;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 15px;
+  color: #fff;
+  font-size: 12px;
+  overflow-y: auto;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.rwsl-status-panel h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #00ff00;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #444;
+}
+
+.status-section:last-child {
+  border-bottom: none;
+}
+
+.status-section h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #ffcc00;
+  font-weight: normal;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  padding: 3px 0;
+}
+
+.status-item span:first-child {
+  color: #999;
+}
+
+.status-value {
+  font-weight: bold;
+  color: #00ff00;
+}
+
+.status-value.online {
+  color: #00ff00;
+}
+
+.status-value.degraded {
+  color: #ffcc00;
+}
+
+.status-value.warning {
+  color: #ff9900;
+}
+
+.status-value.critical {
+  color: #ff0000;
+}
+
+.status-value.safety_mode {
+  color: #ff00ff;
+}
+
+/* 충돌 목록 */
+.conflicts-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.conflict-item {
+  background: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.conflict-item.severity-low {
+  border-color: rgba(255, 255, 0, 0.5);
+  background: rgba(255, 255, 0, 0.1);
+}
+
+.conflict-item.severity-medium {
+  border-color: rgba(255, 165, 0, 0.5);
+  background: rgba(255, 165, 0, 0.1);
+}
+
+.conflict-item.severity-high {
+  border-color: rgba(255, 69, 0, 0.5);
+  background: rgba(255, 69, 0, 0.1);
+}
+
+.conflict-item.severity-critical {
+  border-color: rgba(255, 0, 0, 0.7);
+  background: rgba(255, 0, 0, 0.2);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.conflict-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.conflict-type {
+  font-weight: bold;
+  color: #ffcc00;
+}
+
+.conflict-severity {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.conflict-details {
+  font-size: 11px;
+  color: #ccc;
+}
+
+.conflict-details span {
+  display: block;
+  margin-top: 2px;
+}
+
+.no-conflicts {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.more-conflicts {
+  text-align: center;
+  color: #999;
+  font-size: 11px;
+  margin-top: 10px;
+}
+
+/* 제어 결정 */
+.decision-item {
+  background: rgba(0, 100, 200, 0.1);
+  border: 1px solid rgba(0, 100, 200, 0.3);
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.decision-header {
+  font-weight: bold;
+  color: #00ccff;
+  margin-bottom: 4px;
+}
+
+.decision-details {
+  font-size: 11px;
+  color: #ccc;
+}
+
+.reasoning {
+  display: block;
+  font-style: italic;
+  margin-bottom: 2px;
+}
+
+.affected-lights {
+  display: block;
+  color: #999;
+}
+
+/* 마지막 업데이트 */
+.last-update {
+  text-align: center;
+  color: #666;
+  font-size: 11px;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #333;
+}
+
+/* 스크롤바 스타일 */
+.rwsl-status-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rwsl-status-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.rwsl-status-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.rwsl-status-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
