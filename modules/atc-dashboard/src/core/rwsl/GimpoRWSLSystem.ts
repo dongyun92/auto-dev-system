@@ -374,22 +374,58 @@ export class GimpoRWSLSystem {
   private isOnRunway(aircraft: TrackedAircraft, runway: string): boolean {
     const localPos = this.coordinateSystem.toPlane(aircraft.latitude, aircraft.longitude);
     
-    // 활주로 범위를 더 넓게 설정 (김포공항 활주로 길이 3200m + 여유)
-    const runwayBounds: Record<string, any> = {
-      '14L_32R': { xMin: -1700, xMax: 1700, yMin: 0, yMax: 110 },    // 북쪽 활주로 (폭 110m)
-      '14R_32L': { xMin: -1700, xMax: 1700, yMin: -110, yMax: 0 }    // 남쪽 활주로
+    // 실제 활주로 끝점 위치
+    let start, end, width;
+    
+    if (runway === '14L_32R') {
+      start = this.coordinateSystem.toPlane(37.5705, 126.7784); // 14L
+      end = this.coordinateSystem.toPlane(37.5478, 126.8070);   // 32R
+      width = 45; // 14L/32R 폭
+    } else if (runway === '14R_32L') {
+      start = this.coordinateSystem.toPlane(37.5683, 126.7755); // 14R
+      end = this.coordinateSystem.toPlane(37.5481, 126.8009);   // 32L
+      width = 60; // 14R/32L 폭
+    } else {
+      return false;
+    }
+    
+    // 활주로 벡터
+    const runwayVector = {
+      x: end.x - start.x,
+      y: end.y - start.y
+    };
+    const runwayLength = Math.sqrt(runwayVector.x * runwayVector.x + runwayVector.y * runwayVector.y);
+    
+    // 정규화된 활주로 방향 벡터
+    const runwayDir = {
+      x: runwayVector.x / runwayLength,
+      y: runwayVector.y / runwayLength
     };
     
-    const bounds = runwayBounds[runway];
-    if (!bounds) return false;
+    // 항공기 위치 벡터 (활주로 시작점 기준)
+    const aircraftVector = {
+      x: localPos.x - start.x,
+      y: localPos.y - start.y
+    };
     
-    const isInBounds = localPos.x >= bounds.xMin && 
-                      localPos.x <= bounds.xMax &&
-                      localPos.y >= bounds.yMin && 
-                      localPos.y <= bounds.yMax;
+    // 활주로 방향으로의 투영 (활주로를 따른 거리)
+    const projection = aircraftVector.x * runwayDir.x + aircraftVector.y * runwayDir.y;
+    
+    // 활주로 길이 내에 있는지 확인 (약간의 여유 추가)
+    const lengthMargin = 50; // 50m 여유
+    if (projection < -lengthMargin || projection > runwayLength + lengthMargin) {
+      return false;
+    }
+    
+    // 활주로에 수직인 거리 (Cross product의 크기)
+    const perpDistance = Math.abs(aircraftVector.x * (-runwayDir.y) + aircraftVector.y * runwayDir.x);
+    
+    // 활주로 폭 내에 있는지 확인
+    const halfWidth = width / 2 + 10; // 10m 여유
+    const isInBounds = perpDistance <= halfWidth;
     
     if (isInBounds) {
-      console.log(`[RWSL] 항공기 ${aircraft.id} 활주로 ${runway} 위에 있음:`, {
+      console.log(`[RWSL] 항공기 ${aircraft.callsign} 활주로 ${runway} 위에 있음:`, {
         x: localPos.x.toFixed(0),
         y: localPos.y.toFixed(0),
         altitude: aircraft.altitude,

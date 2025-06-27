@@ -137,7 +137,7 @@ export class GimpoRELController {
     const timeToEntry = minDistance / (aircraft.speed * 0.514444); // seconds
     const rel = closestREL as RELConfiguration; // Type assertion
     
-    console.log(`[RWSL] 항공기 ${aircraft.id} 접근 감지:`, {
+    console.log(`[RWSL] 항공기 ${aircraft.callsign} 접근 감지:`, {
       REL: rel.id,
       runway: rel.runway,
       distance: minDistance.toFixed(0),
@@ -209,12 +209,17 @@ export class GimpoRELController {
     
     console.log(`[RWSL] ${runway} REL 결정 - 점유: ${occupancy?.occupied}, 접근: ${approaches.length}`);
     
-    // 시나리오 1: 활주로 점유 중 + 접근 항공기 있음
-    if (occupancy?.occupied && approaches.length > 0) {
+    // 시나리오 1: 활주로 점유 중 (접근 항공기 여부와 관계없이 REL 활성화)
+    if (occupancy?.occupied) {
       decision.controlAction = 'ACTIVATE_RED';
-      decision.affectedRELLights = this.getAffectedRELs(runway, approaches);
-      decision.reasoning = `활주로 점유 중 (${occupancy.aircraft.length}대), 접근 항공기 ${approaches.length}대 감지`;
-      decision.priority = this.calculatePriority(occupancy, approaches);
+      decision.affectedRELLights = this.getAllRELsForRunway(runway);
+      if (approaches.length > 0) {
+        decision.reasoning = `활주로 점유 중 (${occupancy.aircraft.length}대), 접근 항공기 ${approaches.length}대 감지`;
+        decision.priority = this.calculatePriority(occupancy, approaches);
+      } else {
+        decision.reasoning = `활주로 점유 중 (${occupancy.aircraft.length}대) - 모든 REL 활성화`;
+        decision.priority = 'MEDIUM';
+      }
       decision.detailedCommands = this.generateDetailedRELCommands(runway, occupancy, approaches);
       console.log(`[RWSL] ${runway} REL 활성화 결정:`, decision.affectedRELLights.length, '개 등화');
     }

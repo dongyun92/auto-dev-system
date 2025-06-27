@@ -91,6 +91,9 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   // 활주로 경계 표시
   const [showRunwayBounds, setShowRunwayBounds] = useState(true);
   
+  // 내부 로직 뷰 모드
+  const [showInternalLogic, setShowInternalLogic] = useState(false);
+  
   // REL 그리기 모드
   const [relDrawMode, setRelDrawMode] = useState(false);
   const [relType, setRelType] = useState<'departure' | 'arrival'>('departure');
@@ -607,6 +610,341 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     };
   };
 
+  // 내부 로직 뷰 렌더링 함수
+  const renderInternalLogicView = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+    // 기본 스케일과 연동하여 줌/팬 적용
+    const localScale = 0.3 * scale; // 미터당 픽셀 비율
+    
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.scale(localScale, localScale);
+    ctx.translate(panX, panY);
+    
+    // 좌표 격자 그리기 (100m, 500m, 1000m 구분)
+    for (let x = -3000; x <= 3000; x += 100) {
+      if (x === 0) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+      } else if (x % 1000 === 0) {
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+        ctx.lineWidth = 1.5;
+      } else if (x % 500 === 0) {
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+        ctx.lineWidth = 1;
+      } else {
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.1)';
+        ctx.lineWidth = 0.5;
+      }
+      
+      ctx.beginPath();
+      ctx.moveTo(x, -2000);
+      ctx.lineTo(x, 2000);
+      ctx.stroke();
+    }
+    
+    for (let y = -2000; y <= 2000; y += 100) {
+      if (y === 0) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+      } else if (y % 1000 === 0) {
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+        ctx.lineWidth = 1.5;
+      } else if (y % 500 === 0) {
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+        ctx.lineWidth = 1;
+      } else {
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.1)';
+        ctx.lineWidth = 0.5;
+      }
+      
+      ctx.beginPath();
+      ctx.moveTo(-3000, -y);
+      ctx.lineTo(3000, -y);
+      ctx.stroke();
+    }
+    
+    // 1. 실제 활주로 위치 그리기 (회색 실선)
+    ctx.strokeStyle = 'rgba(150, 150, 150, 0.8)';
+    ctx.lineWidth = 2;
+    
+    localRunways.forEach((runway, idx) => {
+      const start = coordinateSystem.toPlane(
+        runway.centerline.start.lat, 
+        runway.centerline.start.lng
+      );
+      const end = coordinateSystem.toPlane(
+        runway.centerline.end.lat, 
+        runway.centerline.end.lng
+      );
+      
+      // 활주로 중심선
+      ctx.beginPath();
+      ctx.moveTo(start.x, -start.y);
+      ctx.lineTo(end.x, -end.y);
+      ctx.stroke();
+      
+      // 활주로 실제 폭 표시
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const dirX = dx / length;
+      const dirY = dy / length;
+      const perpX = -dirY;
+      const perpY = dirX;
+      
+      const halfWidth = (idx === 0 ? 45 : 60) / 2;
+      
+      ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(start.x + perpX * halfWidth, -(start.y + perpY * halfWidth));
+      ctx.lineTo(start.x - perpX * halfWidth, -(start.y - perpY * halfWidth));
+      ctx.lineTo(end.x - perpX * halfWidth, -(end.y - perpY * halfWidth));
+      ctx.lineTo(end.x + perpX * halfWidth, -(end.y + perpY * halfWidth));
+      ctx.closePath();
+      ctx.stroke();
+      
+      // 활주로 이름
+      ctx.fillStyle = 'rgba(150, 150, 150, 0.9)';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(runway.id + ' (실제)', (start.x + end.x) / 2, -(start.y + end.y) / 2 - 30);
+    });
+    
+    // 2. 내부 로직 판단 영역 (노란색 점선) - 실제 활주로 방향과 일치
+    ctx.strokeStyle = 'rgba(255, 255, 0, 0.6)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 5]);
+    
+    // 각 활주로별 로직 영역 그리기
+    localRunways.forEach((runway, idx) => {
+      const start = coordinateSystem.toPlane(
+        runway.centerline.start.lat, 
+        runway.centerline.start.lng
+      );
+      const end = coordinateSystem.toPlane(
+        runway.centerline.end.lat, 
+        runway.centerline.end.lng
+      );
+      
+      // 활주로 방향 벡터
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const dirX = dx / length;
+      const dirY = dy / length;
+      
+      // 수직 벡터
+      const perpX = -dirY;
+      const perpY = dirX;
+      
+      // 활주로 폭 + 여유 (로직에서 사용하는 값)
+      const halfWidth = (idx === 0 ? 45 : 60) / 2 + 10; // 10m 여유
+      const lengthMargin = 50; // 길이 방향 50m 여유
+      
+      // 로직 영역 네 모서리
+      const corners = [
+        { x: start.x - dirX * lengthMargin + perpX * halfWidth, 
+          y: start.y - dirY * lengthMargin + perpY * halfWidth },
+        { x: start.x - dirX * lengthMargin - perpX * halfWidth, 
+          y: start.y - dirY * lengthMargin - perpY * halfWidth },
+        { x: end.x + dirX * lengthMargin - perpX * halfWidth, 
+          y: end.y + dirY * lengthMargin - perpY * halfWidth },
+        { x: end.x + dirX * lengthMargin + perpX * halfWidth, 
+          y: end.y + dirY * lengthMargin + perpY * halfWidth }
+      ];
+      
+      // 로직 영역 그리기
+      ctx.beginPath();
+      corners.forEach((corner, i) => {
+        if (i === 0) ctx.moveTo(corner.x, -corner.y);
+        else ctx.lineTo(corner.x, -corner.y);
+      });
+      ctx.closePath();
+      ctx.stroke();
+      
+      // 로직 영역 라벨
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255, 255, 0, 0.9)';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        `${runway.id} 로직 영역 (폭 ${(halfWidth * 2 - 20).toFixed(0)}m + 여유 20m)`, 
+        (start.x + end.x) / 2, 
+        -(start.y + end.y) / 2 + (idx === 0 ? -50 : 50)
+      );
+      ctx.setLineDash([10, 5]);
+    });
+    
+    // 항공기 위치 (Local 좌표 기준)
+    aircraft.forEach(ac => {
+      const localPos = coordinateSystem.toPlane(ac.latitude, ac.longitude);
+      
+      // 활주로 점유 확인 (실제 활주로 방향 기반)
+      let onRunway = false;
+      let onRunwayName = '';
+      
+      localRunways.forEach((runway, idx) => {
+        const start = coordinateSystem.toPlane(
+          runway.centerline.start.lat, 
+          runway.centerline.start.lng
+        );
+        const end = coordinateSystem.toPlane(
+          runway.centerline.end.lat, 
+          runway.centerline.end.lng
+        );
+        
+        // 활주로 벡터
+        const runwayVector = { x: end.x - start.x, y: end.y - start.y };
+        const runwayLength = Math.sqrt(runwayVector.x * runwayVector.x + runwayVector.y * runwayVector.y);
+        const runwayDir = { x: runwayVector.x / runwayLength, y: runwayVector.y / runwayLength };
+        
+        // 항공기 위치 벡터
+        const aircraftVector = { x: localPos.x - start.x, y: localPos.y - start.y };
+        
+        // 활주로 방향 투영
+        const projection = aircraftVector.x * runwayDir.x + aircraftVector.y * runwayDir.y;
+        
+        // 수직 거리
+        const perpDistance = Math.abs(aircraftVector.x * (-runwayDir.y) + aircraftVector.y * runwayDir.x);
+        
+        const halfWidth = (idx === 0 ? 45 : 60) / 2 + 10;
+        const lengthMargin = 50;
+        
+        if (projection >= -lengthMargin && projection <= runwayLength + lengthMargin && perpDistance <= halfWidth) {
+          onRunway = true;
+          onRunwayName = runway.id;
+        }
+      });
+      
+      // 항공기 점
+      ctx.fillStyle = onRunway ? 'rgba(255, 0, 0, 0.9)' : 
+                      ac.isActive ? 'rgba(0, 255, 0, 0.8)' : 
+                      'rgba(128, 128, 128, 0.6)';
+      ctx.beginPath();
+      ctx.arc(localPos.x, -localPos.y, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // 항공기 라벨 (callsign + 좌표)
+      ctx.fillStyle = onRunway ? 'red' : 'white';
+      ctx.font = onRunway ? 'bold 12px Arial' : '12px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(
+        `${ac.callsign} (${localPos.x.toFixed(0)}, ${localPos.y.toFixed(0)})`,
+        localPos.x + 10, 
+        -localPos.y - 10
+      );
+    });
+    
+    // REL 위치 (rwslLightPositions.json 기준)
+    rwslLines.filter(line => line.type === 'REL').forEach(rel => {
+      if (rel.points.length > 0) {
+        // 주의: rwslLightPositions.json에서 x는 lng, y는 lat
+        const startLocal = coordinateSystem.toPlane(
+          rel.points[0].y,  // lat
+          rel.points[0].x   // lng
+        );
+        const endLocal = coordinateSystem.toPlane(
+          rel.points[rel.points.length - 1].y,  // lat
+          rel.points[rel.points.length - 1].x   // lng
+        );
+        
+        // REL 선 그리기
+        ctx.strokeStyle = rel.active ? 'rgba(255, 0, 0, 0.9)' : 'rgba(255, 100, 100, 0.4)';
+        ctx.lineWidth = rel.active ? 6 : 3;
+        ctx.beginPath();
+        ctx.moveTo(startLocal.x, -startLocal.y);
+        ctx.lineTo(endLocal.x, -endLocal.y);
+        ctx.stroke();
+        
+        // REL 라벨
+        ctx.fillStyle = rel.active ? 'red' : 'rgba(255, 100, 100, 0.8)';
+        ctx.font = rel.active ? 'bold 10px Arial' : '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          rel.id, 
+          (startLocal.x + endLocal.x) / 2, 
+          -(startLocal.y + endLocal.y) / 2 - 8
+        );
+      }
+    });
+    
+    // 좌표 격자 라벨 (주요 좌표에만)
+    ctx.fillStyle = 'rgba(200, 200, 200, 0.7)';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    for (let x = -2000; x <= 2000; x += 1000) {
+      if (x !== 0) {
+        ctx.fillText(x + 'm', x, 15);
+      }
+    }
+    ctx.textAlign = 'left';
+    for (let y = -2000; y <= 2000; y += 1000) {
+      if (y !== 0) {
+        ctx.fillText(y + 'm', 10, -y);
+      }
+    }
+    
+    // 좌표축 표시 
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('동(+X)', 100, 5);
+    ctx.fillText('서(-X)', -100, 5);
+    ctx.fillText('북(+Y)', 5, -100);
+    ctx.fillText('남(-Y)', 5, 100);
+    
+    ctx.restore();
+    
+    // 범례 (스케일 영향 받지 않음)
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(canvas.width - 260, 10, 250, 120);
+    
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText('내부 로직 뷰 범례', canvas.width - 250, 30);
+    
+    ctx.font = '12px Arial';
+    
+    // 실제 활주로
+    ctx.strokeStyle = 'rgba(150, 150, 150, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width - 240, 50);
+    ctx.lineTo(canvas.width - 200, 50);
+    ctx.stroke();
+    ctx.fillText('실제 활주로 위치', canvas.width - 190, 55);
+    
+    // 로직 영역
+    ctx.strokeStyle = 'rgba(255, 255, 0, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 3]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width - 240, 70);
+    ctx.lineTo(canvas.width - 200, 70);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillText('내부 로직 판단 영역', canvas.width - 190, 75);
+    
+    // 항공기 상태
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.9)';
+    ctx.beginPath();
+    ctx.arc(canvas.width - 220, 90, 4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.fillText('활주로 점유 항공기', canvas.width - 190, 95);
+    
+    ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+    ctx.beginPath();
+    ctx.arc(canvas.width - 220, 110, 4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.fillText('활주로 외부 항공기', canvas.width - 190, 115);
+    
+    ctx.restore();
+  };
+
   // 레이어 분리 캔버스 렌더링
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -621,6 +959,12 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const GIMPO_CENTER = { lat: 37.5587, lng: 126.7905 };
+
+    // 내부 로직 뷰 모드 분기
+    if (showInternalLogic) {
+      renderInternalLogicView(ctx, canvas);
+      return;
+    }
 
     // Layer 1: OSM/위성 타일 배경 (별도 캔버스에서 복사)
     if ((showOSMMap || showSatellite) && osmCanvasRef.current) {
@@ -729,9 +1073,43 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
 
     // 활주로 경계 표시 (디버그용) - 렌더링 좌표계로 변환
     if (showRunwayBounds) {
-      ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)'; // 노란색 반투명
-      ctx.lineWidth = Math.max(2, 2 / scale);
-      ctx.setLineDash([10, 5]);
+      // 실제 활주로 Y 위치 계산
+      const runway14L = coordinateSystem.toPlane(37.5705, 126.7784);
+      const runway32R = coordinateSystem.toPlane(37.5478, 126.8070);
+      const runway14R = coordinateSystem.toPlane(37.5683, 126.7755);
+      const runway32L = coordinateSystem.toPlane(37.5481, 126.8009);
+      
+      const northRunwayY = (runway14L.y + runway32R.y) / 2;
+      const southRunwayY = (runway14R.y + runway32L.y) / 2;
+      
+      // 활주로 점유 상태에 따라 색상 변경 (실제 활주로 방향 기반)
+      const checkRunwayOccupancy = (runwayIndex: number) => {
+        const runway = localRunways[runwayIndex];
+        const start = coordinateSystem.toPlane(runway.centerline.start.lat, runway.centerline.start.lng);
+        const end = coordinateSystem.toPlane(runway.centerline.end.lat, runway.centerline.end.lng);
+        
+        const runwayVector = { x: end.x - start.x, y: end.y - start.y };
+        const runwayLength = Math.sqrt(runwayVector.x * runwayVector.x + runwayVector.y * runwayVector.y);
+        const runwayDir = { x: runwayVector.x / runwayLength, y: runwayVector.y / runwayLength };
+        
+        const halfWidth = (runwayIndex === 0 ? 45 : 60) / 2 + 10;
+        const lengthMargin = 50;
+        
+        return aircraft.some(ac => {
+          const localPos = coordinateSystem.toPlane(ac.latitude, ac.longitude);
+          const aircraftVector = { x: localPos.x - start.x, y: localPos.y - start.y };
+          const projection = aircraftVector.x * runwayDir.x + aircraftVector.y * runwayDir.y;
+          const perpDistance = Math.abs(aircraftVector.x * (-runwayDir.y) + aircraftVector.y * runwayDir.x);
+          
+          return projection >= -lengthMargin && projection <= runwayLength + lengthMargin && perpDistance <= halfWidth;
+        });
+      };
+      
+      const northRunwayOccupied = checkRunwayOccupancy(0);
+      const southRunwayOccupied = checkRunwayOccupancy(1);
+      
+      ctx.lineWidth = Math.max(3, 3 / scale);
+      ctx.setLineDash([]);
       
       // 14L_32R - 실제 활주로 중심선 데이터 사용
       const runway14L32R = localRunways[0];
@@ -759,6 +1137,9 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         coordinateSystem.toWGS84(end32R.x - perpX * halfWidth, end32R.y - perpY * halfWidth),
         coordinateSystem.toWGS84(end32R.x + perpX * halfWidth, end32R.y + perpY * halfWidth)
       ];
+      
+      // 점유 상태에 따라 색상 설정
+      ctx.strokeStyle = northRunwayOccupied ? 'rgba(255, 0, 0, 0.8)' : 'rgba(255, 255, 0, 0.5)';
       
       // 픽셀로 변환하여 그리기
       ctx.beginPath();
@@ -793,6 +1174,9 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         coordinateSystem.toWGS84(end32L.x - perpX2 * halfWidth, end32L.y - perpY2 * halfWidth),
         coordinateSystem.toWGS84(end32L.x + perpX2 * halfWidth, end32L.y + perpY2 * halfWidth)
       ];
+      
+      // 점유 상태에 따라 색상 설정
+      ctx.strokeStyle = southRunwayOccupied ? 'rgba(255, 0, 0, 0.8)' : 'rgba(255, 255, 0, 0.5)';
       
       ctx.beginPath();
       southCorners.forEach((corner, i) => {
@@ -980,13 +1364,36 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         // 색상 설정 (공중/지상 구분)
         const aircraftColor = ac.altitude > 50 ? '#f59e0b' : '#9ca3af';
         
-        // 활주로 점유 상태 확인 (내부 로직과 동일하게)
+        // 활주로 점유 상태 확인 (벡터 기반)
         let onRunway = '';
         const localPos = coordinateSystem.toPlane(ac.latitude, ac.longitude);
-        if (localPos.x >= -1700 && localPos.x <= 1700) {
-          if (localPos.y >= 0 && localPos.y <= 110) {
-            onRunway = ' [14L/32R]';
-          } else if (localPos.y >= -110 && localPos.y <= 0) {
+        
+        // 14L/32R 활주로 확인
+        const start14L = coordinateSystem.toPlane(37.5705, 126.7784);
+        const end32R = coordinateSystem.toPlane(37.5478, 126.8070);
+        const runway14L_32R_vector = { x: end32R.x - start14L.x, y: end32R.y - start14L.y };
+        const runway14L_32R_length = Math.sqrt(runway14L_32R_vector.x * runway14L_32R_vector.x + runway14L_32R_vector.y * runway14L_32R_vector.y);
+        const runway14L_32R_dir = { x: runway14L_32R_vector.x / runway14L_32R_length, y: runway14L_32R_vector.y / runway14L_32R_length };
+        
+        const aircraft14L_vector = { x: localPos.x - start14L.x, y: localPos.y - start14L.y };
+        const projection14L = aircraft14L_vector.x * runway14L_32R_dir.x + aircraft14L_vector.y * runway14L_32R_dir.y;
+        const perpDistance14L = Math.abs(aircraft14L_vector.x * (-runway14L_32R_dir.y) + aircraft14L_vector.y * runway14L_32R_dir.x);
+        
+        if (projection14L >= -50 && projection14L <= runway14L_32R_length + 50 && perpDistance14L <= 32.5) {
+          onRunway = ' [14L/32R]';
+        } else {
+          // 14R/32L 활주로 확인
+          const start14R = coordinateSystem.toPlane(37.5683, 126.7755);
+          const end32L = coordinateSystem.toPlane(37.5481, 126.8009);
+          const runway14R_32L_vector = { x: end32L.x - start14R.x, y: end32L.y - start14R.y };
+          const runway14R_32L_length = Math.sqrt(runway14R_32L_vector.x * runway14R_32L_vector.x + runway14R_32L_vector.y * runway14R_32L_vector.y);
+          const runway14R_32L_dir = { x: runway14R_32L_vector.x / runway14R_32L_length, y: runway14R_32L_vector.y / runway14R_32L_length };
+          
+          const aircraft14R_vector = { x: localPos.x - start14R.x, y: localPos.y - start14R.y };
+          const projection14R = aircraft14R_vector.x * runway14R_32L_dir.x + aircraft14R_vector.y * runway14R_32L_dir.y;
+          const perpDistance14R = Math.abs(aircraft14R_vector.x * (-runway14R_32L_dir.y) + aircraft14R_vector.y * runway14R_32L_dir.x);
+          
+          if (projection14R >= -50 && projection14R <= runway14R_32L_length + 50 && perpDistance14R <= 40) {
             onRunway = ' [14R/32L]';
           }
         }
@@ -1126,7 +1533,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       }
     }
 
-  }, [aircraft, rwslLines, scale, panX, panY, globalOffsetX, globalOffsetY, satelliteOffsetX, satelliteOffsetY, satelliteMapOffsetX, satelliteMapOffsetY, runwaySpacing, showOSMMap, showSatellite, osmBrightness, osmOpacity, mapImage, mapScaleAdjust, mapOffsetX, mapOffsetY, mapRotation, showLightPositions, relDrawMode, relDrawClicks, previewRel, relType]);
+  }, [aircraft, rwslLines, scale, panX, panY, globalOffsetX, globalOffsetY, satelliteOffsetX, satelliteOffsetY, satelliteMapOffsetX, satelliteMapOffsetY, runwaySpacing, showOSMMap, showSatellite, osmBrightness, osmOpacity, mapImage, mapScaleAdjust, mapOffsetX, mapOffsetY, mapRotation, showLightPositions, relDrawMode, relDrawClicks, previewRel, relType, showInternalLogic, coordinateSystem]);
 
   // REL을 파일에 저장하는 함수
   const saveRELToFile = useCallback(async (newRel: any) => {
@@ -1704,6 +2111,17 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
           </div>
           <div className="space-y-1">
             <button
+              onClick={() => setShowInternalLogic(!showInternalLogic)}
+              className={`w-full px-2 py-1 rounded text-xs transition-colors ${
+                showInternalLogic
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-gray-600 hover:bg-gray-700 text-gray-300'
+              }`}
+              title="내부 로직 좌표계 뷰 (Local Tangent Plane)"
+            >
+              {showInternalLogic ? '🔧 내부로직 뷰 ON' : '🔧 내부로직 뷰 OFF'}
+            </button>
+            <button
               onClick={() => {
                 setShowOSMMap(!showOSMMap);
                 if (showSatellite) setShowSatellite(false);
@@ -1927,6 +2345,77 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         onMouseMove={handleMouseMove}
       />
       
+      {/* 내부 로직 디버그 정보 패널 */}
+      {showInternalLogic && (
+        <div className="absolute bottom-2 left-2 bg-black/90 p-3 rounded text-white text-xs max-w-md">
+          <div className="font-bold text-blue-400 mb-2">내부 로직 디버그 정보</div>
+          
+          {/* 활주로 점유 상태 */}
+          <div className="mb-2">
+            <div className="text-yellow-400 font-semibold">활주로 점유 상태:</div>
+            {['14L_32R', '14R_32L'].map((runwayName, idx) => {
+              const runway = localRunways[idx];
+              const start = coordinateSystem.toPlane(runway.centerline.start.lat, runway.centerline.start.lng);
+              const end = coordinateSystem.toPlane(runway.centerline.end.lat, runway.centerline.end.lng);
+              
+              const runwayVector = { x: end.x - start.x, y: end.y - start.y };
+              const runwayLength = Math.sqrt(runwayVector.x * runwayVector.x + runwayVector.y * runwayVector.y);
+              const runwayDir = { x: runwayVector.x / runwayLength, y: runwayVector.y / runwayLength };
+              
+              const halfWidth = (idx === 0 ? 45 : 60) / 2 + 10;
+              const lengthMargin = 50;
+              
+              const occupiedAircraft = aircraft.filter(ac => {
+                const localPos = coordinateSystem.toPlane(ac.latitude, ac.longitude);
+                const aircraftVector = { x: localPos.x - start.x, y: localPos.y - start.y };
+                const projection = aircraftVector.x * runwayDir.x + aircraftVector.y * runwayDir.y;
+                const perpDistance = Math.abs(aircraftVector.x * (-runwayDir.y) + aircraftVector.y * runwayDir.x);
+                
+                return projection >= -lengthMargin && projection <= runwayLength + lengthMargin && perpDistance <= halfWidth;
+              });
+              
+              return (
+                <div key={runwayName} className={`text-xs ${occupiedAircraft.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                  • {runwayName}: {occupiedAircraft.length > 0 ? 
+                    `점유됨 (${occupiedAircraft.map(ac => ac.callsign).join(', ')})` : 
+                    '비어있음'
+                  }
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* REL 활성화 상태 */}
+          <div className="mb-2">
+            <div className="text-red-400 font-semibold">REL 활성화:</div>
+            <div className="text-xs">
+              활성: {rwslDisplay.activeRELCount}개 / 전체: {rwslLines.filter(l => l.type === 'REL').length}개
+            </div>
+            {rwslDisplay.rel.filter(rel => rel.active).slice(0, 3).map(rel => (
+              <div key={rel.id} className="text-xs text-orange-400">
+                • {rel.id}: {rel.reason}
+              </div>
+            ))}
+          </div>
+          
+          {/* 항공기 Local 좌표 */}
+          <div>
+            <div className="text-green-400 font-semibold">항공기 좌표 (Local):</div>
+            {aircraft.slice(0, 5).map(ac => {
+              const localPos = coordinateSystem.toPlane(ac.latitude, ac.longitude);
+              return (
+                <div key={ac.id} className="text-xs">
+                  • {ac.callsign}: ({localPos.x.toFixed(0)}, {localPos.y.toFixed(0)})
+                </div>
+              );
+            })}
+            {aircraft.length > 5 && (
+              <div className="text-xs text-gray-400">... 외 {aircraft.length - 5}대</div>
+            )}
+          </div>
+        </div>
+      )}
+      
       {/* 하단 상태 정보 */}
       <div className="absolute bottom-2 right-2 bg-black/80 p-2 rounded text-white text-xs">
         <div className="text-green-400">
@@ -1970,5 +2459,17 @@ function latLngToPixel(lat: number, lng: number, zoom: number, centerLat: number
   return {
     x: pixelX - centerPixelX,
     y: pixelY - centerPixelY
+  };
+}
+
+// Helper function: Convert Local Tangent Plane coordinates to pixel coordinates
+function localToPixel(localX: number, localY: number, scale: number = 0.3) {
+  // Local 좌표계: 김포공항 중심(0,0), 미터 단위
+  // X: 동쪽이 양수, Y: 북쪽이 양수
+  // scale: 미터당 픽셀 비율 (0.3 = 1미터당 0.3픽셀)
+  
+  return {
+    x: localX * scale,      // 동서 방향
+    y: -localY * scale      // 북남 방향 (화면 좌표계는 Y가 아래쪽이 양수)
   };
 }
