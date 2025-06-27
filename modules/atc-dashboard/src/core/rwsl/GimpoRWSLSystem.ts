@@ -226,6 +226,14 @@ export class GimpoRWSLSystem {
         }
       });
       
+      if (occupancy.occupied) {
+        console.log(`[RWSL] ${runway} 점유 상태:`, {
+          occupied: true,
+          aircraftCount: occupancy.aircraft.length,
+          type: occupancy.occupancyType
+        });
+      }
+      
       occupancyMap.set(runway, occupancy);
     });
     
@@ -366,18 +374,30 @@ export class GimpoRWSLSystem {
   private isOnRunway(aircraft: TrackedAircraft, runway: string): boolean {
     const localPos = this.coordinateSystem.toPlane(aircraft.latitude, aircraft.longitude);
     
+    // 활주로 범위를 더 넓게 설정 (김포공항 활주로 길이 3200m + 여유)
     const runwayBounds: Record<string, any> = {
-      '14L_32R': { xMin: -1600, xMax: 1600, yMin: 25, yMax: 85 },
-      '14R_32L': { xMin: -1600, xMax: 1600, yMin: -85, yMax: -25 }
+      '14L_32R': { xMin: -1700, xMax: 1700, yMin: 0, yMax: 110 },    // 북쪽 활주로 (폭 110m)
+      '14R_32L': { xMin: -1700, xMax: 1700, yMin: -110, yMax: 0 }    // 남쪽 활주로
     };
     
     const bounds = runwayBounds[runway];
     if (!bounds) return false;
     
-    return localPos.x >= bounds.xMin && 
-           localPos.x <= bounds.xMax &&
-           localPos.y >= bounds.yMin && 
-           localPos.y <= bounds.yMax;
+    const isInBounds = localPos.x >= bounds.xMin && 
+                      localPos.x <= bounds.xMax &&
+                      localPos.y >= bounds.yMin && 
+                      localPos.y <= bounds.yMax;
+    
+    if (isInBounds) {
+      console.log(`[RWSL] 항공기 ${aircraft.id} 활주로 ${runway} 위에 있음:`, {
+        x: localPos.x.toFixed(0),
+        y: localPos.y.toFixed(0),
+        altitude: aircraft.altitude,
+        speed: aircraft.speed
+      });
+    }
+    
+    return isInBounds;
   }
   
   private determineOccupancyType(aircraft: TrackedAircraft): 'TAKEOFF' | 'LANDING' | 'TAXI' | 'LINEUP' {

@@ -1,0 +1,266 @@
+{
+  "description" : "사용자 정의 RWSL 등화 위치 데이터",
+  "version" : "1.0",
+  "lastUpdated" : "2025-06-27",
+  "totalLights" : 29,
+  "lights" : {
+    "REL" : {
+      "departure" : [ {
+        "id" : "REL_G2_D",
+        "taxiway" : "G2",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.570617003363246,
+          "lng" : 126.77860273963068
+        },
+        "holdingPoint" : {
+          "lat" : 37.571188594070854,
+          "lng" : 126.77932389928424
+        }
+      }, {
+        "id" : "REL_G1_D",
+        "taxiway" : "G1",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.568369529001515,
+          "lng" : 126.77579502307327
+        },
+        "holdingPoint" : {
+          "lat" : 37.56895818813007,
+          "lng" : 126.77649400854727
+        }
+      }, {
+        "id" : "REL_F2_D",
+        "taxiway" : "F2",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.56804611928113,
+          "lng" : 126.78182818680591
+        },
+        "holdingPoint" : {
+          "lat" : 37.568626396231636,
+          "lng" : 126.78253824415378
+        }
+      }, {
+        "id" : "REL_E2_D",
+        "taxiway" : "E2",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.565733850678576,
+          "lng" : 126.78475121913561
+        },
+        "holdingPoint" : {
+          "lat" : 37.566303196947295,
+          "lng" : 126.78547524618898
+        }
+      }, {
+        "id" : "REL_E1_D",
+        "taxiway" : "E1",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.56284228796706,
+          "lng" : 126.783594323552
+        },
+        "holdingPoint" : {
+          "lat" : 37.56362475860465,
+          "lng" : 126.78333792895609
+        }
+      }, {
+        "id" : "REL_D1_D",
+        "taxiway" : "D1",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.55833867801891,
+          "lng" : 126.78835989400301
+        },
+        "holdingPoint" : {
+          "lat" : 37.55891036294418,
+          "lng" : 126.7890810536565
+        }
+      }, {
+        "id" : "REL_D3_D",
+        "taxiway" : "D3",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.561912152268164,
+          "lng" : 126.79002605775253
+        },
+        "holdingPoint" : {
+          "lat" : 37.56268915327775,
+          "lng" : 126.78974438914406
+        }
+      }, {
+        "id" : "REL_D2_D",
+        "taxiway" : "D2",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.55967787782681,
+          "lng" : 126.79283703889979
+        },
+        "holdingPoint" : {
+          "lat" : 37.55944975358217,
+          "lng" : 126.79381547060365
+        }
+      }, {
+        "id" : "REL_W2_D",
+        "taxiway" : "W2",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.55536551573077,
+          "lng" : 126.79119667924277
+        },
+        "holdingPoint" : {
+          "lat" : 37.55479096636952,
+          "lng" : 126.79047911632864
+        }
+      }, {
+        "id" : "REL_W1_D",
+        "taxiway" : "W1",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.552801117453065,
+          "lng" : 126.79438922097296
+        },
+        "holdingPoint" : {
+          "lat" : 37.55223255308659,
+          "lng" : 126.79366408807891
+        }
+      }, {
+        "id" : "REL_C3_D",
+        "taxiway" : "C3",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.55667536947669,
+          "lng" : 126.79659753031774
+        },
+        "holdingPoint" : {
+          "lat" : 37.55745061063954,
+          "lng" : 126.79630801514435
+        }
+      }, {
+        "id" : "REL_C1_D",
+        "taxiway" : "C1",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.55477093366851,
+          "lng" : 126.79289361556454
+        },
+        "holdingPoint" : {
+          "lat" : 37.554505670405135,
+          "lng" : 126.79385703861846
+        }
+      }, {
+        "id" : "REL_C2_D",
+        "taxiway" : "C2",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.55445068537876,
+          "lng" : 126.799357140263
+        },
+        "holdingPoint" : {
+          "lat" : 37.554229399981054,
+          "lng" : 126.80033807368966
+        }
+      }, {
+        "id" : "REL_B2_D",
+        "taxiway" : "B2",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.55042133676189,
+          "lng" : 126.80395875849774
+        },
+        "holdingPoint" : {
+          "lat" : 37.55099475662831,
+          "lng" : 126.80467780022178
+        }
+      }, {
+        "id" : "REL_B1_D",
+        "taxiway" : "B1",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.54819917311939,
+          "lng" : 126.80111652641494
+        },
+        "holdingPoint" : {
+          "lat" : 37.54875453155239,
+          "lng" : 126.80185779942803
+        }
+      }, {
+        "id" : "REL_A_D",
+        "taxiway" : "A",
+        "type" : "departure",
+        "position" : {
+          "lat" : 37.5478733619495,
+          "lng" : 126.80711230623086
+        },
+        "holdingPoint" : {
+          "lat" : 37.548448803977436,
+          "lng" : 126.80782879833026
+        }
+      } ],
+      "arrival" : [ {
+        "id" : "REL_G1_A",
+        "taxiway" : "G1",
+        "type" : "arrival",
+        "position" : {
+          "lat" : 37.57034097836161,
+          "lng" : 126.77824231366748
+        },
+        "holdingPoint" : {
+          "lat" : 37.56976776418716,
+          "lng" : 126.77752319984467
+        }
+      }, {
+        "id" : "REL_E1_A",
+        "taxiway" : "E1",
+        "type" : "arrival",
+        "position" : {
+          "lat" : 37.56544444429138,
+          "lng" : 126.78438132725324
+        },
+        "holdingPoint" : {
+          "lat" : 37.564860879503655,
+          "lng" : 126.78367553898892
+        }
+      }, {
+        "id" : "REL_D1_A",
+        "taxiway" : "D1",
+        "type" : "arrival",
+        "position" : {
+          "lat" : 37.5603107678569,
+          "lng" : 126.79084153523581
+        },
+        "holdingPoint" : {
+          "lat" : 37.55973431002656,
+          "lng" : 126.79012646099494
+        }
+      }, {
+        "id" : "REL_C1_A",
+        "taxiway" : "C1",
+        "type" : "arrival",
+        "position" : {
+          "lat" : 37.55505591202517,
+          "lng" : 126.79742602281334
+        },
+        "holdingPoint" : {
+          "lat" : 37.554505548414745,
+          "lng" : 126.79667890148573
+        }
+      }, {
+        "id" : "REL_B1_A",
+        "taxiway" : "B1",
+        "type" : "arrival",
+        "position" : {
+          "lat" : 37.5501294561461,
+          "lng" : 126.80358120626727
+        },
+        "holdingPoint" : {
+          "lat" : 37.54954970847627,
+          "lng" : 126.80287027430347
+        }
+      } ]
+    },
+    "THL" : { },
+    "RIL" : [ ]
+  }
+}

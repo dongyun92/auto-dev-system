@@ -85,6 +85,18 @@ export class RWSLAdapter {
       // RWSL 시스템 처리
       const state = this.rwslSystem.processRWSL(this.lastProcessedData);
       
+      // 디버그: 활성화된 등화 확인
+      const activeRELs = Array.from(state.rel.values()).filter(l => l.active);
+      const activeTHLs = Array.from(state.thl.values()).filter(l => l.active);
+      
+      if (activeRELs.length > 0 || activeTHLs.length > 0) {
+        console.log('[RWSL] 활성화된 등화:', {
+          REL: activeRELs.length,
+          THL: activeTHLs.length,
+          conflicts: state.conflicts.length
+        });
+      }
+      
       // 상태 콜백 호출
       if (this.onStateUpdate) {
         this.onStateUpdate(state);

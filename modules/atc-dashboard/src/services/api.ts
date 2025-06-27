@@ -223,6 +223,19 @@ class ApiService {
     });
     return response.text();
   }
+
+  async saveCustomREL(relData: any): Promise<void> {
+    const response = await this.fetchWithError(`${this.baseUrl}/api/rwsl/save-rel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(relData),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to save REL');
+    }
+  }
 }
 
 export const apiService = new ApiService();

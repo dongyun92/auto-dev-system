@@ -6,6 +6,7 @@ import { CoordinateSystem } from '../core/coordinates';
 import { RKSS_AIRPORT_DATA, getRELPositions, getTHLPositions } from '../data/airportData';
 import { calculateDistance } from '../utils/rwslHelpers';
 import rwslLightPositions from '../data/rwslLightPositions.json';
+import { apiService } from '../services/api';
 
 interface RadarDisplayProps {
   aircraft: TrackedAircraft[];
@@ -43,7 +44,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   
   // 줌 설정
   const MIN_SCALE = 0.1;
-  const MAX_SCALE = 10;
+  const MAX_SCALE = 50;  // 10에서 50으로 증가
   const ZOOM_STEP = 0.1;
   
   // RWSL 시스템 상태
@@ -86,6 +87,9 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   
   // 등화 위치 시각화
   const [showLightPositions, setShowLightPositions] = useState(false);
+  
+  // 활주로 경계 표시
+  const [showRunwayBounds, setShowRunwayBounds] = useState(true);
   
   // REL 그리기 모드
   const [relDrawMode, setRelDrawMode] = useState(false);
@@ -205,6 +209,15 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       const relLights = Array.from(state.rel.values());
       const thlLights = Array.from(state.thl.values());
       
+      console.log('RWSL State Update:', {
+        relCount: relLights.length,
+        activeREL: relLights.filter(l => l.active).length,
+        thlCount: thlLights.length,
+        activeTHL: thlLights.filter(l => l.active).length,
+        relLights: relLights,
+        thlLights: thlLights
+      });
+      
       setRwslDisplay({
         rel: relLights,
         thl: thlLights,
@@ -254,6 +267,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
   // 항공기 데이터 업데이트
   useEffect(() => {
     if (aircraft.length > 0) {
+      console.log('Updating aircraft data to RWSL:', aircraft.length, 'aircraft');
       rwslAdapter.updateAircraftData(aircraft);
     }
   }, [aircraft, rwslAdapter]);
@@ -692,6 +706,38 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       ctx.restore();
     });
 
+    // 활주로 경계 표시 (디버그용)
+    if (showRunwayBounds) {
+      ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)'; // 노란색 반투명
+      ctx.lineWidth = Math.max(2, 2 / scale);
+      ctx.setLineDash([10, 5]);
+      
+      // 14L_32R (북쪽 활주로)
+      const northBounds = {
+        xMin: -1700, xMax: 1700, yMin: 0, yMax: 110
+      };
+      ctx.strokeRect(northBounds.xMin, northBounds.yMin, 
+                     northBounds.xMax - northBounds.xMin, 
+                     northBounds.yMax - northBounds.yMin);
+      
+      // 14R_32L (남쪽 활주로)
+      const southBounds = {
+        xMin: -1700, xMax: 1700, yMin: -110, yMax: 0
+      };
+      ctx.strokeRect(southBounds.xMin, southBounds.yMin, 
+                     southBounds.xMax - southBounds.xMin, 
+                     southBounds.yMax - southBounds.yMin);
+      
+      ctx.setLineDash([]);
+      
+      // 경계 라벨
+      ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+      ctx.font = `${Math.max(12, 12 / scale)}px Arial`;
+      ctx.textAlign = 'left';
+      ctx.fillText('14L/32R 경계', northBounds.xMin + 10, northBounds.yMin + 20);
+      ctx.fillText('14R/32L 경계', southBounds.xMin + 10, southBounds.yMin + 20);
+    }
+
     // RWSL 조명 그리기 (줌에 영향 받되 최소 크기 보장)
     rwslLines.forEach(line => {
       // 활성화된 등화 또는 위치 시각화 모드일 때 표시
@@ -797,7 +843,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
               ctx.lineTo(screenX, screenY + iconSize);
               ctx.lineTo(screenX - iconSize, screenY);
               ctx.closePath();
-              if (line.id.includes('_D')) {
+              if (line.id.endsWith('_D')) {
                 ctx.fill(); // 출발 REL은 채우기
               } else {
                 ctx.stroke(); // 도착 REL은 테두리만
@@ -855,6 +901,17 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         // 색상 설정 (공중/지상 구분)
         const aircraftColor = ac.altitude > 50 ? '#f59e0b' : '#9ca3af';
         
+        // 활주로 점유 상태 확인
+        let onRunway = '';
+        const localPos = coordinateSystem.toPlane(ac.latitude, ac.longitude);
+        if (localPos.x >= -1700 && localPos.x <= 1700) {
+          if (localPos.y >= 0 && localPos.y <= 110) {
+            onRunway = ' [14L/32R]';
+          } else if (localPos.y >= -110 && localPos.y <= 0) {
+            onRunway = ' [14R/32L]';
+          }
+        }
+        
         // 빈 원 그리기
         ctx.strokeStyle = aircraftColor;
         ctx.lineWidth = lineWidth;
@@ -905,8 +962,8 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         const textX = screenX + iconSize + 10;
         let textY = screenY - 5;
         
-        // 콜사인
-        const callsign = ac.callsign || `AC${ac.id}`;
+        // 콜사인 (활주로 점유 상태 포함)
+        const callsign = (ac.callsign || `AC${ac.id}`) + onRunway;
         ctx.strokeText(callsign, textX, textY);
         ctx.fillText(callsign, textX, textY);
         
@@ -931,10 +988,10 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       // 첫 번째 클릭 포인트 표시
       if (relDrawClicks.length > 0) {
         const firstClick = relDrawClicks[0];
+        // lat/lng를 픽셀로 변환
         const worldPixel = latLngToPixel(firstClick.lat, firstClick.lng, 14, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
-        // 스크린 좌표로 변환 (활주로 기준)
-        const screenX = canvas.width / 2 + (worldPixel.x * scale) + (panX) * scale;
-        const screenY = canvas.height / 2 + (worldPixel.y * scale) + (panY) * scale;
+        const screenX = canvas.width / 2 + (worldPixel.x * scale) + panX * scale;
+        const screenY = canvas.height / 2 + (worldPixel.y * scale) + panY * scale;
         
         // 교차점 마커
         ctx.fillStyle = '#00ff00';
@@ -992,6 +1049,17 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
 
   }, [aircraft, rwslLines, scale, panX, panY, globalOffsetX, globalOffsetY, satelliteOffsetX, satelliteOffsetY, satelliteMapOffsetX, satelliteMapOffsetY, runwaySpacing, showOSMMap, showSatellite, osmBrightness, osmOpacity, mapImage, mapScaleAdjust, mapOffsetX, mapOffsetY, mapRotation, showLightPositions, relDrawMode, relDrawClicks, previewRel, relType]);
 
+  // REL을 파일에 저장하는 함수
+  const saveRELToFile = useCallback(async (newRel: any) => {
+    try {
+      await apiService.saveCustomREL(newRel);
+      console.log('REL 저장 성공:', newRel.id);
+    } catch (error) {
+      console.error('REL 저장 실패:', error);
+      alert('REL 저장에 실패했습니다. 콘솔을 확인하세요.');
+    }
+  }, []);
+
   // 이벤트 핸들러
   const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -1001,29 +1069,59 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    // Canvas 크기에 맞게 좌표 스케일링
-    const canvasX = (x / rect.width) * canvas.width;
-    const canvasY = (y / rect.height) * canvas.height;
+    // objectFit: 'contain'을 고려한 실제 렌더링 영역 계산
+    const canvasAspect = canvas.width / canvas.height;
+    const rectAspect = rect.width / rect.height;
+    
+    let renderWidth, renderHeight, offsetX, offsetY;
+    
+    if (canvasAspect > rectAspect) {
+      // Canvas가 더 넓은 경우 - 위아래 레터박스
+      renderWidth = rect.width;
+      renderHeight = rect.width / canvasAspect;
+      offsetX = 0;
+      offsetY = (rect.height - renderHeight) / 2;
+    } else {
+      // Canvas가 더 높은 경우 - 좌우 필러박스
+      renderWidth = rect.height * canvasAspect;
+      renderHeight = rect.height;
+      offsetX = (rect.width - renderWidth) / 2;
+      offsetY = 0;
+    }
+    
+    // 실제 캔버스 좌표로 변환
+    const canvasX = ((x - offsetX) / renderWidth) * canvas.width;
+    const canvasY = ((y - offsetY) / renderHeight) * canvas.height;
     
     // REL 그리기 모드일 때
     if (relDrawMode) {
       // 월드 좌표로 변환
-      const worldX = (canvasX - canvas.width / 2 - panX * scale) / scale;
-      const worldY = (canvasY - canvas.height / 2 - panY * scale) / scale;
+      const worldX = (canvasX - canvas.width / 2) / scale - panX;
+      const worldY = (canvasY - canvas.height / 2) / scale - panY;
       
       // 픽셀을 위경도로 변환
       const GIMPO_CENTER = { lat: 37.5587, lng: 126.7905 };
       const pixelToLatLng = (px: number, py: number) => {
         const zoom = 14;
         const tileSize = 256;
-        const centerPixel = latLngToPixel(GIMPO_CENTER.lat, GIMPO_CENTER.lng, zoom, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+        const scale = Math.pow(2, zoom);
         
-        const absoluteX = centerPixel.x + px;
-        const absoluteY = centerPixel.y + py;
+        // 김포공항 중심을 픽셀 좌표로 변환
+        const centerWorldX = (GIMPO_CENTER.lng + 180) / 360;
+        const centerWorldY = (1 - Math.log(Math.tan(GIMPO_CENTER.lat * Math.PI / 180) + 1 / Math.cos(GIMPO_CENTER.lat * Math.PI / 180)) / Math.PI) / 2;
+        const centerPixelX = centerWorldX * tileSize * scale;
+        const centerPixelY = centerWorldY * tileSize * scale;
         
-        const n = Math.pow(2, zoom);
-        const lng = (absoluteX / tileSize / n) * 360 - 180;
-        const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * absoluteY / tileSize / n))) * 180 / Math.PI;
+        // 클릭한 픽셀을 절대 픽셀 좌표로 변환
+        const absoluteX = centerPixelX + px;
+        const absoluteY = centerPixelY + py;
+        
+        // 절대 픽셀 좌표를 위경도로 변환
+        const worldX = absoluteX / (tileSize * scale);
+        const worldY = absoluteY / (tileSize * scale);
+        
+        const lng = worldX * 360 - 180;
+        const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * worldY))) * 180 / Math.PI;
         
         return { lat, lng };
       };
@@ -1032,49 +1130,71 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
       
       if (relDrawClicks.length === 0) {
         // 첫 번째 클릭 - 교차점
-        setRelDrawClicks([{x: worldX, y: worldY, lat: clickLatLng.lat, lng: clickLatLng.lng}]);
+        setRelDrawClicks([{x: 0, y: 0, lat: clickLatLng.lat, lng: clickLatLng.lng}]);
       } else if (relDrawClicks.length === 1) {
         // 두 번째 클릭 - 방향
         const firstClick = relDrawClicks[0];
-        const angle = Math.atan2(worldY - firstClick.y, worldX - firstClick.x);
+        const firstPixel = latLngToPixel(firstClick.lat, firstClick.lng, 14, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+        const clickPixel = latLngToPixel(clickLatLng.lat, clickLatLng.lng, 14, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+        const angle = Math.atan2(clickPixel.y - firstPixel.y, clickPixel.x - firstPixel.x);
+        
+        // 미터를 픽셀로 변환하는 함수
+        const metersToPixels = (meters: number, lat: number, zoom: number) => {
+          // zoom 레벨에서 1픽셀이 나타내는 미터 수 계산
+          const metersPerPixel = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoom);
+          return meters / metersPerPixel;
+        };
         
         // REL 위치 계산 (90m 거리)
         const distance = 90; // meters
-        const distanceInPixels = distance * 3.5; // 대략적인 픽셀 변환 (zoom 14 기준)
+        const distanceInPixels = metersToPixels(distance, GIMPO_CENTER.lat, 14);
         
-        let position, holdingPoint;
+        // 정방향으로 통일 - 첫 클릭에서 두 번째 클릭 방향으로
+        const startPoint = { lat: firstClick.lat, lng: firstClick.lng };
+        const endX = firstPixel.x + Math.cos(angle) * distanceInPixels;
+        const endY = firstPixel.y + Math.sin(angle) * distanceInPixels;
+        const endPoint = pixelToLatLng(endX, endY);
         
-        if (relType === 'departure') {
-          // 출발 REL: 클릭 반대 방향으로
-          position = firstClick;
-          const hpX = firstClick.x - Math.cos(angle) * distanceInPixels;
-          const hpY = firstClick.y - Math.sin(angle) * distanceInPixels;
-          holdingPoint = pixelToLatLng(hpX, hpY);
-        } else {
-          // 도착 REL: 클릭 방향으로
-          holdingPoint = firstClick;
-          const posX = firstClick.x + Math.cos(angle) * distanceInPixels;
-          const posY = firstClick.y + Math.sin(angle) * distanceInPixels;
-          position = pixelToLatLng(posX, posY);
+        const position = startPoint;
+        const holdingPoint = endPoint;
+        
+        // 유세로 이름 입력 받기
+        const taxiwayName = prompt('유세로 이름을 입력하세요 (예: B1, C3):');
+        if (!taxiwayName) {
+          // 취소한 경우
+          setRelDrawClicks([]);
+          setPreviewRel(null);
+          return;
         }
         
-        // 생성된 REL 데이터 출력
+        // 생성된 REL 데이터
         const newRel = {
-          id: `REL_NEW_${relType === 'departure' ? 'D' : 'A'}_${Date.now()}`,
-          taxiway: "NEW",
+          id: `REL_${taxiwayName}_${relType === 'departure' ? 'D' : 'A'}`,
+          taxiway: taxiwayName,
           type: relType,
-          position: relType === 'departure' ? 
-            { lat: position.lat, lng: position.lng } : 
-            { lat: position.lat, lng: position.lng },
-          holdingPoint: relType === 'departure' ? 
-            { lat: holdingPoint.lat, lng: holdingPoint.lng } : 
-            { lat: holdingPoint.lat, lng: holdingPoint.lng }
+          position: { lat: position.lat, lng: position.lng },
+          holdingPoint: { lat: holdingPoint.lat, lng: holdingPoint.lng }
         };
         
-        // REL 생성 로그를 알림으로 표시
-        alert(`새 REL 생성:\n${JSON.stringify(newRel, null, 2)}`);
+        // rwslLines에 새 REL 추가하여 즉시 렌더링
+        const newRwslLine: RWSLLine = {
+          id: newRel.id,
+          type: 'REL',
+          points: [
+            { x: newRel.position.lng, y: newRel.position.lat },
+            { x: newRel.holdingPoint.lng, y: newRel.holdingPoint.lat }
+          ],
+          active: false
+        };
+        
+        setRwslLines(prev => [...prev, newRwslLine]);
+        
+        // 파일에 저장
+        saveRELToFile(newRel);
+        
+        // 성공 메시지
         console.log('새 REL 생성:', JSON.stringify(newRel, null, 2));
-        alert(`새 REL이 생성되었습니다.\n콘솔에서 JSON 데이터를 확인하세요.`);
+        alert(`REL ${newRel.id}이(가) 생성되었습니다.`);
         
         // 리셋
         setRelDrawClicks([]);
@@ -1083,7 +1203,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     } else if (onSelectAircraft) {
       // 일반 모드 - 항공기 선택
     }
-  }, [onSelectAircraft, relDrawMode, relType, relDrawClicks, scale, panX, panY, latLngToPixel]);
+  }, [onSelectAircraft, relDrawMode, relType, relDrawClicks, scale, panX, panY, latLngToPixel, saveRELToFile]);
 
   const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -1104,67 +1224,92 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     
     // REL 그리기 모드에서 첫 클릭 후 미리보기
     if (relDrawMode && relDrawClicks.length === 1) {
-      const canvasX = (x / rect.width) * canvas.width;
-      const canvasY = (y / rect.height) * canvas.height;
+      // objectFit: 'contain'을 고려한 실제 렌더링 영역 계산
+      const canvasAspect = canvas.width / canvas.height;
+      const rectAspect = rect.width / rect.height;
       
-      const worldX = (canvasX - canvas.width / 2 - panX * scale) / scale;
-      const worldY = (canvasY - canvas.height / 2 - panY * scale) / scale;
+      let renderWidth, renderHeight, offsetX, offsetY;
+      
+      if (canvasAspect > rectAspect) {
+        // Canvas가 더 넓은 경우 - 위아래 레터박스
+        renderWidth = rect.width;
+        renderHeight = rect.width / canvasAspect;
+        offsetX = 0;
+        offsetY = (rect.height - renderHeight) / 2;
+      } else {
+        // Canvas가 더 높은 경우 - 좌우 필러박스
+        renderWidth = rect.height * canvasAspect;
+        renderHeight = rect.height;
+        offsetX = (rect.width - renderWidth) / 2;
+        offsetY = 0;
+      }
+      
+      // 실제 캔버스 좌표로 변환
+      const canvasX = ((x - offsetX) / renderWidth) * canvas.width;
+      const canvasY = ((y - offsetY) / renderHeight) * canvas.height;
+      
+      const worldX = (canvasX - canvas.width / 2) / scale - panX;
+      const worldY = (canvasY - canvas.height / 2) / scale - panY;
       
       const GIMPO_CENTER = { lat: 37.5587, lng: 126.7905 };
       const pixelToLatLng = (px: number, py: number) => {
         const zoom = 14;
         const tileSize = 256;
-        const centerPixel = latLngToPixel(GIMPO_CENTER.lat, GIMPO_CENTER.lng, zoom, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+        const scale = Math.pow(2, zoom);
         
-        const absoluteX = centerPixel.x + px;
-        const absoluteY = centerPixel.y + py;
+        // 김포공항 중심을 픽셀 좌표로 변환
+        const centerWorldX = (GIMPO_CENTER.lng + 180) / 360;
+        const centerWorldY = (1 - Math.log(Math.tan(GIMPO_CENTER.lat * Math.PI / 180) + 1 / Math.cos(GIMPO_CENTER.lat * Math.PI / 180)) / Math.PI) / 2;
+        const centerPixelX = centerWorldX * tileSize * scale;
+        const centerPixelY = centerWorldY * tileSize * scale;
         
-        const n = Math.pow(2, zoom);
-        const lng = (absoluteX / tileSize / n) * 360 - 180;
-        const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * absoluteY / tileSize / n))) * 180 / Math.PI;
+        // 클릭한 픽셀을 절대 픽셀 좌표로 변환
+        const absoluteX = centerPixelX + px;
+        const absoluteY = centerPixelY + py;
+        
+        // 절대 픽셀 좌표를 위경도로 변환
+        const worldX = absoluteX / (tileSize * scale);
+        const worldY = absoluteY / (tileSize * scale);
+        
+        const lng = worldX * 360 - 180;
+        const lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * worldY))) * 180 / Math.PI;
         
         return { lat, lng };
       };
       
       const firstClick = relDrawClicks[0];
-      const angle = Math.atan2(worldY - firstClick.y, worldX - firstClick.x);
+      const firstPixel = latLngToPixel(firstClick.lat, firstClick.lng, 14, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+      const currentLatLng = pixelToLatLng(worldX, worldY);
+      const currentPixel = latLngToPixel(currentLatLng.lat, currentLatLng.lng, 14, GIMPO_CENTER.lat, GIMPO_CENTER.lng);
+      const angle = Math.atan2(currentPixel.y - firstPixel.y, currentPixel.x - firstPixel.x);
       
-      const distance = 90;
-      const distanceInPixels = distance * 3.5;
+      // 미터를 픽셀로 변환하는 함수
+      const metersToPixels = (meters: number, lat: number, zoom: number) => {
+        // zoom 레벨에서 1픽셀이 나타내는 미터 수 계산
+        const metersPerPixel = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoom);
+        return meters / metersPerPixel;
+      };
       
-      let position, holdingPoint;
+      const distance = 90; // meters
+      const distanceInPixels = metersToPixels(distance, GIMPO_CENTER.lat, 14);
       
-      if (relType === 'departure') {
-        position = { lat: firstClick.lat, lng: firstClick.lng };
-        const hpX = firstClick.x - Math.cos(angle) * distanceInPixels;
-        const hpY = firstClick.y - Math.sin(angle) * distanceInPixels;
-        holdingPoint = pixelToLatLng(hpX, hpY);
-      } else {
-        holdingPoint = { lat: firstClick.lat, lng: firstClick.lng };
-        const posX = firstClick.x + Math.cos(angle) * distanceInPixels;
-        const posY = firstClick.y + Math.sin(angle) * distanceInPixels;
-        position = pixelToLatLng(posX, posY);
-      }
+      // 정방향으로 통일 - 첫 클릭에서 마우스 방향으로
+      const startPoint = { lat: firstClick.lat, lng: firstClick.lng };
+      const endX = firstPixel.x + Math.cos(angle) * distanceInPixels;
+      const endY = firstPixel.y + Math.sin(angle) * distanceInPixels;
+      const endPoint = pixelToLatLng(endX, endY);
       
-      setPreviewRel({ position, holdingPoint });
+      setPreviewRel({ 
+        position: startPoint,
+        holdingPoint: endPoint 
+      });
     }
   }, [panX, panY, scale, relDrawMode, relDrawClicks, relType, latLngToPixel]);
 
 
   // 마우스 휠 줌 핸들러
-  const handleWheel = useCallback((event: React.WheelEvent<HTMLCanvasElement>) => {
+  const handleWheel = useCallback((event: WheelEvent) => {
     event.preventDefault();
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    
-    // Canvas 크기에 맞게 좌표 스케일링
-    const canvasMouseX = (mouseX / rect.width) * canvas.width;
-    const canvasMouseY = (mouseY / rect.height) * canvas.height;
     
     // 줌 방향 결정
     const zoomDirection = event.deltaY < 0 ? 1 : -1;
@@ -1172,20 +1317,21 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
     
     const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * zoomFactor));
     
-    if (newScale !== scale) {
-      // 마우스 위치를 월드 좌표로 변환
-      const worldX = (canvasMouseX - canvas.width / 2 - panX * scale) / scale;
-      const worldY = (canvasMouseY - canvas.height / 2 - panY * scale) / scale;
-      
-      // 새로운 스케일에서 마우스가 같은 위치에 있도록 팬 조정
-      const newPanX = (canvas.width / 2 + panX * scale - canvasMouseX) / scale + worldX;
-      const newPanY = (canvas.height / 2 + panY * scale - canvasMouseY) / scale + worldY;
-      
-      setScale(newScale);
-      setPanX(newPanX);
-      setPanY(newPanY);
-    }
-  }, [scale, panX, panY, MIN_SCALE, MAX_SCALE, ZOOM_STEP]);
+    // 화면 중심을 기준으로 줌 (pan 값은 그대로 유지)
+    setScale(newScale);
+  }, [scale, MIN_SCALE, MAX_SCALE, ZOOM_STEP]);
+
+  // Wheel 이벤트 리스너 등록 (passive: false로 설정)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleWheel]);
 
   // 줌 제어 함수들
   const handleZoomIn = useCallback(() => {
@@ -1320,6 +1466,20 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
                 </div>
               </div>
             )}
+            
+            {/* 활주로 경계 표시 토글 */}
+            <div className="mt-2 pt-2 border-t border-gray-700">
+              <button
+                onClick={() => setShowRunwayBounds(!showRunwayBounds)}
+                className={`w-full px-2 py-1 rounded text-xs transition-colors ${
+                  showRunwayBounds 
+                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+                    : 'bg-gray-600 hover:bg-gray-700 text-gray-300'
+                }`}
+              >
+                {showRunwayBounds ? '🟨 활주로 경계 ON' : '🟨 활주로 경계 OFF'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1678,7 +1838,7 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         ref={canvasRef}
         width={CANVAS_SIZE.width}
         height={CANVAS_SIZE.height}
-        className="cursor-move"
+        className={relDrawMode ? "cursor-crosshair" : "cursor-move"}
         style={{
           width: '100%',
           height: '100%',
@@ -1686,7 +1846,6 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
         }}
         onClick={handleCanvasClick}
         onMouseMove={handleMouseMove}
-        onWheel={handleWheel}
       />
       
       {/* 하단 상태 정보 */}
@@ -1710,3 +1869,27 @@ const RadarDisplay: React.FC<RadarDisplayProps> = ({
 };
 
 export default RadarDisplay;
+
+// Helper function: Convert lat/lng to pixel coordinates
+function latLngToPixel(lat: number, lng: number, zoom: number, centerLat: number, centerLng: number) {
+  const tileSize = 256;
+  const scale = Math.pow(2, zoom);
+  
+  // Convert center point to world coordinates
+  const centerWorldX = (centerLng + 180) / 360;
+  const centerWorldY = (1 - Math.log(Math.tan(centerLat * Math.PI / 180) + 1 / Math.cos(centerLat * Math.PI / 180)) / Math.PI) / 2;
+  const centerPixelX = centerWorldX * tileSize * scale;
+  const centerPixelY = centerWorldY * tileSize * scale;
+  
+  // Convert target point to world coordinates
+  const worldX = (lng + 180) / 360;
+  const worldY = (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2;
+  const pixelX = worldX * tileSize * scale;
+  const pixelY = worldY * tileSize * scale;
+  
+  // Return relative position from center
+  return {
+    x: pixelX - centerPixelX,
+    y: pixelY - centerPixelY
+  };
+}

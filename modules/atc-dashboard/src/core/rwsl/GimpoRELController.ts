@@ -9,7 +9,8 @@ import {
   RELCommand,
   RunwayOccupancy,
   AircraftApproachData,
-  ConflictSeverity
+  ConflictSeverity,
+  RunwayDirection
 } from '../../types/rwsl';
 import { TrackedAircraft } from '../../types';
 import { CoordinateSystem } from '../coordinates';
@@ -31,8 +32,8 @@ export class GimpoRELController {
   private coordinateSystem: CoordinateSystem;
   private relLights: Map<string, RELConfiguration>;
   private runwayOccupancy: Map<string, RunwayOccupancy>;
-  private approachDetectionDistance: number = 500; // meters
-  private criticalDistance: number = 100; // meters
+  private approachDetectionDistance: number = 1000; // meters (500에서 1000으로 증가)
+  private criticalDistance: number = 200; // meters (100에서 200으로 증가)
 
   constructor(coordinateSystem: CoordinateSystem) {
     this.coordinateSystem = coordinateSystem;
@@ -44,9 +45,15 @@ export class GimpoRELController {
   }
 
   private initializeRELConfiguration(): void {
+    console.log('[RWSL] REL Controller 초기화 - 구성 개수:', gimpoRELConfigurations.length);
     gimpoRELConfigurations.forEach(config => {
       this.relLights.set(config.id, config);
     });
+    console.log('[RWSL] REL 맵 크기:', this.relLights.size);
+    if (this.relLights.size > 0) {
+      const firstRel = Array.from(this.relLights.values())[0];
+      console.log('[RWSL] 첫 번째 REL 예시:', firstRel.id, firstRel.taxiway, firstRel.runway);
+    }
   }
 
   /**
@@ -130,6 +137,14 @@ export class GimpoRELController {
     const timeToEntry = minDistance / (aircraft.speed * 0.514444); // seconds
     const rel = closestREL as RELConfiguration; // Type assertion
     
+    console.log(`[RWSL] 항공기 ${aircraft.id} 접근 감지:`, {
+      REL: rel.id,
+      runway: rel.runway,
+      distance: minDistance.toFixed(0),
+      time: timeToEntry.toFixed(0),
+      speed: aircraft.speed
+    });
+    
     return {
       isApproaching: true,
       targetRunway: String(rel.runway),
@@ -151,21 +166,23 @@ export class GimpoRELController {
     const decisions: RELControlDecision[] = [];
     
     // 각 활주로별 제어 결정
-    ['14L_32R', '14R_32L'].forEach(runway => {
-      const runwayOccupancy = this.runwayOccupancy.get(runway);
-      const approaches14L = approachingAircraft.get('14L') || [];
-      const approaches32R = approachingAircraft.get('32R') || [];
-      const approaches14R = approachingAircraft.get('14R') || [];
-      const approaches32L = approachingAircraft.get('32L') || [];
+    // 북쪽 활주로 (14L/32R)와 남쪽 활주로 (14R/32L)별로 처리
+    const runwayGroups = [
+      { id: '14L_32R', runways: ['14L', '32R'] },
+      { id: '14R_32L', runways: ['14R', '32L'] }
+    ];
+    
+    runwayGroups.forEach(group => {
+      const runwayOccupancy = this.runwayOccupancy.get(group.id);
       
+      // 해당 활주로 그룹의 모든 접근 항공기 수집
       let approaches: AircraftApproachData[] = [];
-      if (runway === '14L_32R') {
-        approaches = [...approaches14L, ...approaches32R];
-      } else {
-        approaches = [...approaches14R, ...approaches32L];
-      }
+      group.runways.forEach(runway => {
+        const runwayApproaches = approachingAircraft.get(runway as RunwayDirection) || [];
+        approaches = [...approaches, ...runwayApproaches];
+      });
       
-      const decision = this.makeRunwayRELDecision(runway, runwayOccupancy, approaches);
+      const decision = this.makeRunwayRELDecision(group.id, runwayOccupancy, approaches);
       if (decision.controlAction !== 'NO_ACTION') {
         decisions.push(decision);
       }
@@ -190,6 +207,8 @@ export class GimpoRELController {
       priority: 'LOW'
     };
     
+    console.log(`[RWSL] ${runway} REL 결정 - 점유: ${occupancy?.occupied}, 접근: ${approaches.length}`);
+    
     // 시나리오 1: 활주로 점유 중 + 접근 항공기 있음
     if (occupancy?.occupied && approaches.length > 0) {
       decision.controlAction = 'ACTIVATE_RED';
@@ -197,6 +216,7 @@ export class GimpoRELController {
       decision.reasoning = `활주로 점유 중 (${occupancy.aircraft.length}대), 접근 항공기 ${approaches.length}대 감지`;
       decision.priority = this.calculatePriority(occupancy, approaches);
       decision.detailedCommands = this.generateDetailedRELCommands(runway, occupancy, approaches);
+      console.log(`[RWSL] ${runway} REL 활성화 결정:`, decision.affectedRELLights.length, '개 등화');
     }
     // 시나리오 2: 활주로 미점유 + 접근 항공기 없음
     else if (!occupancy?.occupied && approaches.length === 0) {
@@ -357,8 +377,11 @@ export class GimpoRELController {
   private getAllRELsForRunway(runway: string): string[] {
     const relIds: string[] = [];
     
+    // runway가 "14L_32R" 또는 "14R_32L" 형태인 경우 처리
+    const runwayPair = runway.split('_');
+    
     this.relLights.forEach((rel, id) => {
-      if (runway.includes(rel.runway)) {
+      if (runwayPair.includes(rel.runway)) {
         relIds.push(id);
       }
     });

@@ -15,6 +15,7 @@ import {
 import { TrackedAircraft } from '../../types';
 import { CoordinateSystem } from '../coordinates';
 import { PlaneCoordinate } from '../../types/coordinates';
+import rwslLightPositions from '../../data/rwslLightPositions.json';
 
 interface ApproachStatus {
   isApproaching: boolean;
@@ -59,7 +60,46 @@ export class GimpoTHLController {
   }
 
   private initializeTHLConfiguration(): void {
-    // 8개의 THL 이륙 대기점 설정
+    // rwslLightPositions.json에서 THL 데이터 읽기
+    const thlConfigurations: THLConfiguration[] = [];
+    
+    console.log('[RWSL] THL 데이터 로드 시작:', {
+      hasTHL: !!rwslLightPositions.lights.THL,
+      runways: Object.keys(rwslLightPositions.lights.THL || {})
+    });
+    
+    // JSON 데이터에서 THL 변환
+    Object.entries(rwslLightPositions.lights.THL || {}).forEach(([runway, lights]) => {
+      if (Array.isArray(lights)) {
+        console.log(`[RWSL] ${runway} THL 개수:`, lights.length);
+        // RunwayDirection 타입 검증
+        if (!['14L', '32R', '14R', '32L'].includes(runway)) {
+          console.error(`[RWSL] 잘못된 활주로 방향: ${runway}`);
+          return;
+        }
+        const runwayDirection = runway as '14L' | '32R' | '14R' | '32L';
+        
+        lights.forEach((light, index) => {
+          const localCoords = this.coordinateSystem.toPlane(light.position.lat, light.position.lng);
+          thlConfigurations.push({
+            id: light.id,
+            type: 'THL' as const,
+            runway: runwayDirection,
+            position: {
+              lat: light.position.lat,
+              lon: light.position.lng,
+              localCoords: localCoords
+            },
+            purpose: `${runway} 이륙 대기`,
+            coverageArea: 200,
+            direction: runway.startsWith('14') ? 'eastbound' as const : 'westbound' as const
+          });
+        });
+      }
+    });
+    
+    // 하드코딩된 설정 제거
+    /*
     const thlConfigurations: THLConfiguration[] = [
       // 주요 이륙 대기점
       {
@@ -168,6 +208,7 @@ export class GimpoTHLController {
         direction: "westbound"
       }
     ];
+    */
 
     thlConfigurations.forEach(config => {
       this.thlLights.set(config.id, config);
